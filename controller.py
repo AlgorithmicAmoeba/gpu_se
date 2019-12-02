@@ -55,3 +55,6 @@ class SMPC:
     :math`\Sigma_0` is the state estimated covariance,
     and :math`W` is the covariance for the state noise.
     """
+    def __init__(self, P, M, Q, R, d, e, model):
+        pass
+
