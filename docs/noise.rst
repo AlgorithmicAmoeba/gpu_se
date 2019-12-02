@@ -1,5 +1,5 @@
 Noise generators
-============
+=================
 |
 
 .. autoclass:: noise.Noise

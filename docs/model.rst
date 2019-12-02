@@ -1,5 +1,5 @@
-Noise generators
-============
+Model
+========
 |
 
 .. autoclass:: model.LinearModel

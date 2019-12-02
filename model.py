@@ -8,7 +8,7 @@ class LinearModel:
         x_{k+1} &= A x_k + B u_k + w_k\\
         y_k &= C x_k + D u_k + v_k
 
-    where :math`w_k` and :math`v_k` are additive noise sampled from some distribution
+    where :math:`w_k` and :math:`v_k` are additive noise sampled from some distribution
 
     Parameters
     ----------

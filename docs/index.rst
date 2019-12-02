@@ -28,7 +28,9 @@ The source code is available `here <https://github.com/darren-roos/INSERTLINK>`_
    :maxdepth: 1
    :name: mastertoc
 
-   SMPC
+   controller
+   model
+   noise
 
 .. Delete this line until the * to generate index for your project: * :ref:`genindex`
 

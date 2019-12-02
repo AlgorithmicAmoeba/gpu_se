@@ -49,11 +49,11 @@ class SMPC:
         d \mu_k + e &\ge k \sqrt{d \Sigma_k d^T}
         \quad \forall \; 0 \le k < N
 
-    where :math`\mu` is the state estimated mean,
-    :math`k` is a constant that depends on :math:`p`,
-    :math`\Sigma_k` is the covariance prediction,
-    :math`\Sigma_0` is the state estimated covariance,
-    and :math`W` is the covariance for the state noise.
+    where :math:`\mu` is the state estimated mean,
+    :math:`k` is a constant that depends on :math:`p`,
+    :math:`\Sigma_k` is the covariance prediction,
+    :math:`\Sigma_0` is the state estimated covariance,
+    and :math:`W` is the covariance for the state noise.
     """
     def __init__(self, P, M, Q, R, d, e, model):
         pass
