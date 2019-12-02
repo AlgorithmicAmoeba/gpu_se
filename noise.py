@@ -6,7 +6,7 @@ class Noise:
     def __call__(self):
         raise NotImplementedError
 
-    def covariance(self):
+    def cov(self):
         raise NotImplementedError
 
 
@@ -21,6 +21,6 @@ class WhiteGaussianNoise(Noise):
     def __call__(self):
         return numpy.random.multivariate_normal(self.mean, self._covariance)
 
-    def covariance(self):
+    def cov(self):
         return self._covariance
 
