@@ -1,0 +1,5 @@
+Controllers
+============
+|
+
+.. autoclass:: controller.SMPC
