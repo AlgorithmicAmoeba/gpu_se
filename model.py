@@ -26,6 +26,9 @@ class LinearModel:
     state_noise, measurement_noise : noise.Noise
         Objects containing state and measurement noise information
 
+    Nx, Ni, No : int
+        Number of states, inputs and outputs
+
     """
     def __init__(self, A, B, C, D,
                  state_noise: noise.Noise,
@@ -36,4 +39,8 @@ class LinearModel:
         self.D = D
         self.w = self.state_noise = state_noise
         self.v = self.measurement_noise = measurement_noise
+
+        self.Nx = self.A.shape[0]
+        self.Ni = self.B.shape[1]
+        self.No = self.C.shape[0]
 
