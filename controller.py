@@ -96,7 +96,8 @@ class SMPC:
     k : float
         Constant that depends on :math:`p`
     """
-    def __init__(self, P, M, Q, R, d, e,
+    def __init__(self, P, M, Q, R, d,
+                 e: float,
                  lin_model: model.LinearModel,
                  k):
         assert P >= M
