@@ -109,10 +109,10 @@ class SMPC:
 
         self._mu0 = cvxpy.Parameter(self.model.Nx)
         self._u0 = cvxpy.Parameter(self.model.Ni)
-        self._sigma0 = cvxpy.Parameter(self.model.Nx, self.model.Nx)
+        self._sigma0 = cvxpy.Parameter((self.model.Nx, self.model.Nx))
 
-        self._us = cvxpy.Variable(self.M, self.model.Ni)
-        mus = cvxpy.Variable(self.P, self.model.Nx)
+        self._us = cvxpy.Variable((self.M, self.model.Ni))
+        mus = cvxpy.Variable((self.P, self.model.Nx))
 
         # Objective function
         obj = cvxpy.sum([cvxpy.quad_form(mu, self.Q) for mu in mus])
@@ -124,7 +124,8 @@ class SMPC:
         state_constraints = [False] * self.P
         state_constraints[0] = mus[0] - (self.model.A @ self._mu0 + self.model.B @ self._u0)
         for i in range(1, self.P):
-            state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ self._us[i - 1]
+            us_indx = i-1 if i-1 < M else -1
+            state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ self._us[us_indx]
 
         # Linear constraints
         # First let us calculate future sigma values
@@ -134,7 +135,7 @@ class SMPC:
             sigmas[i] = self.model.state_noise.cov() + self.model.A @ sigmas[i - 1] @ self.model.A.T
 
         # Calculate c values
-        cs = numpy.empty(self.P)
+        cs = [None]*self.P
         for i in range(self.P):
             cs[i] = self.k * cvxpy.sqrt(cvxpy.quad_form(self.d, sigmas[i])) - self.e
 
@@ -144,6 +145,7 @@ class SMPC:
         constraints = state_constraints + lin_constraints
 
         self._problem = cvxpy.Problem(min_obj, constraints)
+        assert self._problem.is_qp()
 
     def step(self, mu0, u0, sigma0):
         self._mu0.value = mu0
