@@ -1,4 +1,5 @@
 import cvxpy
+import model
 
 
 class SMPC:
@@ -54,7 +55,75 @@ class SMPC:
     :math:`\Sigma_k` is the covariance prediction,
     :math:`\Sigma_0` is the state estimated covariance,
     and :math:`W` is the covariance for the state noise.
-    """
-    def __init__(self, P, M, Q, R, d, e, model):
-        pass
 
+    For convenience we let :math:`c =  k \sqrt{d \Sigma_k d^T} - e `
+    in the code.
+
+    Parameters
+    ----------
+    P, M : int
+        The prediction and control horizon.
+        :math:`P \ge M`
+
+    Q, R : ndarray
+        2D arrays of the diagonal tuning matrices
+
+    d, e : ndarray
+        1D arrays defining the linear constraints
+
+    lin_model : model.LinearModel
+        Internal model for the controller
+
+    Attributes
+    -----------
+    P, M : int
+        The prediction and control horizon.
+        :math:`P \ge M`
+
+    Q, R : ndarray
+        2D arrays of the diagonal tuning matrices
+
+    d, e : ndarray
+        1D arrays defining the linear constraints
+
+    lin_model : model.LinearModel
+        Internal model for the controller
+    """
+    def __init__(self, P, M, Q, R, d, e,
+                 lin_model: model.LinearModel):
+        assert P >= M
+
+        self.P = P
+        self.M = M
+        self.Q = Q
+        self.R = R
+        self.d = d
+        self.e = e
+        self.model = lin_model
+
+        self._mu0 = cvxpy.Parameter(self.model.Nx)
+        self._u0 = cvxpy.Parameter(self.model.Ni)
+        self._cs = cvxpy.Parameter(self.P)
+
+        us = cvxpy.Variable(self.M, self.model.Ni)
+        mus = cvxpy.Variable(self.P, self.model.Nx)
+
+        # Objective function
+        obj = cvxpy.sum([cvxpy.quad_form(mu, self.Q) for mu in mus])
+        obj += cvxpy.sum([cvxpy.quad_form(u, self.R) for u in us])
+        obj += cvxpy.quad_form(us[-1], R) * (self.P - self.M)
+        min_obj = cvxpy.Minimize(obj)
+
+        # State constraints
+        state_constraints = [False] * self.P
+        state_constraints[0] = mus[0] - (self.model.A @ self._mu0 + self.model.B @ self._u0)
+        for i in range(1, self.P):
+            state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ us[i - 1]
+
+        # Linear constraints
+        lin_constraints = [self.d @ mu >= c for mu, c in zip(mus, self._cs)]
+
+        # All constraints
+        constraints = state_constraints + lin_constraints
+
+        self._problem = cvxpy.Problem(min_obj, constraints)
