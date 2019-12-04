@@ -122,7 +122,7 @@ class SMPC:
 
         # State constraints
         state_constraints = [False] * self.P
-        state_constraints[0] = mus[0] - (self.model.A @ self._mu0 + self.model.B @ self._u0)
+        state_constraints[0] = mus[0] == (self.model.A @ self._mu0 + self.model.B @ self._u0)
         for i in range(1, self.P):
             us_indx = i-1 if i-1 < M else -1
             state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ self._us[us_indx]
@@ -150,9 +150,9 @@ class SMPC:
     def step(self, mu0, u0, sigma0):
         self._mu0.value = mu0
         self._u0.value = u0
-        self._sigma0 = sigma0
+        self._sigma0.value = sigma0
 
-        self._problem.solve(solver='OSQP')
+        self._problem.solve()
         u_now = self._us[0].value
 
         return u_now
