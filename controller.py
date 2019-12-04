@@ -84,8 +84,11 @@ class SMPC:
     Q, R : ndarray
         2D arrays of the diagonal tuning matrices
 
-    d, e : ndarray
-        1D arrays defining the linear constraints
+    d : ndarray
+        1D array defining the linear constraints
+
+    e : int
+        Value defining the linear constraints
 
     lin_model : model.LinearModel
         Internal model for the controller
