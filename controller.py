@@ -1,3 +1,4 @@
+import numpy
 import cvxpy
 import model
 
@@ -88,9 +89,13 @@ class SMPC:
 
     lin_model : model.LinearModel
         Internal model for the controller
+
+    k : float
+        Constant that depends on :math:`p`
     """
     def __init__(self, P, M, Q, R, d, e,
-                 lin_model: model.LinearModel):
+                 lin_model: model.LinearModel,
+                 k):
         assert P >= M
 
         self.P = P
@@ -100,30 +105,52 @@ class SMPC:
         self.d = d
         self.e = e
         self.model = lin_model
+        self.k = k
 
         self._mu0 = cvxpy.Parameter(self.model.Nx)
         self._u0 = cvxpy.Parameter(self.model.Ni)
-        self._cs = cvxpy.Parameter(self.P)
+        self._sigma0 = cvxpy.Parameter(self.model.Nx, self.model.Nx)
 
-        us = cvxpy.Variable(self.M, self.model.Ni)
+        self._us = cvxpy.Variable(self.M, self.model.Ni)
         mus = cvxpy.Variable(self.P, self.model.Nx)
 
         # Objective function
         obj = cvxpy.sum([cvxpy.quad_form(mu, self.Q) for mu in mus])
-        obj += cvxpy.sum([cvxpy.quad_form(u, self.R) for u in us])
-        obj += cvxpy.quad_form(us[-1], R) * (self.P - self.M)
+        obj += cvxpy.sum([cvxpy.quad_form(u, self.R) for u in self._us])
+        obj += cvxpy.quad_form(self._us[-1], R) * (self.P - self.M)
         min_obj = cvxpy.Minimize(obj)
 
         # State constraints
         state_constraints = [False] * self.P
         state_constraints[0] = mus[0] - (self.model.A @ self._mu0 + self.model.B @ self._u0)
         for i in range(1, self.P):
-            state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ us[i - 1]
+            state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ self._us[i - 1]
 
         # Linear constraints
-        lin_constraints = [self.d @ mu >= c for mu, c in zip(mus, self._cs)]
+        # First let us calculate future sigma values
+        sigmas = [numpy.array([])] * self.P
+        sigmas[0] = self.model.state_noise.cov() + self.model.A @ self._sigma0 @ self.model.A.T
+        for i in range(1, self.P):
+            sigmas[i] = self.model.state_noise.cov() + self.model.A @ sigmas[i - 1] @ self.model.A.T
+
+        # Calculate c values
+        cs = numpy.empty(self.P)
+        for i in range(self.P):
+            cs[i] = self.k * cvxpy.sqrt(cvxpy.quad_form(self.d, sigmas[i])) - self.e
+
+        lin_constraints = [self.d @ mu >= c for mu, c in zip(mus, cs)]
 
         # All constraints
         constraints = state_constraints + lin_constraints
 
         self._problem = cvxpy.Problem(min_obj, constraints)
+
+    def step(self, mu0, u0, sigma0):
+        self._mu0.value = mu0
+        self._u0.value = u0
+        self._sigma0 = sigma0
+
+        self._problem.solve(solver='OSQP')
+        u_now = self._us[0].value
+
+        return u_now
