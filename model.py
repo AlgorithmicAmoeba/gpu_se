@@ -50,11 +50,11 @@ class BioreactorModel:
     """A nonlinear model of a low dilution rate fed batch bioreactor
     with *Rhizopus oryzae* producing fumaric acid and ethanol from
     glucose feed. The following reactions take place in the reactor: \n
-    1) glucose + 2*CO2 + 6*ATP --> 2*FA + 2*water
-    2) glucose --> 6*CO2 + 12*NADH + 4*ATP (TCA)
-    3) NADH + 0.5*O2 -> 7/3 ATP (Respiration)
-    4) glucose -> 2*ethanol + 2*CO2 + 2*ATP
-    5) glucose + gamma*ATP --> 6*biomass + beta*NADH
+    1) glucose + 2 :math:`CO_2` + 6 ATP --> 2 FA + 2 water
+    2) glucose --> 6 :math:`CO_2` + 12 NADH + 4 ATP (TCA)
+    3) NADH + 0.5 :math:`O_2` -> 7/3 ATP (Respiration)
+    4) glucose -> 2 ethanol + 2 :math:`CO_2` + 2 ATP
+    5) glucose + :math:`\gamma` ATP --> 6 biomass + :math:`\\beta` NADH
 
     Parameters
     ----------
