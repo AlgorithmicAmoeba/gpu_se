@@ -77,8 +77,6 @@ class BioreactorModel:
         self.X = numpy.array(X0)
         self.t = t0
 
-        self._Xs = [self.outputs()]
-
         alpha, PO, gamma, theta, beta = 0.1, 0.1, 1.8, 0.1, 0.1
         rate_matrix = numpy.array([[1, 0, 0, 0, 0],
                                    [0, 0, 0, 1, 0],
@@ -169,7 +167,7 @@ class BioreactorModel:
         self.t += dt
         dX = self.DEs(inputs)
         self.X += numpy.array(dX)*dt
-        self._Xs.append(self.outputs())
+        return self.outputs()
 
     def calculate_pH(self):
         """Calculates the pH in the vessel.
@@ -217,11 +215,3 @@ class BioreactorModel:
         pH = self.calculate_pH()
         outs = numpy.append(self.X, pH)
         return outs
-
-    def get_Xs(self):
-        """Gets all the states that are stored"""
-        return numpy.array(self._Xs)
-
-    def get_data(self):
-        """Gets all relevant information from the object """
-        return self.get_Xs()
