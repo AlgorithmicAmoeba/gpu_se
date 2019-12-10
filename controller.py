@@ -60,7 +60,7 @@ class SMPC:
     :math:`\Sigma_0` is the state estimated covariance,
     and :math:`W` is the covariance for the state noise.
 
-    For convenience we let :math:`c =  k \sqrt{d \Sigma_k d^T} - e `
+    For convenience we let :math:`c =  k \sqrt{d \Sigma_k d^T} - e`
     in the code.
 
     Parameters
