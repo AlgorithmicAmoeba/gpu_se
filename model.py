@@ -87,7 +87,7 @@ class BioreactorModel:
                                    [0, 12, -1, 0, beta]])
         self._rate_matrix_inv = numpy.linalg.inv(rate_matrix)
 
-    def DEs(self, t, inputs):
+    def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
         The rate equations defined in the matrix `rate_matrix` are described by: \n
         1) glucose + 2*CO2 + 6*ATP --> 2*FA + 2*water
@@ -101,8 +101,6 @@ class BioreactorModel:
         Parameters
         ----------
         inputs
-        t : float
-            The current time
 
         Returns
         -------
@@ -169,7 +167,7 @@ class BioreactorModel:
 
         """
         self.t += dt
-        dX = self.DEs(self.t, inputs)
+        dX = self.DEs(inputs)
         self.X += numpy.array(dX)*dt
         self._Xs.append(self.outputs())
 
