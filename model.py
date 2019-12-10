@@ -47,47 +47,35 @@ class LinearModel:
 
 
 class BioreactorModel:
-    """A nonlinear model of the system
+    """A nonlinear model of a low dilution rate fed batch bioreactor
+    with *Rhizopus oryzae* producing fumaric acid and ethanol from
+    glucose feed. The following reactions take place in the reactor: \n
+    1) glucose + 2*CO2 + 6*ATP --> 2*FA + 2*water
+    2) glucose --> 6*CO2 + 12*NADH + 4*ATP (TCA)
+    3) NADH + 0.5*O2 -> 7/3 ATP (Respiration)
+    4) glucose -> 2*ethanol + 2*CO2 + 2*ATP
+    5) glucose + gamma*ATP --> 6*biomass + beta*NADH
 
     Parameters
     ----------
     X0 : array_like
         Initial states
 
-    inputs : callable
-        Must take in a parameter t (the current time) and return an array_like of the current inputs
-
-    t : float, optional
+    t0 : float, optional
         Initial time.
         Defaults to zero
-
-    pH_calculations : bool, optional
-        If `True` then pH calculations are made.
-        Defaults to `False`
 
     Attributes
     -----------
     X : array_like
         Array of current state
 
-    inputs : callable
-        Must take in a parameter t (the current time) and return an array_like of the current inputs
-
     t : float
-        Initial time
-
-    pH_calculations : bool
-        If `True` then pH calculations are made
-
-    rate_matrix_inv : 2d array_like
-        The inverse of the rate matrix.
-        Placed here so that it is only calculated once
+        Current time
     """
-    def __init__(self, X0, inputs, t=0, pH_calculations=False):
+    def __init__(self, X0, t0=0):
         self.X = numpy.array(X0)
-        self.inputs = inputs
-        self.t = t
-        self.pH_calculations = pH_calculations
+        self.t = t0
 
         self._Xs = [self.outputs()]
 
@@ -97,9 +85,9 @@ class BioreactorModel:
                                    [0, 0, 0, 0, 1],
                                    [-6, 4, 7/3, 2, -gamma],
                                    [0, 12, -1, 0, beta]])
-        self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
+        self._rate_matrix_inv = numpy.linalg.inv(rate_matrix)
 
-    def DEs(self, t):
+    def DEs(self, t, inputs):
         """Contains the differential and algebraic equations for the system model.
         The rate equations defined in the matrix `rate_matrix` are described by: \n
         1) glucose + 2*CO2 + 6*ATP --> 2*FA + 2*water
@@ -112,6 +100,7 @@ class BioreactorModel:
 
         Parameters
         ----------
+        inputs
         t : float
             The current time
 
@@ -122,7 +111,7 @@ class BioreactorModel:
         """
         Ng, Nx, Nfa, Ne, Nco, No, Nn, Na, Nb, Nz, Ny, V, Vg, T = [max(0, N) for N in self.X]
         Fg_in, Cg_in, Fco_in, Cco_in, Fo_in, Co_in, \
-            Fg_out, Cn_in, Fn_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = self.inputs(t)
+            Fg_out, Cn_in, Fn_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = inputs
 
         alpha, PO, gamma, theta, beta = 0.1, 0.1, 1.8, 0.1, 0.1
         delta = 0.2
@@ -142,7 +131,7 @@ class BioreactorModel:
         theta_calc = theta * (Cg / (1e-3 + Cg))
         RHS = [rFAf, rEf, 8e-5, theta_calc, 0]
 
-        rFAf, rTCA, rResp, rEf, rbio = self.rate_matrix_inv @ RHS
+        rFAf, rTCA, rResp, rEf, rbio = self._rate_matrix_inv @ RHS
 
         rG = -rFAf - rTCA - rEf - rbio
         rX = 6 * rbio
@@ -169,17 +158,18 @@ class BioreactorModel:
 
         return dNg, dNx, dNfa, dNe, dNco, dNo, dNn, dNa, dNb, dNz, dNy, dV, dVg, dT
 
-    def step(self, dt):
+    def step(self, dt, inputs):
         """Updates the model with inputs
 
         Parameters
         ----------
+        inputs
         dt : float
             Time since previous step
 
         """
         self.t += dt
-        dX = self.DEs(self.t)
+        dX = self.DEs(self.t, inputs)
         self.X += numpy.array(dX)*dt
         self._Xs.append(self.outputs())
 
@@ -225,11 +215,9 @@ class BioreactorModel:
         outputs : array_like
             List of all the outputs from the model
         """
-        if self.pH_calculations:
-            pH = self.calculate_pH()
-            outs = numpy.append(self.X, pH)
-        else:
-            outs = self.X
+
+        pH = self.calculate_pH()
+        outs = numpy.append(self.X, pH)
         return outs
 
     def get_Xs(self):
