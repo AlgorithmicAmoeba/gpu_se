@@ -1,5 +1,6 @@
 import numpy
 import cvxpy
+import cvxpy.expressions.expression
 import model
 
 
@@ -19,7 +20,8 @@ class SMPC:
                 \right)
         \right] \\
         x_{k+1} &= A x_k + B u_k \\
-        e_k &= r - x_k \\
+        y_k &= C x_k + D u_k \\
+        e_k &= r - y_k \\
         P
         \left[
             d x_k + e \ge 0
@@ -45,7 +47,8 @@ class SMPC:
         e_i^T Q e_i + u_i^T R u_i
         \right)	\\
         \mu_{k+1} &= A \mu_k + B u_k \\
-        e_k &= r - \mu_k \\
+        y_k &= C \mu_k + D u_k \\
+        e_k &= r - y_k \\
         \Sigma_{k+1} &= A \Sigma_k A^T + W
         \quad \forall \; 0 \le k < N \\
         d \mu_k + e &\ge k \sqrt{d \Sigma_k d^T}
@@ -114,14 +117,21 @@ class SMPC:
         self._mu0 = cvxpy.Parameter(self.model.Nx)
         self._u0 = cvxpy.Parameter(self.model.Ni)
         self._sigma0 = cvxpy.Parameter((self.model.Nx, self.model.Nx))
+        self.r = cvxpy.Parameter()
 
         self._us = cvxpy.Variable((self.M, self.model.Ni))
         mus = cvxpy.Variable((self.P, self.model.Nx))
 
         # Objective function
-        obj = cvxpy.sum([cvxpy.quad_form(mu, self.Q) for mu in mus])
-        obj += cvxpy.sum([cvxpy.quad_form(u, self.R) for u in self._us])
-        obj += cvxpy.quad_form(self._us[-1], R) * (self.P - self.M)
+        obj = self.r * 0
+        for i in range(1, self.P):
+            us_indx = i-1 if i-1 < M else -1
+            u = self._us[us_indx]
+            mu = mus[i]
+            y = self.model.C @ mu + self.model.D @ u
+            e = self.r - y
+            obj += cvxpy.quad_form(e, self.Q)
+            obj += cvxpy.quad_form(u, self.R)
         min_obj = cvxpy.Minimize(obj)
 
         # State constraints
@@ -151,10 +161,11 @@ class SMPC:
         self._problem = cvxpy.Problem(min_obj, constraints)
         assert self._problem.is_qp()
 
-    def step(self, mu0, u0, sigma0):
+    def step(self, mu0, u0, sigma0, r):
         self._mu0.value = mu0
         self._u0.value = u0
         self._sigma0.value = sigma0
+        self.r.value = r
 
         self._problem.solve()
         u_now = self._us[0].value

@@ -34,11 +34,12 @@ K = controller.SMPC(P, M, Q, R, d, e, m, k)
 mu0 = numpy.array([1.2, 3])
 u0 = numpy.array([10, 0.1])
 sigma0 = numpy.array([[2e-1, 1e-3], [4.5e-3, 7e-2]])
+r = 0
 
 u = 0
 for i in range(5):
     start = time.time()
-    u = K.step(mu0, u0, sigma0)
+    u = K.step(mu0, u0, sigma0, r)
     print(time.time() - start)
 
 print(u)
