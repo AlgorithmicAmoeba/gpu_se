@@ -213,5 +213,6 @@ class BioreactorModel:
         """
 
         pH = self.calculate_pH()
-        outs = numpy.append(self.X, pH)
+        Ng, Nx, Nfa, Ne, Nco, No, Nn, V, Vg, T = self.X
+        outs = Ng/V, Nx/V, Nfa/V, Ne/V, Nco/Vg, No/Vg, Nn/V, T, pH
         return outs
