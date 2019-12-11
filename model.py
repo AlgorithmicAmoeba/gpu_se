@@ -98,7 +98,8 @@ class BioreactorModel:
 
         Parameters
         ----------
-        inputs
+        inputs : ndarray
+            The inputs to the system at the current time
 
         Returns
         -------
@@ -215,4 +216,83 @@ class BioreactorModel:
         pH = self.calculate_pH()
         Ng, Nx, Nfa, Ne, Nco, No, Nn, V, Vg, T = self.X
         outs = Ng/V, Nx/V, Nfa/V, Ne/V, Nco/Vg, No/Vg, Nn/V, T, pH
+        return outs
+
+
+class CSTRModel:
+    """A nonlinear model of a CSTR with an exothermic, irreversible reaction
+    :math:`A \rightarrow B`. The only manipulated variable is the heat added
+    to the reactor Q.
+    Parameters
+    ----------
+    X0 : array_like
+        Initial states
+
+    t0 : float, optional
+        Initial time.
+        Defaults to zero
+
+    Attributes
+    -----------
+    X : array_like
+        Array of current state
+
+    t : float
+        Current time
+    """
+    def __init__(self, X0, t0=0):
+        self.X = numpy.array(X0)
+        self.t = t0
+
+    def DEs(self, inputs):
+        """Contains the differential and algebraic equations for the system model.
+
+        Parameters
+        ----------
+        inputs : ndarray
+            The inputs to the system at the current time
+
+        Returns
+        -------
+        dX : array_like
+            The differential changes to the state variables
+        """
+        Ca, T = [max(0, N) for N in self.X]
+        Q, = inputs
+
+        V, Ca0, dH, E, rho, R, Ta0, k0, Cp, F = 5, 1, -4.78e4, 8.314e4, 1e3, 3.314, 310, 72e7, 0.239, 0.1
+
+        D = F/V
+        rate = k0*numpy.exp(-E/R/T)*Ca
+
+        dCa = D*(Ca0 - Ca) - rate
+        dT = D*(Ta0 - T) - dH/rho/Cp*rate + Q/rho/Cp/V
+
+        return dCa, dT
+
+    def step(self, dt, inputs):
+        """Updates the model with inputs
+
+        Parameters
+        ----------
+        inputs
+        dt : float
+            Time since previous step
+
+        """
+        self.t += dt
+        dX = self.DEs(inputs)
+        self.X += numpy.array(dX)*dt
+        return self.outputs()
+
+    def outputs(self):
+        """Returns all the outputs (state and calculated)
+
+        Returns
+        -------
+        outputs : array_like
+            List of all the outputs from the model
+        """
+
+        outs = self.X
         return outs
