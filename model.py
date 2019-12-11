@@ -85,7 +85,7 @@ class BioreactorModel:
                                    [0, 12, -1, 0, beta]])
         self._rate_matrix_inv = numpy.linalg.inv(rate_matrix)
 
-    def DEs(self, inputs):
+    def DEs(self, Xs, inputs):
         """Contains the differential and algebraic equations for the system model.
         The rate equations defined in the matrix `rate_matrix` are described by: \n
         1) glucose + 2*CO2 + 6*ATP --> 2*FA + 2*water
@@ -98,6 +98,9 @@ class BioreactorModel:
 
         Parameters
         ----------
+        Xs : ndarray
+            The states of the system at the current time
+
         inputs : ndarray
             The inputs to the system at the current time
 
@@ -106,7 +109,7 @@ class BioreactorModel:
         dX : array_like
             The differential changes to the state variables
         """
-        Ng, Nx, Nfa, Ne, Nco, No, Nn, Na, Nb, Nz, Ny, V, Vg, T = [max(0, N) for N in self.X]
+        Ng, Nx, Nfa, Ne, Nco, No, Nn, Na, Nb, Nz, Ny, V, Vg, T = [max(0, N) for N in Xs]
         Fg_in, Cg_in, Fco_in, Cco_in, Fo_in, Co_in, \
             Fg_out, Cn_in, Fn_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = inputs
 
@@ -166,11 +169,11 @@ class BioreactorModel:
 
         """
         self.t += dt
-        dX = self.DEs(inputs)
+        dX = self.DEs(self.X, inputs)
         self.X += numpy.array(dX)*dt
-        return self.outputs()
+        return self.outputs(self.X, inputs)
 
-    def calculate_pH(self):
+    def calculate_pH(self, Xs):
         """Calculates the pH in the vessel.
 
         Returns
@@ -179,7 +182,7 @@ class BioreactorModel:
             The pH of the tank
         """
         K_fa1, K_fa2,  K_a, K_b, K_w = 10 ** (-3.03), 10 ** 4.44, 10 ** 8.08, 10 ** 0.56, 10 ** (-14)
-        _, _, Nfa, _, _, _, _, Na, Nb, _, _, V, _, _ = self.X
+        _, _, Nfa, _, _, _, _, Na, Nb, _, _, V, _, _ = Xs
         C_fa = Nfa/V
         C_a = Na/V
         C_b = Nb/V
@@ -204,7 +207,7 @@ class BioreactorModel:
 
         return pH
 
-    def outputs(self):
+    def outputs(self, Xs, inputs):
         """Returns all the outputs (state and calculated)
 
         Returns
@@ -213,8 +216,9 @@ class BioreactorModel:
             List of all the outputs from the model
         """
 
-        pH = self.calculate_pH()
-        Ng, Nx, Nfa, Ne, Nco, No, Nn, V, Vg, T = self.X
+        pH = self.calculate_pH(Xs)
+        Ng, Nx, Nfa, Ne, Nco, No, Nn, V, Vg, T = Xs
+        _ = inputs
         outs = Ng/V, Nx/V, Nfa/V, Ne/V, Nco/Vg, No/Vg, Nn/V, T, pH
         return outs
 
