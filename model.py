@@ -24,7 +24,7 @@ class LinearModel:
     A, B, C, D : ndarray
         2D array containing the relevant state space matrices
 
-    state_noise, measurement_noise : noise.Noise
+    state_noise, measurement_noise : noise.Noise, optional
         Objects containing state and measurement noise information
 
     Nx, Ni, No : int
@@ -32,8 +32,8 @@ class LinearModel:
 
     """
     def __init__(self, A, B, C, D,
-                 state_noise: noise.Noise,
-                 measurement_noise: noise.Noise):
+                 state_noise: noise.Noise = None,
+                 measurement_noise: noise.Noise = None):
         self.A = A
         self.B = B
         self.C = C
