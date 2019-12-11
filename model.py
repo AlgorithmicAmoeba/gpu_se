@@ -46,7 +46,19 @@ class LinearModel:
         self.No = self.C.shape[0]
 
 
-class BioreactorModel:
+class NonlinearModel:
+    """Base class for nonlinear models"""
+    def DEs(self, Xs, inputs):
+        raise NotImplementedError
+
+    def step(self, dt, inputs):
+        raise NotImplementedError
+
+    def outputs(self, Xs, inputs):
+        raise NotImplementedError
+
+
+class BioreactorModel(NonlinearModel):
     """A nonlinear model of a low dilution rate fed batch bioreactor
     with *Rhizopus oryzae* producing fumaric acid and ethanol from
     glucose feed. The following reactions take place in the reactor: \n
@@ -224,7 +236,7 @@ class BioreactorModel:
         return outs
 
 
-class CSTRModel:
+class CSTRModel(NonlinearModel):
     """A nonlinear model of a CSTR with an exothermic, irreversible reaction
     :math:`A \rightarrow B`. The only manipulated variable is the heat added
     to the reactor Q.
@@ -249,8 +261,7 @@ class CSTRModel:
         self.X = numpy.array(X0)
         self.t = t0
 
-    @staticmethod
-    def DEs(Xs, inputs):
+    def DEs(self, Xs, inputs):
         """Contains the differential and algebraic equations for the system model.
 
         Parameters
@@ -294,8 +305,7 @@ class CSTRModel:
         self.X += numpy.array(dX)*dt
         return self.outputs(self.X, inputs)
 
-    @staticmethod
-    def outputs(Xs, inputs):
+    def outputs(self, Xs, inputs):
         """Returns all the outputs (state and calculated)
 
         Returns
