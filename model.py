@@ -173,7 +173,8 @@ class BioreactorModel:
         self.X += numpy.array(dX)*dt
         return self.outputs(self.X, inputs)
 
-    def calculate_pH(self, Xs):
+    @staticmethod
+    def calculate_pH(Xs):
         """Calculates the pH in the vessel.
 
         Returns
@@ -248,11 +249,15 @@ class CSTRModel:
         self.X = numpy.array(X0)
         self.t = t0
 
-    def DEs(self, inputs):
+    @staticmethod
+    def DEs(Xs, inputs):
         """Contains the differential and algebraic equations for the system model.
 
         Parameters
         ----------
+        Xs : ndarray
+            The states of the system at the current time
+
         inputs : ndarray
             The inputs to the system at the current time
 
@@ -261,7 +266,7 @@ class CSTRModel:
         dX : array_like
             The differential changes to the state variables
         """
-        Ca, T = [max(0, N) for N in self.X]
+        Ca, T = [max(0, N) for N in Xs]
         Q, = inputs
 
         V, Ca0, dH, E, rho, R, Ta0, k0, Cp, F = 5, 1, -4.78e4, 8.314e4, 1e3, 3.314, 310, 72e7, 0.239, 0.1
@@ -285,11 +290,12 @@ class CSTRModel:
 
         """
         self.t += dt
-        dX = self.DEs(inputs)
+        dX = self.DEs(self.X, inputs)
         self.X += numpy.array(dX)*dt
-        return self.outputs()
+        return self.outputs(self.X, inputs)
 
-    def outputs(self):
+    @staticmethod
+    def outputs(Xs, inputs):
         """Returns all the outputs (state and calculated)
 
         Returns
@@ -298,5 +304,6 @@ class CSTRModel:
             List of all the outputs from the model
         """
 
-        outs = self.X
+        outs = Xs
+        _ = inputs
         return outs
