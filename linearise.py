@@ -21,7 +21,7 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
         The linear model of the system
     """
 
-    def max_norm_error_close(f, tol=1e-5, x=0.1):
+    def max_norm_error_close(f, tol=1e-8, x=0.1):
         """Takes in a function :math:`f` that takes in a
         parameter :math:`x` and evaluates
         :math:`\gamma = \frac{f(x) - f(-x)}{2x}` as an approximation
@@ -40,7 +40,11 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
     def f(x):
         new_vec = vec.copy()
         new_vec[k] += x
-        return fun(new_vec)
+
+        if j == 0:
+            return fun(new_vec, input_op)
+
+        return fun(X_op, new_vec)
 
     matrices = [[[], []], [[], []]]
     for i, fun in enumerate([nonlinear_model.DEs, nonlinear_model.outputs]):
@@ -52,6 +56,6 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
             matrices[i][j] = numpy.array(matrix)
 
     (A, B), (C, D) = matrices
-    linear_model = model.LinearModel(A, B, C, D)
+    linear_model = model.LinearModel(A.T, B.T, C.T, D.T)
 
     return linear_model
