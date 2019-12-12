@@ -168,7 +168,9 @@ class BioreactorModel(NonlinearModel):
         dVg = Fco_in + Fo_in - Fg_out
         dT = 4.5*Q - 0.25*(T - Tamb)
 
-        return dNg, dNx, dNfa, dNe, dNco, dNo, dNn, dNa, dNb, dNz, dNy, dV, dVg, dT
+        dX = numpy.array([dNg, dNx, dNfa, dNe, dNco, dNo, dNn, dNa, dNb, dNz, dNy, dV, dVg, dT])
+
+        return dX
 
     def step(self, dt, inputs):
         """Updates the model with inputs
@@ -182,7 +184,7 @@ class BioreactorModel(NonlinearModel):
         """
         self.t += dt
         dX = self.DEs(self.X, inputs)
-        self.X += numpy.array(dX)*dt
+        self.X += dX*dt
         return self.outputs(self.X, inputs)
 
     @staticmethod
@@ -232,7 +234,7 @@ class BioreactorModel(NonlinearModel):
         pH = self.calculate_pH(Xs)
         Ng, Nx, Nfa, Ne, Nco, No, Nn, V, Vg, T = Xs
         _ = inputs
-        outs = Ng/V, Nx/V, Nfa/V, Ne/V, Nco/Vg, No/Vg, Nn/V, T, pH
+        outs = numpy.array([Ng/V, Nx/V, Nfa/V, Ne/V, Nco/Vg, No/Vg, Nn/V, T, pH])
         return outs
 
 
@@ -280,7 +282,7 @@ class CSTRModel(NonlinearModel):
         Ca, T = [max(0, N) for N in Xs]
         Q, = inputs
 
-        V, Ca0, dH, E, rho, R, Ta0, k0, Cp, F = 5, 1, -4.78e4, 8.314e4, 1e3, 3.314, 310, 72e7, 0.239, 0.1
+        V, Ca0, dH, E, rho, R, Ta0, k0, Cp, F = 5, 1, -4.78e4, 8.314e4, 1e3, 8.314, 310, 72e7, 0.239, 0.1
 
         D = F/V
         rate = k0*numpy.exp(-E/R/T)*Ca
@@ -288,7 +290,9 @@ class CSTRModel(NonlinearModel):
         dCa = D*(Ca0 - Ca) - rate
         dT = D*(Ta0 - T) - dH/rho/Cp*rate + Q/rho/Cp/V
 
-        return dCa, dT
+        dX = numpy.array([dCa, dT])
+
+        return dX
 
     def step(self, dt, inputs):
         """Updates the model with inputs
@@ -302,7 +306,7 @@ class CSTRModel(NonlinearModel):
         """
         self.t += dt
         dX = self.DEs(self.X, inputs)
-        self.X += numpy.array(dX)*dt
+        self.X += dX*dt
         return self.outputs(self.X, inputs)
 
     def outputs(self, Xs, inputs):
