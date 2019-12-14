@@ -117,13 +117,13 @@ class SMPC:
         self._mu0 = cvxpy.Parameter(self.model.Nx)
         self._u0 = cvxpy.Parameter(self.model.Ni)
         self._sigma0 = cvxpy.Parameter((self.model.Nx, self.model.Nx))
-        self._r = cvxpy.Parameter()
+        self._r = cvxpy.Parameter(self.model.No)
 
         self._us = cvxpy.Variable((self.M, self.model.Ni))
         mus = cvxpy.Variable((self.P, self.model.Nx))
 
         # Objective function
-        obj = self._r * 0
+        obj = self._r @ numpy.zeros(self.model.No)
         for i in range(1, self.P):
             us_indx = i-1 if i-1 < M else -1
             u = self._us[us_indx]
