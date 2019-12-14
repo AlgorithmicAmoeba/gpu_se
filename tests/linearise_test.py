@@ -1,6 +1,6 @@
 import numpy
 import linearise
-import model
+import model.CSTRModel
 
 X0 = numpy.array([1., 320.])
 cstr = model.CSTRModel(X0)
