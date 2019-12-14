@@ -1,5 +1,5 @@
 import numpy
-import model.NonlinearModel
+import model
 
 
 class CSTRModel(model.NonlinearModel):

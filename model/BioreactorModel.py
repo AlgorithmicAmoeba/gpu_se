@@ -1,4 +1,5 @@
-import model.NonlinearModel
+import numpy
+import model
 
 
 class BioreactorModel(model.NonlinearModel):
