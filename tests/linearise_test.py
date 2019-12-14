@@ -5,14 +5,14 @@ X0 = numpy.array([1., 320.])
 cstr = model.CSTRModel(X0)
 
 X_op = X0
-inpup_op = numpy.array([0., 0.1])
+input_op = numpy.array([0., 0.1])
 
-lin_model = model.create_LinearModel(cstr, X_op, inpup_op)
+lin_model = model.create_LinearModel(cstr, X_op, input_op)
 
 # Calculated linear values from model
 
 Ca, T = X_op
-Q, F = inpup_op
+Q, F = input_op
 
 V, Ca0, dH, E, rho, R, Ta0, k0, Cp = 5, 1, -4.78e4, 8.314e4, 1e3, 8.314, 310, 72e7, 0.239
 
