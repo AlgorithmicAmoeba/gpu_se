@@ -280,9 +280,9 @@ class CSTRModel(NonlinearModel):
             The differential changes to the state variables
         """
         Ca, T = [max(0, N) for N in Xs]
-        Q, = inputs
+        Q, F = inputs  # Normally on the order of (0, 0.1)
 
-        V, Ca0, dH, E, rho, R, Ta0, k0, Cp, F = 5, 1, -4.78e4, 8.314e4, 1e3, 8.314, 310, 72e7, 0.239, 0.1
+        V, Ca0, dH, E, rho, R, Ta0, k0, Cp = 5, 1, -4.78e4, 8.314e4, 1e3, 8.314, 310, 72e7, 0.239
 
         D = F/V
         rate = k0*numpy.exp(-E/R/T)*Ca
