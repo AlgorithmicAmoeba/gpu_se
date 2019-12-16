@@ -49,5 +49,3 @@ us = [numpy.zeros_like(u0)]
 for t in ts[1:]:
     us.append(K.step(ys[-1], us[-1], sigma0, r))
     ys.append(cstr.step(dt, us[-1]))
-
-
