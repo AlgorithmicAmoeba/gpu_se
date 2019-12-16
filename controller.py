@@ -162,12 +162,12 @@ class SMPC:
         assert self._problem.is_qp()
 
     def step(self, mu0, u0, sigma0, r):
-        self._mu0.value = mu0
-        self._u0.value = u0
-        self._sigma0.value = sigma0
-        self._r.value = r
+        self._mu0.value = mu0.copy()
+        self._u0.value = u0.copy()
+        self._sigma0.value = sigma0.copy()
+        self._r.value = r.copy()
 
         self._problem.solve()
-        u_now = self._us[0].value
+        u_now = self._us[0].value.copy()
 
         return u_now

@@ -85,4 +85,4 @@ class CSTRModel(model.NonlinearModel):
 
         outs = Xs
         _ = inputs
-        return outs
+        return outs.copy()
