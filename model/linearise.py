@@ -3,7 +3,7 @@ import model
 
 
 def create_LinearModel(nonlinear_model: model.NonlinearModel,
-                       X_op, input_op):
+                       X_op, input_op, T=1):
     """Linearise a non-linear model about an operating point to give
     a linear state space model
 
@@ -14,6 +14,9 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
         
     X_op, input_op : ndarray
         The state and input around which the model should be linearised
+
+    T : float, optional
+        The sampling interval
 
     Returns
     -------
@@ -53,9 +56,19 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
             for k in range(len(vec)):
                 gradient = max_norm_error_close(f)
                 matrix.append(gradient)
-            matrices[i][j] = numpy.array(matrix)
+            matrices[i][j] = numpy.array(matrix).T
 
     (A, B), (C, D) = matrices
-    linear_model = model.LinearModel(A.T, B.T, C.T, D.T)
+    Nx = A.shape[0]
+    # We now have a continuous system, let's use the bilinear transform to get the discrete one
+    alpha = 2/T
+    P_inv = numpy.linalg.inv(numpy.eye(Nx) - 1/alpha * A)
+    Q = numpy.eye(Nx) + 1/alpha * A
+
+    Ad = P_inv @ Q
+    Bd = numpy.sqrt(T) * P_inv @ B
+    Cd = numpy.sqrt(T) * C @ P_inv
+    Dd = 1/numpy.sqrt(2*alpha) * C @ Bd + D
+    linear_model = model.LinearModel(Ad, Bd, Cd, Dd, T=T)
 
     return linear_model
