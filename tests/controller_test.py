@@ -16,8 +16,9 @@ A = 2*numpy.eye(2)
 B = numpy.array([[2, 0.1], [-0.2, 3]])
 C = numpy.array([[1, 0], [1, -1]])
 D = numpy.array([[0, 0.2], [0, 0]])
+dt = 0.5
 
-m = model.LinearModel(A, B, C, D, nx, ny)
+m = model.LinearModel(A, B, C, D, dt, nx, ny)
 
 # Controller
 P = 5
@@ -40,6 +41,8 @@ u = 0
 for i in range(5):
     start = time.time()
     u = K.step(mu0, u0, sigma0, r)
-    print(time.time() - start)
+    if __name__ == "__main__":
+        print(time.time() - start)
 
-print(u)
+if __name__ == "__main__":
+    print(u)

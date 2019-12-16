@@ -7,7 +7,9 @@ cstr = model.CSTRModel(X0)
 X_op = X0
 input_op = numpy.array([0., 0.1])
 
-lin_model = model.create_LinearModel(cstr, X_op, input_op)
+dt = 0.1
+
+lin_model = model.create_LinearModel(cstr, X_op, input_op, dt)
 
 # Calculated linear values from model
 
@@ -25,5 +27,17 @@ C = numpy.array([[1, 0], [0, 1]])
 
 D = numpy.array([[0], [0]])
 
-for numeric, calucluated in zip([lin_model.A, lin_model.B, lin_model.C, lin_model.D], [A, B, C, D]):
+Nx = A.shape[0]
+# We now have a continuous system, let's use the bilinear transform to get the discrete one
+alpha = 2 / dt
+P_inv = numpy.linalg.inv(numpy.eye(Nx) - 1/alpha * A)
+Q1 = numpy.eye(Nx) + 1/alpha * A
+
+Ad = P_inv @ Q1
+Bd = numpy.sqrt(dt) * P_inv @ B
+Cd = numpy.sqrt(dt) * C @ P_inv
+Dd = 1/numpy.sqrt(2*alpha) * C @ Bd + D
+linear_model = model.LinearModel(Ad, Bd, Cd, Dd, dt)
+
+for numeric, calucluated in zip([lin_model.A, lin_model.B, lin_model.C, lin_model.D], [Ad, Bd, Cd, Dd]):
     assert numpy.max(numpy.abs(numeric - calucluated)) < 1e-8
