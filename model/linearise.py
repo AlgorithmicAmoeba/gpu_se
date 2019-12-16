@@ -3,7 +3,7 @@ import model
 
 
 def create_LinearModel(nonlinear_model: model.NonlinearModel,
-                       X_op, input_op, T=1):
+                       X_op, input_op, T):
     """Linearise a non-linear model about an operating point to give
     a linear state space model
 
@@ -15,7 +15,7 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
     X_op, input_op : ndarray
         The state and input around which the model should be linearised
 
-    T : float, optional
+    T : float
         The sampling interval
 
     Returns
@@ -24,18 +24,18 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
         The linear model of the system
     """
 
-    def max_norm_error_close(f, tol=1e-8, x=0.1):
-        """Takes in a function :math:`f` that takes in a
+    def max_norm_error_close(g, tol=1e-8, x=0.1):
+        """Takes in a function :math:`g` that takes in a
         parameter :math:`x` and evaluates
-        :math:`\gamma = \frac{f(x) - f(-x)}{2x}` as an approximation
+        :math:`\gamma = \frac{g(x) - g(-x)}{2x}` as an approximation
         of the gradient.
         It halves :math:`x` until :math:`e_k = || \gamma_k - \gamma_{k-1}||_\infty < tol`
         """
-        gamma = (f(x) - f(-x))/2/x
+        gamma = (g(x) - g(-x)) / 2 / x
         e = tol + 1
         while e > tol:
             x /= 2
-            new_gamma = (f(x) - f(-x))/2/x
+            new_gamma = (g(x) - g(-x)) / 2 / x
             e = numpy.max(numpy.abs(new_gamma - gamma))
 
         return gamma
@@ -69,6 +69,6 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
     Bd = numpy.sqrt(T) * P_inv @ B
     Cd = numpy.sqrt(T) * C @ P_inv
     Dd = 1/numpy.sqrt(2*alpha) * C @ Bd + D
-    linear_model = model.LinearModel(Ad, Bd, Cd, Dd, T=T)
+    linear_model = model.LinearModel(Ad, Bd, Cd, Dd, T)
 
     return linear_model
