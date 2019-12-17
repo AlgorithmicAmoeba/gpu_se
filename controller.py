@@ -120,26 +120,22 @@ class SMPC:
         self._r = cvxpy.Parameter(self.model.No)
 
         self._us = cvxpy.Variable((self.M, self.model.Ni))
-        mus = cvxpy.Variable((self.P, self.model.Nx))
+        mus = []
 
         # Objective function
         obj = self._r @ numpy.zeros(self.model.No)
+        mu = self._mu0
         for i in range(1, self.P):
             us_indx = i-1 if i-1 < M else -1
             u = self._us[us_indx]
-            mu = mus[i]
+            mu = self.model.A @ mu + self.model.B @ u
+            mus.append(mu)
+
             y = self.model.C @ mu + self.model.D @ u
-            e = self._r - y
+            e = self._r - mu
             obj += cvxpy.quad_form(e, self.Q)
             obj += cvxpy.quad_form(u, self.R)
         min_obj = cvxpy.Minimize(obj)
-
-        # State constraints
-        state_constraints = [False] * self.P
-        state_constraints[0] = mus[0] == (self.model.A @ self._mu0 + self.model.B @ self._u0)
-        for i in range(1, self.P):
-            us_indx = i-1 if i-1 < M else -1
-            state_constraints[i] = mus[i] == self.model.A @ mus[i - 1] + self.model.B @ self._us[us_indx]
 
         # Linear constraints
         # First let us calculate future sigma values
@@ -156,7 +152,7 @@ class SMPC:
         lin_constraints = [self.d @ mu >= c for mu, c in zip(mus, cs)]
 
         # All constraints
-        constraints = state_constraints + lin_constraints
+        constraints = lin_constraints
 
         self._problem = cvxpy.Problem(min_obj, constraints)
         assert self._problem.is_qp()
@@ -168,6 +164,7 @@ class SMPC:
         self._r.value = r.copy()
 
         self._problem.solve()
+
         u_now = self._us[0].value.copy()
 
         return u_now
