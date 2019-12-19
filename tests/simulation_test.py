@@ -1,10 +1,13 @@
 import numpy
+import tqdm
+import matplotlib.pyplot as plt
 import model
 import controller
 import noise
 
 # Simulation set-up
-ts = numpy.linspace(0, 10, 100)
+end_time = 1000
+ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 
 # CSTR model
@@ -12,8 +15,8 @@ X0 = numpy.array([1., 320.])
 cstr = model.CSTRModel(X0)
 
 # Noise
-state_noise_cov = numpy.array([[1e-1, 0], [0, 7e-2]])
-meas_noise_cov = numpy.array([[6e-2, 0], [0, 1e-2]])
+state_noise_cov = numpy.array([[1e-6, 0], [0, 0.1]])
+meas_noise_cov = numpy.array([[1e-3, 0], [0, 10]])
 
 nx = noise.WhiteGaussianNoise(state_noise_cov)
 ny = noise.WhiteGaussianNoise(meas_noise_cov)
@@ -27,25 +30,35 @@ lin_model.state_noise = nx
 lin_model.measurement_noise = ny
 
 # Controller parameters
-P = 20
+P = 25
 M = 5
-Q = numpy.eye(2)
+Q = numpy.array([[1000, 0], [0, 1]])
 R = numpy.eye(2)
-d = numpy.array([0, 0])
-e = 0
+d = numpy.array([10, 1])
+e = 412
 k = 1.86
 
-K = controller.SMPC(P, M, Q, R, d, e, lin_model, k)
+r = numpy.array([0.5, 400])
+K = controller.SMPC2(P, M, Q, R, d, e, lin_model, k, r)
 
 # Controller initial params
 mu0 = X0
 u0 = input_op
 sigma0 = numpy.zeros((2, 2))
-r = numpy.array([0.3, 400])
+r = numpy.array([0.6, 400])
 
 ys = [X0]
 us = [numpy.zeros_like(u0)]
 
-for t in ts[1:]:
-    us.append(K.step(ys[-1], us[-1], sigma0, r))
+for t in tqdm.tqdm(ts[1:]):
+    us.append(K.step(ys[-1]))
     ys.append(cstr.step(dt, us[-1]))
+
+ys = numpy.array(ys)
+us = numpy.array(us)
+
+plt.plot(ts, ys[:, 0])
+plt.show()
+
+plt.plot(ts, ys[:, 1])
+plt.show()
