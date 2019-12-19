@@ -267,8 +267,7 @@ class SMPC2:
     k : float
         Constant that depends on :math:`p`
     """
-    def __init__(self, P, M, Q, R, d,
-                 e: float,
+    def __init__(self, P, M, Q, R, d, e,
                  lin_model: model.LinearModel,
                  k, r):
         assert P >= M
@@ -313,10 +312,12 @@ class SMPC2:
         Aeq = scipy.sparse.hstack([Ax, Bu])
         leq = numpy.hstack([-x0, numpy.zeros(P * nx)])
         ueq = leq
+
         # - input and state constraints
         Aineq = scipy.sparse.eye((P + 1) * nx + P * nu)
         lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmin), numpy.kron(numpy.ones(P), umin)])
         uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmax), numpy.kron(numpy.ones(P), umax)])
+
         # - OSQP constraints
         A = scipy.sparse.vstack([Aeq, Aineq], format='csc')
         self.lower = numpy.hstack([leq, lineq])
@@ -344,5 +345,4 @@ class SMPC2:
         # Apply first control input to the plant
         ctrl = res.x[-self.P * self.model.Ni:-(self.P - 1) * self.model.Ni]
 
-        # check_constraints(GG, L, U, res, b)
         return ctrl
