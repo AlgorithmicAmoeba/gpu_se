@@ -1,7 +1,9 @@
 import numpy
+import scipy.sparse
 import cvxpy
 import cvxpy.expressions.expression
 import model
+import osqp
 
 
 class SMPC:
@@ -131,7 +133,7 @@ class SMPC:
             mu = self.model.A @ mu + self.model.B @ u
             mus.append(mu)
 
-            y = self.model.C @ mu + self.model.D @ u
+            # y = self.model.C @ mu + self.model.D @ u
             e = self._r - mu
             obj += cvxpy.quad_form(e, self.Q)
             obj += cvxpy.quad_form(u, self.R)
@@ -168,3 +170,179 @@ class SMPC:
         u_now = self._us[0].value.copy()
 
         return u_now
+
+
+class SMPC2:
+    r"""A deterministic reformulation of a linear chance constrained MPC
+    that uses a discrete linear state space model of the system.
+    The original stochastic problem is given by:
+
+    .. math::
+        \displaystyle \underset{u}{\min}
+        \quad
+        & \mathbb{E}
+        \left[
+            \sum_{i=0}^{P-1}
+                \left(
+                e_i^T Q e_i + u_i^T R u_i
+                \right)
+        \right] \\
+        x_{k+1} &= A x_k + B u_k \\
+        y_k &= C x_k + D u_k \\
+        e_k &= r - y_k \\
+        P
+        \left[
+            d x_k + e \ge 0
+        \right]
+        &\ge p
+        \quad \forall \; 0 \le k < N
+
+    where :math:`Q` and :math:`R` are tuning parameters,
+    :math:`A` and :math:`B`
+    are state space matrices,
+    :math:`r` is the set point,
+    and :math:`P[c] \ge p`
+    ensures that the probability of :math:`c` is larger than :math:`p`.
+
+    The reformulation is done by Wilken (2015) and the deterministic problem
+    is given by:
+
+    .. math::
+        \displaystyle \underset{u}{\min}
+        \quad
+        & \sum_{i=0}^{P-1}
+        \left(
+        e_i^T Q e_i + u_i^T R u_i
+        \right)	\\
+        \mu_{k+1} &= A \mu_k + B u_k \\
+        y_k &= C \mu_k + D u_k \\
+        e_k &= r - y_k \\
+        \Sigma_{k+1} &= A \Sigma_k A^T + W
+        \quad \forall \; 0 \le k < N \\
+        d \mu_k + e &\ge k \sqrt{d \Sigma_k d^T}
+        \quad \forall \; 0 \le k < N
+
+    where :math:`\mu` is the state estimated mean,
+    :math:`k` is a constant that depends on :math:`p`,
+    :math:`\Sigma_k` is the covariance prediction,
+    :math:`\Sigma_0` is the state estimated covariance,
+    and :math:`W` is the covariance for the state noise.
+
+    For convenience we let :math:`c =  k \sqrt{d \Sigma_k d^T} - e`
+    in the code.
+
+    Parameters
+    ----------
+    P_matrix, M : int
+        The prediction and control horizon.
+        :math:`P \ge M`
+
+    Q, R : ndarray
+        2D arrays of the diagonal tuning matrices
+
+    d, e : ndarray
+        1D arrays defining the linear constraints
+
+    lin_model : model.LinearModel
+        Internal model for the controller
+
+    Attributes
+    -----------
+    P_matrix, M : int
+        The prediction and control horizon.
+        :math:`P \ge M`
+
+    Q, R : ndarray
+        2D arrays of the diagonal tuning matrices
+
+    d : ndarray
+        1D array defining the linear constraints
+
+    e : int
+        Value defining the linear constraints
+
+    lin_model : model.LinearModel
+        Internal model for the controller
+
+    k : float
+        Constant that depends on :math:`p`
+    """
+    def __init__(self, P, M, Q, R, d,
+                 e: float,
+                 lin_model: model.LinearModel,
+                 k, r):
+        assert P >= M
+
+        self.P = P
+        self.M = M
+        self.Q = Q
+        self.R = R
+        self.d = d
+        self.e = e
+        self.model = lin_model
+        self.k = k
+
+        nx = self.model.Nx
+        nu = self.model.Ni
+        Ad = self.model.A
+        Bd = self.model.B
+
+        # Constraints
+        umin = numpy.array([-numpy.inf]*nu)
+        umax = numpy.array([numpy.inf]*nu)
+        xmin = numpy.array([-numpy.inf]*nx)
+        xmax = numpy.array([numpy.inf]*nx)
+
+        # Objective function
+        QN = Q
+
+        # Initial and reference states
+        x0 = numpy.zeros(nx)
+
+        # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),u(0),...,u(P-1))
+        # - quadratic objective
+        P_matrix = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(P), Q), QN,
+                                            scipy.sparse.kron(scipy.sparse.eye(P), R)], format='csc')
+        # - linear objective
+        q = numpy.hstack([numpy.kron(numpy.ones(P), -Q.dot(r)), -QN.dot(r),
+                          numpy.zeros(P * nu)])
+        # - linear dynamics
+        Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1),
+                               -scipy.sparse.eye(nx)) + scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
+        Bu = scipy.sparse.kron(scipy.sparse.vstack([scipy.sparse.csc_matrix((1, P)), scipy.sparse.eye(P)]), Bd)
+        Aeq = scipy.sparse.hstack([Ax, Bu])
+        leq = numpy.hstack([-x0, numpy.zeros(P * nx)])
+        ueq = leq
+        # - input and state constraints
+        Aineq = scipy.sparse.eye((P + 1) * nx + P * nu)
+        lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmin), numpy.kron(numpy.ones(P), umin)])
+        uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmax), numpy.kron(numpy.ones(P), umax)])
+        # - OSQP constraints
+        A = scipy.sparse.vstack([Aeq, Aineq], format='csc')
+        self.lower = numpy.hstack([leq, lineq])
+        self.u = numpy.hstack([ueq, uineq])
+
+        # Create an OSQP object
+        self.prob = osqp.OSQP()
+
+        # Setup workspace
+        self.prob.setup(P_matrix, q, A, self.lower, self.u, warm_start=True, verbose=False)
+
+    def step(self, x0):
+        # Update initial state
+        self.lower[:self.model.Nx] = -x0
+        self.u[:self.model.Nx] = -x0
+        self.prob.update(l=self.lower, u=self.u)
+
+        # Solve
+        res = self.prob.solve()
+
+        # Check solver status
+        if res.info.status != 'solved':
+            raise ValueError('OSQP did not solve the problem!')
+
+        # Apply first control input to the plant
+        ctrl = res.x[-self.P * self.model.Ni:-(self.P - 1) * self.model.Ni]
+
+        # check_constraints(GG, L, U, res, b)
+        return ctrl
