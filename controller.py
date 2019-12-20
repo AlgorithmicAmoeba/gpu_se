@@ -248,7 +248,7 @@ class SMPC2:
 
     Attributes
     -----------
-    P_matrix, M : int
+    P, M : int
         The prediction and control horizon.
         :math:`P \ge M`
 
@@ -269,7 +269,8 @@ class SMPC2:
     """
     def __init__(self, P, M, Q, R, d, e,
                  lin_model: model.LinearModel,
-                 k, r):
+                 k, r, x_bounds=None,
+                 u_bounds=None, u_step_bounds=None):
         assert P >= M
 
         self.P = P
@@ -281,30 +282,46 @@ class SMPC2:
         self.model = lin_model
         self.k = k
 
-        nx = self.model.Nx
-        nu = self.model.Ni
+        Nx = self.model.Nx
+        Ni = self.model.Ni
         Ad = self.model.A
         Bd = self.model.B
 
-        # Constraints
-        umin = numpy.array([-numpy.inf]*nu)
-        umax = numpy.array([numpy.inf]*nu)
-        xmin = numpy.array([-numpy.inf]*nx)
-        xmax = numpy.array([numpy.inf]*nx)
+        # Limit constraints
+        if x_bounds is None:
+            x_min = numpy.array([-numpy.inf] * Nx)
+            x_max = numpy.array([numpy.inf] * Nx)
+        else:
+            x_min, x_max = [numpy.array(x) for x in zip(*x_bounds)]
+
+        if u_bounds is None:
+            u_min = numpy.array([-numpy.inf] * Ni)
+            u_max = numpy.array([numpy.inf] * Ni)
+        else:
+            u_min, u_max = [numpy.array(x) for x in zip(*u_bounds)]
+
+        if u_step_bounds is None:
+            u_step_min = numpy.array([-numpy.inf] * Ni)
+            u_step_max = numpy.array([numpy.inf] * Ni)
+        else:
+            u_step_min, u_step_max = [numpy.array(x) for x in zip(*u_step_bounds)]
 
         # Initial and reference states
-        x0 = numpy.zeros(nx)
+        x0 = numpy.zeros(Nx)
 
         # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),u(0),...,u(M-1))
-        # - quadratic objective
+        # min x^T P x + q^T x
+        # such that l <= Ax <= u
+
         P_matrix = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(P + 1), Q),
                                             scipy.sparse.kron(scipy.sparse.eye(M), R)], format='csc')
-        # - linear objective
-        q = numpy.hstack([numpy.kron(numpy.ones(P + 1), -Q.dot(r)),
-                          numpy.zeros(M * nu)])
-        # - linear dynamics
+
+        q_matrix = numpy.hstack([numpy.kron(numpy.ones(P + 1), -Q.dot(r)),
+                                 numpy.zeros(M * Ni)])
+
+        # x_{k+1} = A x_k + B u_k
         Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1),
-                               -scipy.sparse.eye(nx)) + scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
+                               -scipy.sparse.eye(Nx)) + scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
         Bu = scipy.sparse.kron(
                 scipy.sparse.vstack([
                     scipy.sparse.csc_matrix((1, M)),
@@ -313,24 +330,24 @@ class SMPC2:
                      ]),
                 Bd)
         Aeq = scipy.sparse.hstack([Ax, Bu])
-        leq = numpy.hstack([-x0, numpy.zeros(P * nx)])
+        leq = numpy.hstack([-x0, numpy.zeros(P * Nx)])
         ueq = leq
 
-        # - input and state constraints
-        Aineq = scipy.sparse.eye((P + 1) * nx + M * nu)
-        lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmin), numpy.kron(numpy.ones(M), umin)])
-        uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmax), numpy.kron(numpy.ones(M), umax)])
+        # x_min <= x_k <= x_max and u_min <= u_k <= u_max for all k
+        Aineq = scipy.sparse.eye((P + 1) * Nx + M * Ni)
+        lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), x_min), numpy.kron(numpy.ones(M), u_min)])
+        uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), x_max), numpy.kron(numpy.ones(M), u_max)])
 
-        # - OSQP constraints
-        A = scipy.sparse.vstack([Aeq, Aineq], format='csc')
+        # OSQP constraints
+        A_matrix = scipy.sparse.vstack([Aeq, Aineq], format='csc')
         self.lower = numpy.hstack([leq, lineq])
-        self.u = numpy.hstack([ueq, uineq])
+        self.upper = numpy.hstack([ueq, uineq])
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
 
         # Setup workspace
-        self.prob.setup(P_matrix, q, A, self.lower, self.u, warm_start=True, verbose=False)
+        self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True, verbose=False)
 
     def step(self, x0):
         # Added due to OSQP bug
@@ -338,8 +355,8 @@ class SMPC2:
 
         # Update initial state
         self.lower[:self.model.Nx] = -x0
-        self.u[:self.model.Nx] = -x0
-        self.prob.update(l=self.lower, u=self.u)
+        self.upper[:self.model.Nx] = -x0
+        self.prob.update(l=self.lower, u=self.upper)
 
         # Solve
         res = self.prob.solve()
@@ -349,6 +366,6 @@ class SMPC2:
             raise ValueError('OSQP did not solve the problem!')
 
         # Apply first control input to the plant
-        ctrl = res.x[-self.P * self.model.Ni:-(self.P - 1) * self.model.Ni]
+        ctrl = res.x[-self.M * self.model.Ni: -(self.M - 1) * self.model.Ni]
 
         return ctrl
