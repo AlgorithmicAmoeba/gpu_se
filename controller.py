@@ -292,18 +292,15 @@ class SMPC2:
         xmin = numpy.array([-numpy.inf]*nx)
         xmax = numpy.array([numpy.inf]*nx)
 
-        # Objective function
-        QN = Q
-
         # Initial and reference states
         x0 = numpy.zeros(nx)
 
         # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),u(0),...,u(M-1))
         # - quadratic objective
-        P_matrix = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(P), Q), QN,
+        P_matrix = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(P + 1), Q),
                                             scipy.sparse.kron(scipy.sparse.eye(M), R)], format='csc')
         # - linear objective
-        q = numpy.hstack([numpy.kron(numpy.ones(P), -Q.dot(r)), -QN.dot(r),
+        q = numpy.hstack([numpy.kron(numpy.ones(P + 1), -Q.dot(r)),
                           numpy.zeros(M * nu)])
         # - linear dynamics
         Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1),
