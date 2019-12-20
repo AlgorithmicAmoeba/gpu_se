@@ -11,7 +11,7 @@ ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 
 # CSTR model
-X0 = numpy.array([1., 320.])
+X0 = numpy.array([0.6, 400.])
 cstr = model.CSTRModel(X0)
 
 # Noise
@@ -31,7 +31,7 @@ lin_model.measurement_noise = ny
 
 # Controller parameters
 P = int(10/dt)
-M = int(10/dt)
+M = int(5/dt)
 Q = numpy.array([[10000, 0], [0, 1]])
 R = numpy.eye(2)
 d = numpy.array([10, 1])
@@ -39,7 +39,14 @@ e = 412
 k = 1.86
 
 r = numpy.array([0.4893, 412])
-K = controller.SMPC2(P, M, Q, R, d, e, lin_model, k, r)
+
+# Bounds
+x_bounds = [(0, 5), (0, 600)]
+u_bounds = [(-300, 300), (0, 3)]
+u_step_bounds = [(-10, 10), (-0.1, 0.1)]
+
+K = controller.SMPC2(P, M, Q, R, d, e, lin_model, k, r, x_bounds, u_bounds, u_step_bounds)
+
 
 # Controller initial params
 mu0 = X0
@@ -61,4 +68,10 @@ plt.plot(ts, ys[:, 0])
 plt.show()
 
 plt.plot(ts, ys[:, 1])
+plt.show()
+
+plt.plot(ts, us[:, 0])
+plt.show()
+
+plt.plot(ts, us[:, 1])
 plt.show()
