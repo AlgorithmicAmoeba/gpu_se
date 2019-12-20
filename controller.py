@@ -298,25 +298,31 @@ class SMPC2:
         # Initial and reference states
         x0 = numpy.zeros(nx)
 
-        # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),u(0),...,u(P-1))
+        # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),u(0),...,u(M-1))
         # - quadratic objective
         P_matrix = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(P), Q), QN,
-                                            scipy.sparse.kron(scipy.sparse.eye(P), R)], format='csc')
+                                            scipy.sparse.kron(scipy.sparse.eye(M), R)], format='csc')
         # - linear objective
         q = numpy.hstack([numpy.kron(numpy.ones(P), -Q.dot(r)), -QN.dot(r),
-                          numpy.zeros(P * nu)])
+                          numpy.zeros(M * nu)])
         # - linear dynamics
         Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1),
                                -scipy.sparse.eye(nx)) + scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
-        Bu = scipy.sparse.kron(scipy.sparse.vstack([scipy.sparse.csc_matrix((1, P)), scipy.sparse.eye(P)]), Bd)
+        Bu = scipy.sparse.kron(
+                scipy.sparse.vstack([
+                    scipy.sparse.csc_matrix((1, M)),
+                    scipy.sparse.eye(M),
+                    scipy.sparse.hstack([scipy.sparse.csc_matrix((P-M, M-1)), numpy.ones((P-M, 1))])
+                     ]),
+                Bd)
         Aeq = scipy.sparse.hstack([Ax, Bu])
         leq = numpy.hstack([-x0, numpy.zeros(P * nx)])
         ueq = leq
 
         # - input and state constraints
-        Aineq = scipy.sparse.eye((P + 1) * nx + P * nu)
-        lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmin), numpy.kron(numpy.ones(P), umin)])
-        uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmax), numpy.kron(numpy.ones(P), umax)])
+        Aineq = scipy.sparse.eye((P + 1) * nx + M * nu)
+        lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmin), numpy.kron(numpy.ones(M), umin)])
+        uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), xmax), numpy.kron(numpy.ones(M), umax)])
 
         # - OSQP constraints
         A = scipy.sparse.vstack([Aeq, Aineq], format='csc')
@@ -330,6 +336,9 @@ class SMPC2:
         self.prob.setup(P_matrix, q, A, self.lower, self.u, warm_start=True, verbose=False)
 
     def step(self, x0):
+        # Added due to OSQP bug
+        x0 = numpy.maximum(numpy.minimum(x0, 1e30), -1e30)
+
         # Update initial state
         self.lower[:self.model.Nx] = -x0
         self.u[:self.model.Nx] = -x0
