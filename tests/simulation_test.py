@@ -30,15 +30,15 @@ lin_model.state_noise = nx
 lin_model.measurement_noise = ny
 
 # Controller parameters
-P = 25
-M = 5
-Q = numpy.array([[1000, 0], [0, 1]])
+P = int(10/dt)
+M = int(10/dt)
+Q = numpy.array([[10000, 0], [0, 1]])
 R = numpy.eye(2)
 d = numpy.array([10, 1])
 e = 412
 k = 1.86
 
-r = numpy.array([0.5, 400])
+r = numpy.array([0.4893, 412])
 K = controller.SMPC2(P, M, Q, R, d, e, lin_model, k, r)
 
 # Controller initial params
