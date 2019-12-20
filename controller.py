@@ -267,7 +267,8 @@ class SMPC2:
     k : float
         Constant that depends on :math:`p`
     """
-    def __init__(self, P, M, Q, R, d, e,
+    def __init__(self, P, M, Q, R, d,
+                 e: float,
                  lin_model: model.LinearModel,
                  k, r, x_bounds=None,
                  u_bounds=None, u_step_bounds=None):
@@ -334,14 +335,33 @@ class SMPC2:
         ueq = leq
 
         # x_min <= x_k <= x_max and u_min <= u_k <= u_max for all k
-        Aineq = scipy.sparse.eye((P + 1) * Nx + M * Ni)
-        lineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), x_min), numpy.kron(numpy.ones(M), u_min)])
-        uineq = numpy.hstack([numpy.kron(numpy.ones(P + 1), x_max), numpy.kron(numpy.ones(M), u_max)])
+        A_bound = scipy.sparse.eye((P + 1) * Nx + M * Ni)
+        lower_bound = numpy.hstack([numpy.kron(numpy.ones(P + 1), x_min), numpy.kron(numpy.ones(M), u_min)])
+        upper_bound = numpy.hstack([numpy.kron(numpy.ones(P + 1), x_max), numpy.kron(numpy.ones(M), u_max)])
+
+        # u_step_min <= u_k - u_{k-1} <= u_step_max for all k >= 1
+        if M >= 2:
+            Ax_step_bound = scipy.sparse.csc_matrix(((M - 1)*Ni, (P+1)*Nx))
+            Bu_step_bound = scipy.sparse.kron(scipy.sparse.hstack([
+                -scipy.sparse.eye(M-1) + scipy.sparse.eye(M-1, k=1),
+                scipy.sparse.vstack([
+                    scipy.sparse.csc_matrix((M-2, 1)),
+                    1
+                ])
+            ]), scipy.sparse.eye(Ni))
+
+            A_step = scipy.sparse.hstack([Ax_step_bound, Bu_step_bound])
+            lower_step_bound = numpy.kron(numpy.ones(M-1), u_step_min)
+            upper_step_bound = numpy.kron(numpy.ones(M-1), u_step_max)
+        else:
+            A_step = scipy.sparse.csc_matrix((0, 0))
+            lower_step_bound = scipy.sparse.csc_matrix(0)
+            upper_step_bound = scipy.sparse.csc_matrix(0)
 
         # OSQP constraints
-        A_matrix = scipy.sparse.vstack([Aeq, Aineq], format='csc')
-        self.lower = numpy.hstack([leq, lineq])
-        self.upper = numpy.hstack([ueq, uineq])
+        A_matrix = scipy.sparse.vstack([Aeq, A_bound, A_step], format='csc')
+        self.lower = numpy.hstack([leq, lower_bound, lower_step_bound])
+        self.upper = numpy.hstack([ueq, upper_bound, upper_step_bound])
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
