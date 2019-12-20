@@ -11,7 +11,7 @@ ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 
 # CSTR model
-X0 = numpy.array([0.6, 400.])
+X0 = numpy.array([0.6, 420.])
 cstr = model.CSTRModel(X0)
 
 # Noise
@@ -21,8 +21,11 @@ meas_noise_cov = numpy.array([[1e-3, 0], [0, 10]])
 nx = noise.WhiteGaussianNoise(state_noise_cov)
 ny = noise.WhiteGaussianNoise(meas_noise_cov)
 
+# set point
+r = numpy.array([0.6, 400])
+
 # Linear CSTR model
-X_op = X0
+X_op = r
 input_op = numpy.array([0., 0.1])
 
 lin_model = model.create_LinearModel(cstr, X_op, input_op, dt)
@@ -52,7 +55,6 @@ K = controller.SMPC2(P, M, Q, R, d, e, lin_model, k, r, x_bounds, u_bounds, u_st
 mu0 = X0
 u0 = input_op
 sigma0 = numpy.zeros((2, 2))
-r = numpy.array([0.6, 400])
 
 ys = [X0]
 us = [numpy.zeros_like(u0)]
