@@ -15,7 +15,7 @@ X0 = numpy.array([0.6, 420.])
 cstr = model.CSTRModel(X0)
 
 # Noise
-state_noise_cov = numpy.array([[1e-6, 0], [0, 0.1]])
+state_noise_cov = numpy.array([[1e-6, 0], [0, 0.001]])
 meas_noise_cov = numpy.array([[1e-3, 0], [0, 10]])
 
 nx = noise.WhiteGaussianNoise(state_noise_cov)
@@ -37,8 +37,8 @@ P = int(10/dt)
 M = int(5/dt)
 Q = numpy.array([[10000, 0], [0, 1]])
 R = numpy.eye(2)
-d = numpy.array([10, 1])
-e = 412
+D = numpy.array([[0, 1], [1, 0]])
+e = numpy.array([100, 0])
 k = 1.86
 
 r = numpy.array([0.4893, 412])
@@ -48,7 +48,7 @@ x_bounds = [(0, 5), (0, 600)]
 u_bounds = [(-300, 300), (0, 3)]
 u_step_bounds = [(-10, 10), (-0.1, 0.1)]
 
-K = controller.SMPC2(P, M, Q, R, d, e, lin_model, k, r, x_bounds, u_bounds, u_step_bounds)
+K = controller.SMPC2(P, M, Q, R, D, e, lin_model, k, r, x_bounds, u_bounds, u_step_bounds)
 
 
 # Controller initial params
@@ -60,7 +60,7 @@ ys = [X0]
 us = [numpy.zeros_like(u0)]
 
 for t in tqdm.tqdm(ts[1:]):
-    us.append(K.step(ys[-1]))
+    us.append(K.step(ys[-1], sigma0))
     ys.append(cstr.step(dt, us[-1]))
 
 ys = numpy.array(ys)
