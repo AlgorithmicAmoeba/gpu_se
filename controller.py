@@ -192,7 +192,7 @@ class SMPC2:
         e_k &= r - y_k \\
         P
         \left[
-            d x_k + e \ge 0
+            D x_k + e \ge 0
         \right]
         &\ge p
         \quad \forall \; 0 \le k < N
@@ -219,8 +219,8 @@ class SMPC2:
         e_k &= r - y_k \\
         \Sigma_{k+1} &= A \Sigma_k A^T + W
         \quad \forall \; 0 \le k < N \\
-        d \mu_k + e &\ge k \sqrt{d \Sigma_k d^T}
-        \quad \forall \; 0 \le k < N
+        d_i \mu_k + e_i &\ge k \sqrt{d_i \Sigma_k d_i^T}
+        \quad \forall \; 0 \le k < N \; i
 
     where :math:`\mu` is the state estimated mean,
     :math:`k` is a constant that depends on :math:`p`,
@@ -233,15 +233,18 @@ class SMPC2:
 
     Parameters
     ----------
-    P_matrix, M : int
+    P, M : int
         The prediction and control horizon.
         :math:`P \ge M`
 
     Q, R : ndarray
         2D arrays of the diagonal tuning matrices
 
-    d, e : ndarray
-        1D arrays defining the linear constraints
+    D : ndarray
+        2D array defining the linear constraints
+
+    e : ndarray
+        1D array defining the linear constraints
 
     lin_model : model.LinearModel
         Internal model for the controller
@@ -255,7 +258,7 @@ class SMPC2:
     Q, R : ndarray
         2D arrays of the diagonal tuning matrices
 
-    d : ndarray
+    D : ndarray
         1D array defining the linear constraints
 
     e : int
@@ -267,8 +270,7 @@ class SMPC2:
     k : float
         Constant that depends on :math:`p`
     """
-    def __init__(self, P, M, Q, R, d,
-                 e: float,
+    def __init__(self, P, M, Q, R, D, e,
                  lin_model: model.LinearModel,
                  k, r, x_bounds=None,
                  u_bounds=None, u_step_bounds=None):
@@ -278,7 +280,7 @@ class SMPC2:
         self.M = M
         self.Q = Q
         self.R = R
-        self.d = d
+        self.D = D
         self.e = e
         self.model = lin_model
         self.k = k
@@ -309,6 +311,7 @@ class SMPC2:
 
         # Initial and reference states
         x0 = numpy.zeros(Nx)
+        sigma0 = numpy.zeros((Nx, Nx))
 
         # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),u(0),...,u(M-1))
         # min x^T P x + q^T x
@@ -355,13 +358,25 @@ class SMPC2:
             upper_step_bound = numpy.kron(numpy.ones(M-1), u_step_max)
         else:
             A_step = scipy.sparse.csc_matrix((0, 0))
-            lower_step_bound = scipy.sparse.csc_matrix(0)
-            upper_step_bound = scipy.sparse.csc_matrix(0)
+            lower_step_bound = numpy.array(0)
+            upper_step_bound = numpy.array(0)
+
+        # Stochastic constraints
+        if D.ndim != 2:
+            raise ValueError("D must be 2D")
+        Nd = D.shape[0]
+        Ax_stochastic = scipy.sparse.kron(scipy.sparse.eye(P + 1), D)
+        Bu_stochastic = scipy.sparse.csc_matrix(((P + 1)*Nd, M*Ni))
+
+        A_stochastic = scipy.sparse.hstack([Ax_stochastic, Bu_stochastic])
+        lower_stochastic = numpy.array([-numpy.inf] * (P + 1) * Nd)
+        upper_stochastic = numpy.array([numpy.inf]*(P + 1)*Nd)
+        self._stochastic_bounds(sigma0, lower_stochastic)
 
         # OSQP constraints
-        A_matrix = scipy.sparse.vstack([Aeq, A_bound, A_step], format='csc')
-        self.lower = numpy.hstack([leq, lower_bound, lower_step_bound])
-        self.upper = numpy.hstack([ueq, upper_bound, upper_step_bound])
+        A_matrix = scipy.sparse.vstack([Aeq, A_bound, A_step, A_stochastic], format='csc')
+        self.lower = numpy.hstack([leq, lower_bound, lower_step_bound, lower_stochastic])
+        self.upper = numpy.hstack([ueq, upper_bound, upper_step_bound, upper_stochastic])
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
@@ -369,14 +384,30 @@ class SMPC2:
         # Setup workspace
         self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True, verbose=False)
 
-    def step(self, x0):
+    def _stochastic_bounds(self, sigma0, array):
+        sigma = sigma0
+        Nd = self.D.shape[0]
+        for k in range(self.P+1):
+            sigma = self.model.state_noise.cov() + self.model.A @ sigma @ self.model.A
+            for i in range(Nd):
+                d_i = self.D[i]
+                e_i = self.e[i]
+                bound = k * numpy.sqrt(d_i @ sigma @ d_i.T) - e_i
+                array[k*Nd + i] = bound
+
+    def step(self, x0, sigma0):
         # Added due to OSQP bug
         x0 = numpy.maximum(numpy.minimum(x0, 1e30), -1e30)
+        sigma0 = numpy.maximum(numpy.minimum(sigma0, 1e30), -1e30)
 
         # Update initial state
         self.lower[:self.model.Nx] = -x0
         self.upper[:self.model.Nx] = -x0
         self.prob.update(l=self.lower, u=self.upper)
+
+        # Update stochastic constraints
+        Nd = self.D.shape[0]
+        self._stochastic_bounds(sigma0, self.lower[-(self.P + 1) * Nd:])
 
         # Solve
         res = self.prob.solve()
