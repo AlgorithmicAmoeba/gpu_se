@@ -1,3 +1,7 @@
+import numpy
+import numba.cuda as cuda
+
+
 class MultivariateGaussianSum:
     """Allows efficient pdf lookup of multivarite Gaussian sum pdf for GPU code"""
 
@@ -19,6 +23,5 @@ class MultivariateGaussianSum:
             exp = es[i].T @ self.inverse_covariances_device[i] @ es[i]
             r = numpy.exp(exp)
             result += self.weights_device[i] * self.constants_device[i] * r
-
 
         return result

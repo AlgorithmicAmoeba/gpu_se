@@ -1,5 +1,5 @@
 import numpy
-from numba import cuda
+import numba.cuda as cuda
 import cupy
 
 print("In nicely_sampling.py: rewriting cupy.cumsum to be numpy.cumsum")
