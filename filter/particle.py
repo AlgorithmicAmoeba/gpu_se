@@ -1,4 +1,4 @@
-from numba import cuda
+import numba.cuda as cuda
 import cupy
 
 
@@ -35,8 +35,8 @@ class ParticleFilter:
         particles[indx] = f(particles[indx], u, dt)
 
     def update(self, u, z):
-        ParticleFilter.update_kernel[self.tpb, self.bpg](u, z,
-                                                         self.g, self.particles_device, self.weights_device, self.measurement_pdf)
+        ParticleFilter.update_kernel[self.tpb, self.bpg](u, z, self.g, self.particles_device, self.weights_device,
+                                                         self.measurement_pdf)
 
     @staticmethod
     @cuda.jit
