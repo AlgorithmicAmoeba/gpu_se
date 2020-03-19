@@ -1,42 +1,50 @@
+import numpy
+import numba
 import numba.cuda as cuda
 import cupy
 
 
 class ParticleFilter:
-    """Implements a parallel particle filter algorithm.
-    """
+    """Implements a particle filter algorithm"""
 
     def __init__(self, f, g, N_particles, x0, measurement_pdf):
         self.f = f
         self.g = g
         self.N_particles = N_particles
 
-        self.particles_device = x0.draw(N_particles)  # Draws into GPU memory
-        self.weights_device = cupy.full(N_particles, 1 / N_particles)
+        self.particles = x0.draw(N_particles)
+        self.weights = numpy.full(N_particles, 1 / N_particles)
         self.measurement_pdf = measurement_pdf
+
+    def predict(self, u, dt):
+        for particle, i in enumerate(self.particles):
+            self.particles[i] = self.f(particle, u, dt)
+
+
+class ParallelParticleFilter(ParticleFilter):
+    """Implements a parallel particle filter algorithm.
+    """
+
+    def __init__(self, f, g, N_particles, x0, measurement_pdf):
+        super().__init__(f, g, N_particles, x0, measurement_pdf)
+        self.f_vectorize = numba.vectorize(f)
+
+        self.particles_device = cupy.asarray(self.particles)
+        self.weights_device = cupy.asarray(self.weights)
+
+        # This object should no longer have anything to do with these variables
+        del self.particles
+        del self.weights
 
         self.threads_per_block = self.tpb = 1024
         self.blocks_per_grid = self.bpg = (self.N_particles - 1) // self.threads_per_block + 1
 
     def predict(self, u, dt):
-        ParticleFilter.predict_kernel[self.tpb, self.bpg](dt, u, self.f, self.particles_device)
-
-    @staticmethod
-    @cuda.jit
-    def predict_kernel(dt, u, f, particles):
-        tx = cuda.threadIdx.x
-        bx = cuda.blockIdx.x
-        bw = cuda.blockDim.x
-        indx = bw * bx + tx
-
-        if indx >= particles.size:
-            return
-
-        particles[indx] = f(particles[indx], u, dt)
+        self.particles_device = self.f_vectorize(self.particles_device, u, dt)
 
     def update(self, u, z):
-        ParticleFilter.update_kernel[self.tpb, self.bpg](u, z, self.g, self.particles_device, self.weights_device,
-                                                         self.measurement_pdf)
+        ParallelParticleFilter.update_kernel[self.tpb, self.bpg](u, z, self.g, self.particles_device, self.weights_device,
+                                                                 self.measurement_pdf)
 
     @staticmethod
     @cuda.jit
