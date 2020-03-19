@@ -19,10 +19,10 @@ class MultivariateGaussianSum:
     @cuda.jit(device=True)
     def pdf(self, x):
         es = x - self.means_device
-        result = 0
-        for i in range(self.means_device.shape[1]):
-            exp = es[i].T @ self.inverse_covariances_device[i] @ es[i]
-            r = numpy.exp(exp)
-            result += self.weights_device[i] * self.constants_device[i] * r
+        # exp[i] = es[i].T @ self.inverse_covariances_device[i] @ es[i]
+        exp = cupy.einsum('abc, cd, ed -> a', self.inverse_covariances_device, es, es)
+        r = cupy.exp(-exp)
+        # result = sum(r[i] * self.weights_device[i] * self.constants_device[i])
+        result = cupy.einsum('i, i, i -> ', r, self.weights_device, self.constants_device)
 
         return result
