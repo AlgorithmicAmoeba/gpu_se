@@ -26,3 +26,15 @@ class MultivariateGaussianSum:
         result = cupy.einsum('i, i, i -> ', r, self.weights_device, self.constants_device)
 
         return result
+
+    def draw(self, shape=(1,)):
+        size = int(numpy.prod(shape))
+        bins = cupy.bincount(cupy.random.choice(cupy.arange(self.N), size, p=self.weights_device), minlength=self.N)
+        out = cupy.empty((size, self.k))
+
+        index = 0
+        for n, mean, cov in zip(bins, self.means_device, self.covariances_device):
+            out[index:index+n] = cupy.random.multivariate_normal(mean, cov, n)
+            index += n
+
+        return out
