@@ -16,8 +16,9 @@ class MultivariateGaussianSum:
 
         self.constants_device = (2*cupy.pi)**(-self.k/2) / cupy.sqrt(cupy.linalg.det(self.covariances_device))
 
-    @cuda.jit(device=True)
     def pdf(self, x):
+        x = cupy.asarray(x)
+        
         es = x - self.means_device
         # exp[i] = es[i].T @ self.inverse_covariances_device[i] @ es[i]
         exp = cupy.einsum('abc, cd, ed -> a', self.inverse_covariances_device, es, es)
@@ -28,13 +29,16 @@ class MultivariateGaussianSum:
         return result
 
     def draw(self, shape=(1,)):
+        if isinstance(shape, int):
+            shape = (shape, )
+
         size = int(numpy.prod(shape))
         bins = cupy.bincount(cupy.random.choice(cupy.arange(self.N), size, p=self.weights_device), minlength=self.N)
         out = cupy.empty((size, self.k))
 
         index = 0
         for n, mean, cov in zip(bins, self.means_device, self.covariances_device):
-            out[index:index+n] = cupy.random.multivariate_normal(mean, cov, n)
+            out[index:index+n] = cupy.random.multivariate_normal(mean, cov, int(n))
             index += n
 
-        return out
+        return out.reshape(shape + (self.k, ))
