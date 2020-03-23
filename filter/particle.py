@@ -1,7 +1,6 @@
 import numpy
 import numba
 import numba.cuda as cuda
-import cupy
 
 
 class ParticleFilter:
@@ -35,8 +34,8 @@ class ParallelParticleFilter(ParticleFilter):
                             'void(f8[:], f4, f4, f8[:])',
                             'void(f8[:], f8, f8, f8[:])'],
                            '(n), (), () -> (n)', target='cuda')
-        def f_vec(x, u, dt, x_out):
-            x_out = f_jit(x, u, dt)
+        def f_vec(x, u, dt, _x_out):
+            _x_out = f_jit(x, u, dt)
 
         self.f_vectorize = f_vec
 
@@ -54,8 +53,8 @@ class ParallelParticleFilter(ParticleFilter):
         self.particles_device = self.f_vectorize(self.particles_device, u, dt)
 
     def update(self, u, z):
-        ParallelParticleFilter.update_kernel[self.tpb, self.bpg](u, z, self.g, self.particles_device, self.weights_device,
-                                                                 self.measurement_pdf)
+        ParallelParticleFilter.update_kernel[self.tpb, self.bpg](u, z, self.g, self.particles_device,
+                                                                 self.weights_device, self.measurement_pdf)
 
     @staticmethod
     @cuda.jit
