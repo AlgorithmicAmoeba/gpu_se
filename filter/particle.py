@@ -17,7 +17,7 @@ class ParticleFilter:
         self.measurement_pdf = measurement_pdf
 
     def predict(self, u, dt):
-        for particle, i in enumerate(self.particles):
+        for i, particle in enumerate(self.particles):
             self.particles[i] = self.f(particle, u, dt)
 
 
@@ -27,10 +27,21 @@ class ParallelParticleFilter(ParticleFilter):
 
     def __init__(self, f, g, N_particles, x0, measurement_pdf):
         super().__init__(f, g, N_particles, x0, measurement_pdf)
-        self.f_vectorize = numba.vectorize(f)
 
-        self.particles_device = cupy.asarray(self.particles)
-        self.weights_device = cupy.asarray(self.weights)
+        f_jit = cuda.jit(device=True)(f)
+
+        @numba.guvectorize(['void(f8[:], i4, i4, f8[:])',
+                            'void(f8[:], i8, i8, f8[:])',
+                            'void(f8[:], f4, f4, f8[:])',
+                            'void(f8[:], f8, f8, f8[:])'],
+                           '(n), (), () -> (n)', target='cuda')
+        def f_vec(x, u, dt, x_out):
+            x_out = f_jit(x, u, dt)
+
+        self.f_vectorize = f_vec
+
+        self.particles_device = cuda.to_device(self.particles)
+        self.weights_device = cuda.to_device(self.weights)
 
         # This object should no longer have anything to do with these variables
         del self.particles
