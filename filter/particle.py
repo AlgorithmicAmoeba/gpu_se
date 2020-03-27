@@ -36,7 +36,6 @@ class ParallelParticleFilter(ParticleFilter):
 
         self.f_vectorize = self.__f_vec()
         self.g_vectorize = self.__g_vec()
-        # self.pdf_vectorize = self.__pdf_vec()
 
         self.particles_device = cuda.to_device(self.particles)
         self.weights_device = cuda.to_device(self.weights)
@@ -96,21 +95,3 @@ class ParallelParticleFilter(ParticleFilter):
         es = z - ys
         ws = cupy.asarray(self.measurement_pdf.pdf(es))
         self.weights_device *= ws
-
-        # ParallelParticleFilter.update_kernel[self.tpb, self.bpg](u, z, self.g, self.particles_device,
-        #                                                          self.weights_device, self.measurement_pdf)
-
-    # @staticmethod
-    # @cuda.jit
-    # def update_kernel(u, z, g, particles, weights, measurement_pdf):
-    #     tx = cuda.threadIdx.x
-    #     bx = cuda.blockIdx.x
-    #     bw = cuda.blockDim.x
-    #     indx = bw * bx + tx
-    #
-    #     if indx >= particles.size:
-    #         return
-    #
-    #     y_i = g(particles[indx], u)
-    #     e_i = z - y_i
-    #     weights[indx] *= measurement_pdf(e_i)
