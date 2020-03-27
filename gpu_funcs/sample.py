@@ -7,7 +7,7 @@ def systematic_sample(N, weights):
     cumsum = numpy.cumsum(weights)
     cumsum /= cumsum[-1]
 
-    sample_index_result = numpy.zeros(N)
+    sample_index_result = numpy.zeros(N, dtype=numpy.int64)
     r = numpy.random.rand()
     k = 0
 
@@ -24,8 +24,8 @@ def nicely_systematic_sample(N, weights):
     cumsum = cupy.cumsum(weights)
     cumsum /= cumsum[-1]
 
-    sample_index_result = cupy.zeros(N)
-    r = cupy.random.rand()
+    sample_index_result = cupy.zeros(N, dtype=cupy.int64)
+    random_number = cupy.float64(cupy.random.rand())
     N_weights = weights.size
 
     threads_per_block = 1024
