@@ -2,6 +2,7 @@ import numpy
 import numba
 import numba.cuda as cuda
 import cupy
+from gpu_funcs.sample import systematic_sample, nicely_systematic_sample
 
 
 class ParticleFilter:
@@ -25,6 +26,11 @@ class ParticleFilter:
             y = self.g(particle, u)
             e = z - y
             self.weights[i] *= self.measurement_pdf.pdf(e)
+
+    def resample(self):
+        indices = systematic_sample(self.weights.size, self.weights)
+        self.particles = self.particles[indices]
+        self.weights = numpy.full(self.N_particles, 1 / self.N_particles)
 
 
 class ParallelParticleFilter(ParticleFilter):
@@ -95,3 +101,8 @@ class ParallelParticleFilter(ParticleFilter):
         es = z - ys
         ws = cupy.asarray(self.measurement_pdf.pdf(es))
         self.weights_device *= ws
+
+    def resample(self):
+        indices = nicely_systematic_sample(self.weights_device.size, self.weights_device)
+        self.particles_device = cupy.asarray(self.particles_device)[indices]
+        self.weights_device = cupy.full(self.N_particles, 1 / self.N_particles)
