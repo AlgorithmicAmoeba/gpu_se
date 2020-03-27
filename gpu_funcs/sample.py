@@ -2,8 +2,22 @@ import numpy
 import numba.cuda as cuda
 import cupy
 
-print("In nicely_sampling.py: rewriting cupy.cumsum to be numpy.cumsum")
-cupy.cumsum = numpy.cumsum
+
+def systematic_sample(N, weights):
+    cumsum = numpy.cumsum(weights)
+    cumsum /= cumsum[-1]
+
+    sample_index_result = numpy.zeros(N)
+    r = numpy.random.rand()
+    k = 0
+
+    for i in range(N):
+        u = (i + r) / N
+        while cumsum[k] < u:
+            k += 1
+        sample_index_result[i] = k
+
+    return sample_index_result
 
 
 def nicely_systematic_sample(N, weights):
