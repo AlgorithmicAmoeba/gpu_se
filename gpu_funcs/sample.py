@@ -32,7 +32,7 @@ def nicely_systematic_sample(N, weights):
     blocks_per_grid = (N - 1) // threads_per_block + 1
 
     @cuda.jit
-    def do_in_parallel(c, sample_index):
+    def do_in_parallel(c, sample_index, r):
         tx = cuda.threadIdx.x
         bx = cuda.blockIdx.x
         bw = cuda.blockDim.x
@@ -55,6 +55,6 @@ def nicely_systematic_sample(N, weights):
 
         sample_index[i] = k + 1
 
-    do_in_parallel[threads_per_block, blocks_per_grid](cumsum, sample_index_result)
+    do_in_parallel[threads_per_block, blocks_per_grid](cumsum, sample_index_result, random_number)
 
     return sample_index_result
