@@ -21,16 +21,18 @@ def systematic_sample(N, weights):
 
 
 def nicely_systematic_sample(N, weights):
-    c_outer = cupy.cumsum(weights)
+    cumsum = cupy.cumsum(weights)
+    cumsum /= cumsum[-1]
 
-    sample_indx_outer = numpy.zeros(N)
-    r = numpy.random.rand()
-    threads_per_block = 1024
-    blocks_per_grid = (N - 1) // threads_per_block + 1
+    sample_index_result = cupy.zeros(N)
+    r = cupy.random.rand()
     N_weights = weights.size
 
+    threads_per_block = 1024
+    blocks_per_grid = (N - 1) // threads_per_block + 1
+
     @cuda.jit
-    def do_in_parallel(c, sample_indx):
+    def do_in_parallel(c, sample_index):
         tx = cuda.threadIdx.x
         bx = cuda.blockIdx.x
         bw = cuda.blockDim.x
@@ -51,8 +53,8 @@ def nicely_systematic_sample(N, weights):
 
         cuda.syncthreads()
 
-        sample_indx[i] = k + 1
+        sample_index[i] = k + 1
 
-    do_in_parallel[threads_per_block, blocks_per_grid](c_outer, sample_indx_outer)
+    do_in_parallel[threads_per_block, blocks_per_grid](cumsum, sample_index_result)
 
-    return sample_indx_outer
+    return sample_index_result
