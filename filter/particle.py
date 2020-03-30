@@ -2,7 +2,8 @@ import numpy
 import numba
 import numba.cuda as cuda
 import cupy
-from gpu_funcs.sample import systematic_sample, nicely_systematic_sample
+import torch
+import torch.utils.dlpack as torch_dlpack
 
 
 class ParticleFilter:
@@ -28,8 +29,20 @@ class ParticleFilter:
             self.weights[i] *= self.measurement_pdf.pdf(e)
 
     def resample(self):
-        indices = systematic_sample(self.weights.size, self.weights)
-        self.particles = self.particles[indices]
+        cumsum = numpy.cumsum(self.weights)
+        cumsum /= cumsum[-1]
+
+        sample_index_result = numpy.zeros(self.N_particles, dtype=numpy.int64)
+        r = numpy.random.rand()
+        k = 0
+
+        for i in range(self.N_particles):
+            u = (i + r) / self.N_particles
+            while cumsum[k] < u:
+                k += 1
+            sample_index_result[i] = k
+
+        self.particles = self.particles[sample_index_result]
         self.weights = numpy.full(self.N_particles, 1 / self.N_particles)
 
 
@@ -92,6 +105,31 @@ class ParallelParticleFilter(ParticleFilter):
 
         return pdf_vec
 
+    @staticmethod
+    @cuda.jit
+    def __parallel_resample(c, sample_index, r, N):
+        tx = cuda.threadIdx.x
+        bx = cuda.blockIdx.x
+        bw = cuda.blockDim.x
+        i = bw * bx + tx
+
+        if i >= N:
+            return
+
+        u = (i + r) / N
+        k = i
+        while c[k] < u:
+            k += 1
+
+        cuda.syncthreads()
+
+        while c[k] > u and k >= 0:
+            k -= 1
+
+        cuda.syncthreads()
+
+        sample_index[i] = k + 1
+
     def predict(self, u, dt):
         self.particles_device = self.f_vectorize(self.particles_device, u, dt)
 
@@ -103,6 +141,24 @@ class ParallelParticleFilter(ParticleFilter):
         self.weights_device *= ws
 
     def resample(self):
-        indices = nicely_systematic_sample(self.weights_device.size, self.weights_device)
-        self.particles_device = cupy.asarray(self.particles_device)[indices]
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(self.weights_device).toDlpack())
+        t_cumsum = torch.cumsum(t_weights, 0)
+        cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
+        cumsum /= cumsum[-1]
+
+        sample_index = cupy.zeros(self.N_particles, dtype=cupy.int64)
+        random_number = cupy.float64(cupy.random.rand())
+
+        if self.N_particles >= 1024:
+            threads_per_block = 1024
+            blocks_per_grid = (self.N_particles - 1) // threads_per_block + 1
+        else:
+            div_32 = (self.N_particles - 1) // 32 + 1
+            threads_per_block = 32 * div_32
+            blocks_per_grid = 1
+
+        ParallelParticleFilter.__parallel_resample[blocks_per_grid, threads_per_block](cumsum, sample_index,
+                                                                                       random_number, self.N_particles)
+
+        self.particles_device = cupy.asarray(self.particles_device)[sample_index]
         self.weights_device = cupy.full(self.N_particles, 1 / self.N_particles)
