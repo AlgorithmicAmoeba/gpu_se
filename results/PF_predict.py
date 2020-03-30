@@ -37,6 +37,10 @@ def plot_results():
     df['speedup'] = df['CPU']/df['GPU']
     plt.semilogy(df.index, df['speedup'], '.')
 
+    plt.title('Speed-up of particle filter prediction')
+    plt.ylabel('Speed-up')
+    plt.xlabel('$ \log_2(N) $ particles')
+
 
 if __name__ == '__main__':
     generate_results()
