@@ -55,6 +55,9 @@ def plot_results():
     plt.ylabel('Speed-up')
     plt.xlabel('$ \log_2(N) $ particles')
 
+    plt.savefig('PF_resample.pdf')
+    plt.show()
+
 
 if __name__ == '__main__':
     generate_results()
