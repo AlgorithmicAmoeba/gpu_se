@@ -13,7 +13,7 @@ def generate_results(redo=False):
         if redo:
             raise FileNotFoundError
 
-        df = pandas.read_csv('PF_predict.csv')
+        df = pandas.read_csv('PF_predict.csv', index_col=0)
     except FileNotFoundError:
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
@@ -21,7 +21,7 @@ def generate_results(redo=False):
 
     N = 25
     count = 5
-    times = numpy.zeros((N, 2))
+    times = numpy.zeros((N - N_done, 2))
     for i in tqdm.tqdm(range(N)):
         if i < N_done:
             continue
@@ -41,8 +41,8 @@ def generate_results(redo=False):
             pp.predict(-1, 1)
         times[i, 1] = time.time() - t_gpu
 
-    df_new = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(1, N + 1))
-    df.append(df_new)
+    df_new = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(N_done+1, N+1))
+    df = df.append(df_new)
     df.to_csv('PF_predict.csv')
 
 
@@ -60,5 +60,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    # generate_results()
+    generate_results()
     plot_results()
