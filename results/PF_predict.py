@@ -8,11 +8,24 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-def generate_results():
-    N = 15
+def generate_results(redo=False):
+    try:
+        if redo:
+            raise FileNotFoundError
+
+        df = pandas.read_csv('PF_predict.csv')
+    except FileNotFoundError:
+        df = pandas.DataFrame(columns=['CPU', 'GPU'])
+
+    N_done = df.shape[0]
+
+    N = 25
     count = 5
     times = numpy.zeros((N, 2))
     for i in tqdm.tqdm(range(N)):
+        if i < N_done:
+            continue
+
         p = ParticleFilter(f, g, 2**(i+1), x0_cpu, measurement_noise_cpu)
         pp = ParallelParticleFilter(f, g, 2**(i+1), x0_gpu, measurement_noise_gpu)
 
@@ -28,7 +41,8 @@ def generate_results():
             pp.predict(-1, 1)
         times[i, 1] = time.time() - t_gpu
 
-    df = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(1, N+1))
+    df_new = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(1, N + 1))
+    df.append(df_new)
     df.to_csv('PF_predict.csv')
 
 
@@ -41,7 +55,10 @@ def plot_results():
     plt.ylabel('Speed-up')
     plt.xlabel('$ \log_2(N) $ particles')
 
+    plt.savefig('PF_predict.pdf')
+    plt.show()
+
 
 if __name__ == '__main__':
-    generate_results()
+    # generate_results()
     plot_results()
