@@ -22,7 +22,7 @@ def generate_results(redo=False):
     N = 25
     count = 5
     times = numpy.zeros((N - N_done, 2))
-    for i in tqdm.tqdm(range(N)):
+    for i in tqdm.tqdm(range(N - N_done)):
         if i < N_done:
             continue
 
