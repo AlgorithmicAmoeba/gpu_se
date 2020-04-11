@@ -18,7 +18,7 @@ def generate_results(redo=False):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 25
+    N = 22
 
     if N_done >= N:
         return
