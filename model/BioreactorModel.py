@@ -59,8 +59,6 @@ class Bioreactor:
         self.t = t
         self.pH_calculations = pH_calculations
 
-        self._Xs = [self.outputs()]
-
         alpha, PO, gamma, theta, beta = 0.1, 0.1, 1.8, 0.1, 0.1
         rate_matrix = numpy.array([[1, 0, 0, 0, 0],
                                    [0, 0, 0, 1, 0],
@@ -110,9 +108,9 @@ class Bioreactor:
         r_max_ezfa = smooth(Cg, 0.3/180, 0.2/180, 200, 0) if Cn < 0.01 else 0
         # r_max_ezfa = 200 if Cg < 0.3/180 and Cn < 0.01 else 0
 
-        Cfaz_eqi = (-kI_faz + numpy.sqrt(kI_faz ** 2 + 4 * r_max_faz * kI_faz / kD_faz)) / 2
-        Cez_eqi = (-kI_ez + numpy.sqrt(kI_ez ** 2 + 4 * r_max_ez * kI_ez / kD_ez)) / 2
-        Cezfa_eqi = (-kI_ezfa + numpy.sqrt(kI_ezfa ** 2 + 4 * r_max_ezfa * kI_ezfa / kD_ezfa)) / 2
+        # Cfaz_eqi = (-kI_faz + numpy.sqrt(kI_faz ** 2 + 4 * r_max_faz * kI_faz / kD_faz)) / 2
+        # Cez_eqi = (-kI_ez + numpy.sqrt(kI_ez ** 2 + 4 * r_max_ez * kI_ez / kD_ez)) / 2
+        # Cezfa_eqi = (-kI_ezfa + numpy.sqrt(kI_ezfa ** 2 + 4 * r_max_ezfa * kI_ezfa / kD_ezfa)) / 2
 
         x = 0.3
         kBio = 0.02/x
@@ -185,7 +183,6 @@ class Bioreactor:
         self.t += dt
         dX = self.DEs(self.t)
         self.X += numpy.array(dX)*dt
-        self._Xs.append(self.outputs())
 
     def calculate_pH(self):
         """Calculates the pH in the vessel.
@@ -235,11 +232,3 @@ class Bioreactor:
         else:
             outs = self.X
         return outs
-
-    def get_Xs(self):
-        """Gets all the states that are stored"""
-        return numpy.array(self._Xs)
-
-    def get_data(self):
-        """Gets all relevant information from the object """
-        return self.get_Xs()

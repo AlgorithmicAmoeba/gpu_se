@@ -1,6 +1,5 @@
 import numpy
 import tqdm
-import pandas
 from model.BioreactorModel import Bioreactor
 from model.inputter import Inputs
 
@@ -17,12 +16,3 @@ Xs = [X0]
 
 for ti in tqdm.tqdm(ts[1:]):
     m.step(ts[1])
-
-xls = pandas.ExcelWriter('results/biotest.xlsx', engine='xlsxwriter')
-
-model_names = ['Ng', 'Nx', 'Nfa', 'Ne', 'Nco', 'No', 'Nn', 'Na', 'Nb', 'Nez', 'Nfaz', 'Nezfa', 'V', 'Vg', 'T', 'pH']
-model_data = pandas.DataFrame(m.get_data(), index=ts, columns=model_names)
-model_data.index.name = 'ts'
-model_data.to_excel(xls, 'model')
-
-xls.save()
