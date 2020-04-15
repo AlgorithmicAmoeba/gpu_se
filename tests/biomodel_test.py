@@ -11,14 +11,14 @@ ts = numpy.linspace(0, 230, 1000)
 inputs = Inputs()
 
 # Biomass C H_1.8 O_0.5 N_0.2 => 24.6 g/mol
-#     Ng, Nx, Nfa, Ne, Nco, No, Nn, Na, Nb, Nez, Nfaz, Nezfa, V, Vg, T
-X0 = [3.1/180, 1e-3/24.6, 0, 0, 0, 0, 2/60, 1e-5, 0, 0, 0, 0, 1.077, 0.1, 25]
+#     Ng, Nx, Nfa, Ne, Na, Nb, V, T
+X0 = [3.1/180, 1e-3/24.6, 0, 0, 1e-5, 0, 1.077, 25]
 
 model = Bioreactor(X0, inputs, pH_calculations=True)
-model_reagents = ['Ng', 'Nx', 'Nfa', 'Ne', 'Nco', 'No', 'Nn', 'Na', 'Nb', 'Nez', 'Nfaz', 'Nezfa']
-model_states = ['V', 'Vg', 'T', 'pH']
+model_reagents = ['Ng', 'Nx', 'Nfa', 'Ne', 'Na', 'Nb']
+model_states = ['V', 'T', 'pH']
 model_names = model_reagents + model_states
-molar_mass = numpy.array([180, 24.6, 116, 46, 44, 32, 60, 36.5, 40, 1, 1, 1])
+molar_mass = numpy.array([180, 24.6, 116, 46, 36.5, 40])
 
 history = Historian()
 
