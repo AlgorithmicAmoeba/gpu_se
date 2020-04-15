@@ -18,5 +18,6 @@ class Historian:
             return self._df
 
         new_data = pandas.DataFrame(self._data)
+        new_data.set_index('ts', inplace=True)
         self._df = self._df.append(new_data)
         return self._df
