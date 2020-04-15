@@ -10,10 +10,17 @@ class Inputs:
         Cn_in = 0.625 * 10 / 60  # (g/L) / (g/mol) = mol/L
         if t < t_batch + 66:
             CgFg = 0.141612826257827
-        else:
+        elif t < t_batch + 101:
             CgFg = 0.21241923938674
+        elif t < t_batch + 137:
+            CgFg = 0.283225652515653
+        else:
+            CgFg = 0.354032065644566
+
+        # if t < t_batch + 66:
+        #     CgFg = 0.141612826257827
         # else:
-        #     CgFg = 0.21241923938674 * 2
+        #     CgFg = 0.21241923938674
         Cg_in = 314.19206 / 180  # (g/L) / (g/mol) = mol/L
         Cb_in = 10  # mol/L
         Fm_in = 0
