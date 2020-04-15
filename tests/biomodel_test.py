@@ -4,6 +4,7 @@ import pandas
 import matplotlib.pyplot as plt
 from model.BioreactorModel import Bioreactor
 from model.inputter import Inputs
+from historian import Historian
 
 ts = numpy.linspace(0, 230, 1000)
 
@@ -19,17 +20,16 @@ model_states = ['V', 'Vg', 'T', 'pH']
 model_names = model_reagents + model_states
 molar_mass = numpy.array([180, 24.6, 116, 46, 44, 32, 60, 36.5, 40, 1, 1, 1])
 
-history = [X0]
+history = Historian()
 
 for ti in tqdm.tqdm(ts[1:]):
     model.step(ts[1])
-    history.append(model.outputs())
+    history.log(ti, dict(zip(model_names, model.outputs())))
 
 concentration_data = pandas.read_csv('../model/run_9_conc.csv')
 
-history = pandas.DataFrame(history, index=ts, columns=model_names)
-history.index.name = 'ts'
-
 plt.plot(concentration_data['Time']+30, concentration_data['Glucose'], '.')
-plt.plot(history.index, history['Ng']*180/history['V'])
+# plt.plot(history.df[], history['Ng']*180/history['V'])
+Cg = history.df()['Ng']*180/history.df()['V']
+Cg.plot()
 plt.show()
