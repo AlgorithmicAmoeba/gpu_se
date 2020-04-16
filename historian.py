@@ -20,4 +20,5 @@ class Historian:
         new_data = pandas.DataFrame(self._data)
         new_data.set_index('ts', inplace=True)
         self._df = self._df.append(new_data)
+        self._ready = True
         return self._df
