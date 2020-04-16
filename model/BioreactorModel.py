@@ -45,7 +45,7 @@ class Bioreactor:
         self.t = t
         self.pH_calculations = pH_calculations
 
-        alpha, PO, gamma, theta, beta = 0.1, 0.1, 1.8, 0.1, 0.1
+        gamma, beta = 1.8, 0.1
         rate_matrix = numpy.array([[1, 0, 0, 0, 0],
                                    [0, 0, 0, 1, 0],
                                    [0, 0, 0, 0, 1],
@@ -77,14 +77,14 @@ class Bioreactor:
         Ng, Nx, Nfa, Ne, Na, Nb, V, T = [max(0, N) for N in self.X]
         Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = self.inputs(t)
 
-        alpha, gamma, theta, beta = 0.1, 1.8, 0.2, 0.1
+        theta = 1.1
 
         # Concentrations
         Cg, Cx, Cfa, Ce, Ca, Cb = [N/V for N in [Ng, Nx, Nfa, Ne, Na, Nb]]
 
-        rFAf = (1/3000) * (Cg / (1e-3 + Cg))
-        rEf = (1/120) * (Cg / (1e-3 + Cg))
-        rbio = (1/15) * (Cg / (1e-3 + Cg))
+        rFAf = (1/120) * (Cg / (1e-3 + Cg))
+        rEf = (1/12) * (Cg / (1e-3 + Cg))
+        rbio = (1/22) * (Cg / (1e-3 + Cg))
         theta_calc = theta * (Cg / (1e-3 + Cg))
         RHS = [rFAf, rEf, rbio, theta_calc, 0]
 

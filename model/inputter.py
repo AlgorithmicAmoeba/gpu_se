@@ -22,7 +22,7 @@ class Inputs:
         # else:
         #     CgFg = 0.21241923938674
         Cg_in = 314.19206 / 180  # (g/L) / (g/mol) = mol/L
-        Ca_in = 10 # mol/L
+        Ca_in = 10  # mol/L
         Cb_in = 10  # mol/L
         Fm_in = 0
 
