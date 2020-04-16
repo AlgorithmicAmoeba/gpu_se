@@ -27,9 +27,23 @@ for ti in tqdm.tqdm(ts[1:]):
     history.log(ti, dict(zip(model_names, model.outputs())))
 
 concentration_data = pandas.read_csv('../model/run_9_conc.csv')
+ts_data = concentration_data['Time']+30
+Cs = (history.df()[model_reagents]*molar_mass).div(history.df()['V'], axis=0)
 
-plt.plot(concentration_data['Time']+30, concentration_data['Glucose'], '.')
-# plt.plot(history.df[], history['Ng']*180/history['V'])
-Cg = history.df()['Ng']*180/history.df()['V']
-Cg.plot()
+for i, C in enumerate(model_reagents):
+    plt.subplot(3, 3, i+1)
+    Cs[C].plot()
+    plt.title(C)
+
+for i, C in enumerate(model_states):
+    plt.subplot(3, 3, i+7)
+    history.df()[C].plot()
+    plt.title(C)
+
+# for i, C_data in zip([0, 2, 3], ['Glucose', 'Fumaric', 'Ethanol']):
+#     plt.subplot(3, 3, i+1)
+#     plt.plot(ts_data, concentration_data[C_data], '.')
+
+print(Cs[['Ng', 'Nfa', 'Ne', 'Nx']].tail(1))
+print(Cs[['Nfa', 'Ne', 'Nx']].tail(1)/3.1)
 plt.show()
