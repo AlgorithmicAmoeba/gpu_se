@@ -49,9 +49,10 @@ class Bioreactor:
         rate_matrix = numpy.array([[1, 0, 0, 0, 0],
                                    [0, 0, 0, 1, 0],
                                    [0, 0, 0, 0, 1],
-                                   [-6, 4, 7/3, 2, -gamma],
-                                   [0, 12, -1, 0, beta]])
+                                   [-6, 4, 7/3, 2, -6*gamma],
+                                   [0, 12, -1, 0, 6*beta]])
         self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
+        self.high_N = True
 
     def DEs(self, t):
         """Contains the differential and algebraic equations for the system model.
@@ -60,7 +61,7 @@ class Bioreactor:
         2) glucose --> 6*CO2 + 12*NADH + 4*ATP (TCA)
         3) NADH + 0.5*O2 -> 7/3 ATP (Respiration)
         4) glucose -> 2*ethanol + 2*CO2 + 2*ATP
-        5) glucose + gamma*ATP --> 6*biomass + beta*NADH
+        5) glucose + 6*gamma*ATP --> 6*biomass + 6*beta*NADH
 
         where the unknowns are: rFAp, rTCA, rResp, rEp, rXp
 
@@ -77,22 +78,33 @@ class Bioreactor:
         Ng, Nx, Nfa, Ne, Na, Nb, V, T = [max(0, N) for N in self.X]
         Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = self.inputs(t)
 
-        theta = 1.1
-
         # Concentrations
         Cg, Cx, Cfa, Ce, Ca, Cb = [N/V for N in [Ng, Nx, Nfa, Ne, Na, Nb]]
 
-        rFAf = (1/120) * (Cg / (1e-3 + Cg))
-        rEf = (1/12) * (Cg / (1e-3 + Cg))
-        rbio = (1/22) * (Cg / (1e-3 + Cg))
-        theta_calc = theta * (Cg / (1e-3 + Cg))
-        RHS = [rFAf, rEf, rbio, theta_calc, 0]
+        if self.high_N:
+            ks = 1/230, 1/12, 1/21
+            rFAf, rEf, rX = [k * (Cg / (1e-3 + Cg)) for k in ks]
+            theta_calc = 1.1 * (Cg / (1e-3 + Cg))
+        elif Cg < 0.28/180:
+            ks = 0.01, 0, 0
+            rFAf, rEf, rX = [k for k in ks]
+            theta_calc = 2.15 * (Cg / (1e-3 + Cg))
+        elif Cg < 0.32/180:
+            ks = 0.01, 0.006, 0
+            rFAf, rEf, rX = [k for k in ks]
+            theta_calc = 2.4 * (Cg / (1e-3 + Cg))
+        else:
+            ks = 0.01, 0.006, 0
+            rFAf, rEf, rX = [k for k in ks]
+            theta_calc = 2.4 * (0.3/180 / (1e-3 + 0.3/180))
 
-        rFAf, rTCA, rResp, rEf, rbio = self.rate_matrix_inv @ RHS
+        RHS = [rFAf, rEf, rX, theta_calc, 0]
 
-        rG = -rFAf - rTCA - rEf - rbio
-        rX = 6 * rbio
-        rFA = 2*rFAf
+        rFAf, rTCA, rResp, rEf, rX = self.rate_matrix_inv @ RHS
+
+        rG = -rFAf - rTCA - rEf - rX
+        rX = 6*rX
+        rFA = 4*rFAf
         rE = 2*rEf
 
         # DE's

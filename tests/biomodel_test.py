@@ -26,6 +26,9 @@ for ti in tqdm.tqdm(ts[1:]):
     model.step(ts[1])
     history.log(ti, dict(zip(model_names, model.outputs())))
 
+    if model.high_N and ti > 30:
+        model.high_N = False
+
 concentration_data = pandas.read_csv('../model/run_9_conc.csv')
 ts_data = concentration_data['Time']+30
 Cs = (history.df()[model_reagents]*molar_mass).div(history.df()['V'], axis=0)
@@ -47,3 +50,22 @@ for i, C in enumerate(model_states):
 print(Cs[['Ng', 'Nfa', 'Ne', 'Nx']].tail(1))
 print(Cs[['Nfa', 'Ne', 'Nx']].tail(1)/3.1)
 plt.show()
+
+# concentration_data = pandas.read_csv('../model/run_9_conc.csv')
+# ts_data = concentration_data['Time']
+#
+# for i, C_data in zip([0, 1, 2], ['Glucose', 'Fumaric', 'Ethanol']):
+#     plt.subplot(1, 3, i+1)
+#     plt.plot(ts_data, concentration_data[C_data], '.')
+#
+# concentration_data = pandas.read_csv('../model/run_7_conc.csv')
+# ts_data = concentration_data['Time']
+#
+# for i, C_data in zip([0, 1, 2], ['Glucose', 'Fumaric', 'Ethanol']):
+#     plt.subplot(1, 3, i+1)
+#     plt.plot(ts_data, concentration_data[C_data], '.')
+#     plt.axvline(66)
+#     plt.axvline(101)
+#     plt.axvline(137)
+#
+# plt.show()
