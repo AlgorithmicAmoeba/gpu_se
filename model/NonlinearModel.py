@@ -1,10 +1,10 @@
 class NonlinearModel:
     """Base class for nonlinear models"""
-    def DEs(self, Xs, inputs):
+    def DEs(self, inputs):
         raise NotImplementedError
 
     def step(self, dt, inputs):
         raise NotImplementedError
 
-    def outputs(self, Xs, inputs):
+    def outputs(self, inputs):
         raise NotImplementedError

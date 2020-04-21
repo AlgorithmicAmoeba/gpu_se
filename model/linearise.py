@@ -45,13 +45,17 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
         new_vec[k] += x
 
         if j == 0:
-            return fun(new_vec, input_op)
+            nonlinear_model.X = new_vec
+            ans = fun(input_op)
+            nonlinear_model.X = X_op
+            return ans
 
-        return fun(X_op, new_vec)
+        return fun(new_vec)
 
     matrices = [[[], []], [[], []]]
     for i, fun in enumerate([nonlinear_model.DEs, nonlinear_model.outputs]):
         for j, vec in enumerate([X_op, input_op]):
+            nonlinear_model.X = X_op
             matrix = []
             for k in range(len(vec)):
                 gradient = max_norm_error_close(f)

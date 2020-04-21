@@ -28,14 +28,11 @@ class CSTRModel(model.NonlinearModel):
         self.X = numpy.array(X0)
         self.t = t0
 
-    def DEs(self, Xs, inputs):
+    def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
 
         Parameters
         ----------
-        Xs : ndarray
-            The states of the system at the current time
-
         inputs : ndarray
             The inputs to the system at the current time
 
@@ -44,7 +41,7 @@ class CSTRModel(model.NonlinearModel):
         dX : array_like
             The differential changes to the state variables
         """
-        Ca, T = Xs
+        Ca, T = self.X
         Q, F = inputs  # Normally on the order of (0, 0.1)
 
         V, Ca0, dH, E, rho, R, Ta0, k0, Cp = 5, 1, -4.78e4, 8.314e4, 1e3, 8.314, 310, 72e7, 0.239
@@ -70,11 +67,11 @@ class CSTRModel(model.NonlinearModel):
 
         """
         self.t += dt
-        dX = self.DEs(self.X, inputs)
+        dX = self.DEs(inputs)
         self.X += dX*dt
-        return self.outputs(self.X, inputs)
+        return self.outputs(inputs)
 
-    def outputs(self, Xs, inputs):
+    def outputs(self, inputs):
         """Returns all the outputs (state and calculated)
 
         Returns
@@ -83,6 +80,6 @@ class CSTRModel(model.NonlinearModel):
             List of all the outputs from the model
         """
 
-        outs = Xs
+        outs = self.X
         _ = inputs
         return outs.copy()
