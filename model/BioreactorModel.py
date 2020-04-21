@@ -75,49 +75,59 @@ class Bioreactor:
         dX : array_like
             The differential changes to the state variables
         """
-        Ng, Nx, Nfa, Ne, Na, Nb, V, T = [max(0, N) for N in self.X]
+        Ng, Nx, Nfa, Ne, Na, Nb, _, V, T = [max(0, N) for N in self.X]
+        Nh = self.X[6]
         Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = self.inputs(t)
 
         # Concentrations
-        Cg, Cx, Cfa, Ce, Ca, Cb = [N/V for N in [Ng, Nx, Nfa, Ne, Na, Nb]]
+        Cg, Cx, Cfa, Ce, Ca, Cb, Ch = [N/V for N in [Ng, Nx, Nfa, Ne, Na, Nb, Nh]]
 
         if self.high_N:
             ks = 1/230, 1/12, 1/21
             rFAf, rEf, rX = [k * (Cg / (1e-3 + Cg)) for k in ks]
             theta_calc = 1.1 * (Cg / (1e-3 + Cg))
-        elif Cg < 0.28/180:
-            ks = 0.01, 0, 0
-            rFAf, rEf, rX = [k for k in ks]
-            theta_calc = 2.15 * (Cg / (1e-3 + Cg))
-        elif Cg < 0.32/180:
-            ks = 0.01, 0.006, 0
-            rFAf, rEf, rX = [k for k in ks]
-            theta_calc = 2.4 * (Cg / (1e-3 + Cg))
+
+            RHS = [rFAf, rEf, rX, theta_calc, 0]
+
+            rFAf, rTCA, rResp, rEf, rX = self.rate_matrix_inv @ RHS
+
+            rG = (-rFAf - rTCA - rEf - rX) * Cx * V
+            rX = 6 * rX * Cx * V
+            rFA = 2 * rFAf * Cx * V
+            rE = 2 * rEf * Cx * V
+            rH = 0
         else:
-            ks = 0.01, 0.006, 0
-            rFAf, rEf, rX = [k for k in ks]
-            theta_calc = 2.4 * (0.3/180 / (1e-3 + 0.3/180))
+            rX = 0
+            rH = (0.28 / 180 - Cg)
 
-        RHS = [rFAf, rEf, rX, theta_calc, 0]
+            rFA_max = 0.15/116
+            rFA = rFA_max * (Cg / (1e-5 + Cg))
 
-        rFAf, rTCA, rResp, rEf, rX = self.rate_matrix_inv @ RHS
+            r_theta1_max = 0.24/180 - 0.15/180
+            r_theta1_req = r_theta1_max - (r_theta1_max/2/(0.28/180)*rH + 0.01 * Ch)
+            r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-5 + Cg))
 
-        rG = -rFAf - rTCA - rEf - rX
-        rX = 6*rX
-        rFA = 4*rFAf
-        rE = 2*rEf
+            rE_req = r_theta1_req - r_theta1_max
+            rE = min(3.804e-4, max(0, rE_req))
+
+            r_theta2_max = 0.06 / 180 - 0.0175 / 180
+            r_theta2_req = r_theta1_req - r_theta1_max - rE
+            r_theta2 = min(r_theta2_max, max(0, r_theta2_req))
+
+            rG = -rFA * (116/180) - r_theta1 - rE * (46/180) - r_theta2
 
         # DE's
-        dNg = Fg_in*Cg_in - Fout*Cg + rG*Cx*V
-        dNx = rX*Cx*V
-        dNfa = -Fout*Cfa + rFA*Cx*V
-        dNe = -Fout*Ce + rE*Cx*V
+        dNg = Fg_in*Cg_in - Fout*Cg + rG
+        dNx = rX
+        dNfa = -Fout*Cfa + rFA
+        dNe = -Fout*Ce + rE
         dNa = - Fout * Ca
         dNb = Fb_in*Cb_in - Fout*Cb
         dV = Fg_in + Fb_in + Fm_in - Fout
         dT = 4.5*Q - 0.25*(T - Tamb)
+        dNh = rH
 
-        return dNg, dNx, dNfa, dNe, dNa, dNb, dV, dT
+        return dNg, dNx, dNfa, dNe, dNa, dNb, dNh, dV, dT
 
     def step(self, dt):
         """Updates the model with inputs
@@ -141,7 +151,7 @@ class Bioreactor:
             The pH of the tank
         """
         K_fa1, K_fa2,  K_a, K_b, K_w = 10 ** (-3.03), 10 ** 4.44, 10 ** 8.08, 10 ** 0.56, 10 ** (-14)
-        _, _, Nfa, _, Na, Nb, V, _ = self.X
+        _, _, Nfa, _, Na, Nb, V, _, _ = self.X
         C_fa = Nfa/V
         C_a = Na/V
         C_b = Nb/V
@@ -161,8 +171,8 @@ class Bioreactor:
         CBs = charge_balance(pHs)
         index = numpy.argmin(abs(CBs))
         pH = pHs[index]
-        if abs(CBs[index]) > 1e-1:
-            print('ph CB:', CBs[index])
+        # if abs(CBs[index]) > 1e-1:
+        #     print('ph CB:', CBs[index])
 
         return pH
 
