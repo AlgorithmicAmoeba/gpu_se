@@ -28,6 +28,7 @@ for ti in tqdm.tqdm(ts[1:]):
 
     if model.high_N and ti > 30:
         model.high_N = False
+        model.X[[0, 2, 3]] = 0
 
 concentration_data = pandas.read_csv('../model/run_9_conc.csv')
 ts_data = concentration_data['Time']+30
