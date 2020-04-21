@@ -115,13 +115,13 @@ class Bioreactor(model.NonlinearModel):
         dNx = rX
         dNfa = -Fout*Cfa + rFA
         dNe = -Fout*Ce + rE
-        dNa = - Fout * Ca
+        dNa = Fa_in*Ca_in - Fout * Ca
         dNb = Fb_in*Cb_in - Fout*Cb
-        dV = Fg_in + Fb_in + Fm_in - Fout
+        dV = Fg_in + Fa_in + Fb_in + Fm_in - Fout
         dT = 4.5*Q - 0.25*(T - Tamb)
         dNh = rH
 
-        return dNg, dNx, dNfa, dNe, dNa, dNb, dNh, dV, dT
+        return numpy.array([dNg, dNx, dNfa, dNe, dNa, dNb, dNh, dV, dT])
 
     def step(self, dt, inputs):
         """Updates the model with inputs
@@ -147,7 +147,7 @@ class Bioreactor(model.NonlinearModel):
             The pH of the tank
         """
         K_fa1, K_fa2,  K_a, K_b, K_w = 10 ** (-3.03), 10 ** 4.44, 10 ** 8.08, 10 ** 0.56, 10 ** (-14)
-        _, _, Nfa, _, Na, Nb, V, _, _ = self.X
+        _, _, Nfa, _, Na, Nb, _, V, _ = self.X
         C_fa = Nfa/V
         C_a = Na/V
         C_b = Nb/V
@@ -180,6 +180,23 @@ class Bioreactor(model.NonlinearModel):
         outputs : array_like
             List of all the outputs from the model
         """
+        if self.pH_calculations:
+            pH = self.calculate_pH()
+            outs = numpy.append(self.X, pH)
+        else:
+            outs = self.X
+        outs[:7] /= outs[7]
+        return outs
+
+    def raw_outputs(self, inputs):
+        """Returns all the outputs (state and calculated)
+
+        Returns
+        -------
+        outputs : array_like
+            List of all the outputs from the model
+        """
+        _ = inputs
         if self.pH_calculations:
             pH = self.calculate_pH()
             outs = numpy.append(self.X, pH)

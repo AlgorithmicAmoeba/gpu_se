@@ -12,7 +12,7 @@ inputs = Inputs()
 
 # Biomass C H_1.8 O_0.5 N_0.2 => 24.6 g/mol
 #     Ng, Nx, Nfa, Ne, Na, Nb, Nh, V, T
-X0 = [3.1/180, 1e-3/24.6, 0, 0, 1e-5, 0, 0, 1.077, 25]
+X0 = numpy.array([3.1/180, 1e-3/24.6, 0, 0, 1e-5, 0, 0, 1.077, 25])
 
 model = Bioreactor(X0, pH_calculations=True)
 model_reagents = ['Ng', 'Nx', 'Nfa', 'Ne', 'Na', 'Nb', 'Nh']
@@ -25,7 +25,7 @@ history = Historian()
 for ti in tqdm.tqdm(ts[1:]):
     ins = inputs(ti)
     model.step(ts[1], ins)
-    history.log(ti, dict(zip(model_names, model.outputs(ins))))
+    history.log(ti, dict(zip(model_names, model.raw_outputs(ins))))
 
     if model.high_N and ti > 30:
         model.high_N = False
