@@ -1,17 +1,15 @@
 # Contains code for the system model
 import numpy
+import model
 
 
-class Bioreactor:
+class Bioreactor(model.NonlinearModel):
     """A nonlinear model of the system
 
     Parameters
     ----------
     X0 : array_like
         Initial states
-
-    inputs : callable
-        Must take in a parameter t (the current time) and return an array_like of the current inputs
 
     t : float, optional
         Initial time.
@@ -26,9 +24,6 @@ class Bioreactor:
     X : array_like
         Array of current state
 
-    inputs : callable
-        Must take in a parameter t (the current time) and return an array_like of the current inputs
-
     t : float
         Initial time
 
@@ -39,9 +34,8 @@ class Bioreactor:
         The inverse of the rate matrix.
         Placed here so that it is only calculated once
     """
-    def __init__(self, X0, inputs, t=0, pH_calculations=False):
+    def __init__(self, X0, t=0, pH_calculations=False):
         self.X = numpy.array(X0)
-        self.inputs = inputs
         self.t = t
         self.pH_calculations = pH_calculations
 
@@ -54,7 +48,7 @@ class Bioreactor:
         self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
         self.high_N = True
 
-    def DEs(self, t):
+    def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
         The rate equations defined in the matrix `rate_matrix` are described by: \n
         1) glucose + 2*CO2 + 6*ATP --> 2*FA + 2*water
@@ -67,8 +61,8 @@ class Bioreactor:
 
         Parameters
         ----------
-        t : float
-            The current time
+        inputs : ndarray
+            The inputs to the system at the current time
 
         Returns
         -------
@@ -77,7 +71,7 @@ class Bioreactor:
         """
         Ng, Nx, Nfa, Ne, Na, Nb, _, V, T = [max(0, N) for N in self.X]
         Nh = self.X[6]
-        Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = self.inputs(t)
+        Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = inputs
 
         # Concentrations
         Cg, Cx, Cfa, Ce, Ca, Cb, Ch = [N/V for N in [Ng, Nx, Nfa, Ne, Na, Nb, Nh]]
@@ -129,7 +123,7 @@ class Bioreactor:
 
         return dNg, dNx, dNfa, dNe, dNa, dNb, dNh, dV, dT
 
-    def step(self, dt):
+    def step(self, dt, inputs):
         """Updates the model with inputs
 
         Parameters
@@ -137,9 +131,11 @@ class Bioreactor:
         dt : float
             Time since previous step
 
+        inputs : ndarray
+            The inputs to the system at the current time
         """
         self.t += dt
-        dX = self.DEs(self.t)
+        dX = self.DEs(inputs)
         self.X += numpy.array(dX)*dt
 
     def calculate_pH(self):
@@ -176,7 +172,7 @@ class Bioreactor:
 
         return pH
 
-    def outputs(self):
+    def outputs(self, inputs):
         """Returns all the outputs (state and calculated)
 
         Returns

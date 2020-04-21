@@ -14,7 +14,7 @@ inputs = Inputs()
 #     Ng, Nx, Nfa, Ne, Na, Nb, Nh, V, T
 X0 = [3.1/180, 1e-3/24.6, 0, 0, 1e-5, 0, 0, 1.077, 25]
 
-model = Bioreactor(X0, inputs, pH_calculations=True)
+model = Bioreactor(X0, pH_calculations=True)
 model_reagents = ['Ng', 'Nx', 'Nfa', 'Ne', 'Na', 'Nb', 'Nh']
 model_states = ['V', 'T', 'pH']
 model_names = model_reagents + model_states
@@ -23,8 +23,9 @@ molar_mass = numpy.array([180, 24.6, 116, 46, 36.5, 40, 1])
 history = Historian()
 
 for ti in tqdm.tqdm(ts[1:]):
-    model.step(ts[1])
-    history.log(ti, dict(zip(model_names, model.outputs())))
+    ins = inputs(ti)
+    model.step(ts[1], ins)
+    history.log(ti, dict(zip(model_names, model.outputs(ins))))
 
     if model.high_N and ti > 30:
         model.high_N = False
