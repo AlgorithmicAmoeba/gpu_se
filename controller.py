@@ -388,7 +388,7 @@ class SMPC2:
         sigma = sigma0
         Nd = self.D.shape[0]
         for k in range(self.P+1):
-            sigma = self.model.state_noise.cov() + self.model.A @ sigma @ self.model.A
+            sigma = self.model.state_noise.cov() + self.model.A @ sigma @ self.model.A.T
             for i in range(Nd):
                 d_i = self.D[i]
                 e_i = self.e[i]
