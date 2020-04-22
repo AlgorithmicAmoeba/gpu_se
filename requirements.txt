@@ -10,3 +10,4 @@ numba>=0.48.0
 pandas>=1.0.2
 pytorch>=1.4.0
 xlsxwriter>=1.2.8
+osqp>=0.6.1
