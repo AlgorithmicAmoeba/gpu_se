@@ -22,7 +22,7 @@ nx = noise.WhiteGaussianNoise(state_noise_cov)
 ny = noise.WhiteGaussianNoise(meas_noise_cov)
 
 # set point
-r = numpy.array([0.6, 400])
+r = numpy.array([0.4893, 412])
 
 # Linear CSTR model
 X_op = r
@@ -35,13 +35,11 @@ lin_model.measurement_noise = ny
 # Controller parameters
 P = int(10/dt)
 M = int(5/dt)
-Q = numpy.array([[1, 0], [0, 1]])
-R = numpy.eye(2)*0
-D = numpy.array([[0, 1], [1, 0]])*0
-e = numpy.array([100, 0])*0
+Q = numpy.array([[10000, 0], [0, 1]])
+R = numpy.eye(2)
+D = numpy.array([[0, 1], [1, 0]])
+e = numpy.array([100, 0])
 p = 0
-
-r = numpy.array([0.4893, 412])
 
 # Bounds
 x_bounds = [(0, 5), (0, 600)]
