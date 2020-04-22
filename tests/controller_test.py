@@ -26,10 +26,10 @@ M = 2
 Q = numpy.eye(2)
 R = numpy.eye(2)
 d = numpy.array([1, 1])
-e = 0
-k = 1.86
+e = numpy.array([0])
+p = 0.9
 
-K = controller.SMPC(P, M, Q, R, d, e, m, k)
+K = controller.SMPC(P, M, Q, R, d, e, m, p)
 
 # Step controller
 mu0 = numpy.array([1.2, 3])
@@ -40,7 +40,7 @@ r = numpy.array([0, 0])
 u = 0
 for i in range(5):
     start = time.time()
-    u = K.step(mu0, u0, sigma0, r)
+    u = K.step(mu0, sigma0)
     if __name__ == "__main__":
         print(time.time() - start)
 

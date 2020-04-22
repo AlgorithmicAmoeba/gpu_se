@@ -35,11 +35,11 @@ lin_model.measurement_noise = ny
 # Controller parameters
 P = int(10/dt)
 M = int(5/dt)
-Q = numpy.array([[10000, 0], [0, 1]])
-R = numpy.eye(2)
-D = numpy.array([[0, 1], [1, 0]])
-e = numpy.array([100, 0])
-k = 1.86
+Q = numpy.array([[1, 0], [0, 1]])
+R = numpy.eye(2)*0
+D = numpy.array([[0, 1], [1, 0]])*0
+e = numpy.array([100, 0])*0
+p = 0
 
 r = numpy.array([0.4893, 412])
 
@@ -48,8 +48,8 @@ x_bounds = [(0, 5), (0, 600)]
 u_bounds = [(-300, 300), (0, 3)]
 u_step_bounds = [(-10, 10), (-0.1, 0.1)]
 
-K = controller.SMPC(P, M, Q, R, D, e, lin_model, k, r, x_bounds, u_bounds, u_step_bounds)
-
+# K = controller.SMPC(P, M, Q, R, D, e, lin_model, r, x_bounds, u_bounds, u_step_bounds, p)
+K = controller.SMPC(P, M, Q, R, D, e, lin_model, r)
 
 # Controller initial params
 mu0 = X0

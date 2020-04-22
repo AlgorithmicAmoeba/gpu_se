@@ -1,7 +1,7 @@
 import numpy
 import scipy.sparse
-import cvxpy
-import cvxpy.expressions.expression
+import scipy.stats
+import scipy.optimize
 import model
 import osqp
 
@@ -62,9 +62,6 @@ class SMPC:
     :math:`\Sigma_0` is the state estimated covariance,
     and :math:`W` is the covariance for the state noise.
 
-    For convenience we let :math:`c =  k \sqrt{d \Sigma_k d^T} - e`
-    in the code.
-
     Parameters
     ----------
     P, M : int
@@ -101,13 +98,14 @@ class SMPC:
     lin_model : model.LinearModel
         Internal model for the controller
 
-    k : float
+    p : float
         Constant that depends on :math:`p`
     """
     def __init__(self, P, M, Q, R, D, e,
                  lin_model: model.LinearModel,
-                 k, r, x_bounds=None,
-                 u_bounds=None, u_step_bounds=None):
+                 r, x_bounds=None,
+                 u_bounds=None, u_step_bounds=None,
+                 p=0):
         assert P >= M
 
         self.P = P
@@ -117,7 +115,11 @@ class SMPC:
         self.D = D
         self.e = e
         self.model = lin_model
-        self.k = k
+        self.p = p
+        self.k = 0
+
+        if self.p:
+            self.k = self._inv_chi2()
 
         Nx = self.model.Nx
         Ni = self.model.Ni
@@ -203,8 +205,8 @@ class SMPC:
         Bu_stochastic = scipy.sparse.csc_matrix(((P + 1)*Nd, M*Ni))
 
         A_stochastic = scipy.sparse.hstack([Ax_stochastic, Bu_stochastic])
-        lower_stochastic = numpy.array([-numpy.inf] * (P + 1) * Nd)
-        upper_stochastic = numpy.array([numpy.inf]*(P + 1)*Nd)
+        lower_stochastic = numpy.full((P + 1) * Nd, 0)
+        upper_stochastic = numpy.full((P + 1)*Nd, numpy.inf)
         self._stochastic_bounds(sigma0, lower_stochastic)
 
         # OSQP constraints
@@ -218,7 +220,19 @@ class SMPC:
         # Setup workspace
         self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True, verbose=False)
 
+    def _inv_chi2(self):
+        Nx = self.model.Nx
+
+        def fun(k2):
+            return abs(scipy.stats.chi2.cdf(k2, df=Nx) - self.p)
+
+        ans = scipy.optimize.minimize_scalar(fun)
+        k = numpy.sqrt(ans.x)
+        return numpy.sqrt(k)
+
     def _stochastic_bounds(self, sigma0, array):
+        if self.k == 0:
+            return
         sigma = sigma0
         Nd = self.D.shape[0]
         for k in range(self.P+1):
@@ -226,7 +240,7 @@ class SMPC:
             for i in range(Nd):
                 d_i = self.D[i]
                 e_i = self.e[i]
-                bound = k * numpy.sqrt(d_i @ sigma @ d_i.T) - e_i
+                bound = self.k * numpy.sqrt(d_i @ sigma @ d_i.T) - e_i
                 array[k*Nd + i] = bound
 
     def step(self, x0, sigma0):
