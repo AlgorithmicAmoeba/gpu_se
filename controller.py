@@ -206,7 +206,7 @@ class SMPC:
         Bu_stochastic = scipy.sparse.csc_matrix(((P + 1)*Nd, M*Ni))
 
         A_stochastic = scipy.sparse.hstack([Ax_stochastic, Bu_stochastic])
-        lower_stochastic = numpy.full((P + 1) * Nd, 0)
+        lower_stochastic = numpy.full((P + 1) * Nd, -numpy.inf)
         upper_stochastic = numpy.full((P + 1)*Nd, numpy.inf)
         self._stochastic_bounds(sigma0, lower_stochastic)
 
