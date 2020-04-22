@@ -48,7 +48,7 @@ x_bounds = [(0, 5), (0, 600)]
 u_bounds = [(-300, 300), (0, 3)]
 u_step_bounds = [(-10, 10), (-0.1, 0.1)]
 
-K = controller.SMPC2(P, M, Q, R, D, e, lin_model, k, r, x_bounds, u_bounds, u_step_bounds)
+K = controller.SMPC(P, M, Q, R, D, e, lin_model, k, r, x_bounds, u_bounds, u_step_bounds)
 
 
 # Controller initial params
