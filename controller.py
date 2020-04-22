@@ -156,12 +156,13 @@ class SMPC:
         P_matrix = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(P + 1), Q),
                                             scipy.sparse.kron(scipy.sparse.eye(M), R)], format='csc')
 
-        q_matrix = numpy.hstack([numpy.kron(numpy.ones(P + 1), -Q.dot(r)),
+        q_matrix = numpy.hstack([numpy.kron(numpy.ones(P + 1), -r.T @ Q),
                                  numpy.zeros(M * Ni)])
 
         # x_{k+1} = A x_k + B u_k
-        Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1),
-                               -scipy.sparse.eye(Nx)) + scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
+        Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1), -scipy.sparse.eye(Nx))
+        Ax += scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
+
         Bu = scipy.sparse.kron(
                 scipy.sparse.vstack([
                     scipy.sparse.csc_matrix((1, M)),
