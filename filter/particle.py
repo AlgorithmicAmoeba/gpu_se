@@ -1,9 +1,9 @@
 import numpy
 import numba
 import numba.cuda as cuda
-import cupy
 import torch
 import torch.utils.dlpack as torch_dlpack
+import cupy
 
 
 class ParticleFilter:
