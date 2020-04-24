@@ -26,8 +26,6 @@ def generate_results(redo=False):
     count = 5
     times = numpy.zeros((N - N_done, 2))
     for i in tqdm.tqdm(range(N - N_done)):
-        if i < N_done:
-            continue
 
         p = ParticleFilter(f, g, 2**(N_done + i+1), x0_cpu, measurement_noise_cpu)
         pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, measurement_noise_gpu)

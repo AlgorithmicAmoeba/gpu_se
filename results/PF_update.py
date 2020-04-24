@@ -29,8 +29,6 @@ def generate_results(redo=False):
     z = numpy.array([2.3, 1.2])
 
     for i in tqdm.tqdm(range(N - N_done)):
-        if i < N_done:
-            continue
 
         p = ParticleFilter(f, g, 2**(N_done + i+1), x0_cpu, measurement_noise_cpu)
         pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, measurement_noise_gpu)
@@ -64,5 +62,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results(True)
+    # generate_results(True)
     plot_results()
