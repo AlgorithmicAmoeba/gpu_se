@@ -48,7 +48,7 @@ def generate_results(redo=False):
 
 
 def plot_results():
-    df = pandas.read_csv('PF_predict.csv')
+    df = pandas.read_csv('PF_predict.csv', index_col=0)
     df['speedup'] = df['CPU']/df['GPU']
     plt.semilogy(df.index, df['speedup'], '.')
 
