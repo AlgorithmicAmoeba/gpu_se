@@ -55,7 +55,8 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
         return fun(new_vec)
 
     matrices = [[[], []], [[], []]]
-    for i, fun in enumerate([nonlinear_model.DEs, nonlinear_model.outputs]):
+    old_X = nonlinear_model.X
+    for i, fun in enumerate([lambda x: nonlinear_model.DEs(x), lambda x: nonlinear_model.outputs(x)]):
         for j, vec in enumerate([X_op, input_op]):
             nonlinear_model.X = X_op
             matrix = []
@@ -64,6 +65,7 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
                 matrix.append(gradient)
             matrices[i][j] = numpy.array(matrix).T
 
+    nonlinear_model.X = old_X
     (A, B), (C, D) = matrices
     Ad, Bd, Cd, Dd, _ = scipy.signal.cont2discrete((A, B, C, D), T)
     linear_model = model.LinearModel(Ad, Bd, Cd, Dd, T)
