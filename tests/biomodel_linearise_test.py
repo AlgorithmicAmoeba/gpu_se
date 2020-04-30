@@ -31,8 +31,11 @@ dt = 0.1
 
 lin_model = LinearModel.create_LinearModel(model, X_op, input_op, dt)
 
+#        Nfa, Na, Nb, V
 states = [2, 4, 5, 7]
+#     Fa_in, Fb_in, Fm_in
 inputs = [2, 4, 6]
+#      Cfa, pH
 outputs = [2, 9]
 
 A = lin_model.A[states][:, states]
