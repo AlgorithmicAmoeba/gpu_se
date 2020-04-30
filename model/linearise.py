@@ -12,7 +12,7 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
     nonlinear_model : model.NonlinearModel
         The nonlinear model to be linearised
         
-    X_op, input_op : ndarray
+    X_op, input_op : array-like
         The state and input around which the model should be linearised
 
     T : float
@@ -37,6 +37,7 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
             x /= 2
             new_gamma = (g(x) - g(-x)) / 2 / x
             e = numpy.max(numpy.abs(new_gamma - gamma))
+            gamma = new_gamma
 
         return gamma
 
