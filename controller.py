@@ -131,13 +131,13 @@ class SMPC:
             x_min = numpy.array([-numpy.inf] * Nx)
             x_max = numpy.array([numpy.inf] * Nx)
         else:
-            x_min, x_max = [numpy.array(x) for x in zip(*x_bounds)]
+            x_min, x_max = [numpy.asarray(x) for x in zip(*x_bounds)]
 
         if u_bounds is None:
             u_min = numpy.array([-numpy.inf] * Ni)
             u_max = numpy.array([numpy.inf] * Ni)
         else:
-            u_min, u_max = [numpy.array(x) for x in zip(*u_bounds)]
+            u_min, u_max = [numpy.asarray(x) for x in zip(*u_bounds)]
 
         if u_step_bounds is None:
             u_step_min = numpy.array([-numpy.inf] * Ni)
