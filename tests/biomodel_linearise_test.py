@@ -1,6 +1,6 @@
 import numpy
 from model.BioreactorModel import Bioreactor
-from model.linearise import create_LinearModel
+from model import LinearModel
 
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
 X_op = numpy.array([0.28/180, 0.639773/24.6, 2/116, 0, 1e-5, 0, 4.857e-3, 1.077, 35])
@@ -29,7 +29,7 @@ input_op = numpy.array([Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, F_out, 
 
 dt = 0.1
 
-lin_model = create_LinearModel(model, X_op, input_op, dt)
+lin_model = LinearModel.create_LinearModel(model, X_op, input_op, dt)
 
 states = [2, 4, 5, 7]
 inputs = [2, 4, 6]
