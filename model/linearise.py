@@ -1,5 +1,6 @@
 import numpy
 import model
+import scipy.signal
 
 
 def create_LinearModel(nonlinear_model: model.NonlinearModel,
@@ -64,16 +65,7 @@ def create_LinearModel(nonlinear_model: model.NonlinearModel,
             matrices[i][j] = numpy.array(matrix).T
 
     (A, B), (C, D) = matrices
-    Nx = A.shape[0]
-    # We now have a continuous system, let's use the bilinear transform to get the discrete one
-    alpha = 2/T
-    P_inv = numpy.linalg.inv(numpy.eye(Nx) - 1/alpha * A)
-    Q = numpy.eye(Nx) + 1/alpha * A
-
-    Ad = P_inv @ Q
-    Bd = numpy.sqrt(T) * P_inv @ B
-    Cd = numpy.sqrt(T) * C @ P_inv
-    Dd = 1/numpy.sqrt(2*alpha) * C @ Bd + D
+    Ad, Bd, Cd, Dd, _ = scipy.signal.cont2discrete((A, B, C, D), T)
     linear_model = model.LinearModel(Ad, Bd, Cd, Dd, T)
 
     return linear_model
