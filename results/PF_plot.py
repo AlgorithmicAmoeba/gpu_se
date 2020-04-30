@@ -8,6 +8,10 @@ def plot_speedup():
     plt.figure(figsize=(6, 6))
     plt.rcParams.update({'font.size': 12})
 
+    resample_df = pandas.read_csv('PF_resample.csv', index_col=0)
+    resample_df['speedup'] = resample_df['CPU'] / resample_df['GPU']
+    plt.semilogy(resample_df.index, resample_df['speedup'], 'g^')
+
     predict_df = pandas.read_csv('PF_predict.csv', index_col=0)
     predict_df['speedup'] = predict_df['CPU'] / predict_df['GPU']
     plt.semilogy(predict_df.index, predict_df['speedup'], 'b.')
@@ -16,11 +20,7 @@ def plot_speedup():
     update_df['speedup'] = update_df['CPU'] / update_df['GPU']
     plt.semilogy(update_df.index, update_df['speedup'], 'rx')
 
-    resample_df = pandas.read_csv('PF_resample.csv', index_col=0)
-    resample_df['speedup'] = resample_df['CPU'] / resample_df['GPU']
-    plt.semilogy(resample_df.index, resample_df['speedup'], 'g^')
-
-    plt.legend(['Predict', 'Update', 'Resample'])
+    plt.legend(['Resample', 'Predict', 'Update'])
     plt.title('Speed-up of particle filter')
     plt.ylabel('Speed-up')
     plt.xlabel('$ \log_2(N) $ particles')
@@ -40,21 +40,21 @@ def plot_times():
     plt.rcParams.update({'font.size': 12})
 
     plt.subplot(1, 2, 1)
+    plt.semilogy(resample_df.index, resample_df['CPU'], 'g^')
     plt.semilogy(predict_df.index, predict_df['CPU'], 'b.')
     plt.semilogy(update_df.index, update_df['CPU'], 'rx')
-    plt.semilogy(resample_df.index, resample_df['CPU'], 'g^')
 
-    plt.legend(['Predict', 'Update', 'Resample'])
+    plt.legend(['Resample', 'Predict', 'Update'])
     plt.ylabel('Time (s)')
     plt.xlabel('$ \log_2(N) $ particles')
     plt.title('CPU')
 
     plt.subplot(1, 2, 2, sharey=plt.gca())
+    plt.semilogy(resample_df.index, resample_df['GPU'], 'g^')
     plt.semilogy(predict_df.index, predict_df['GPU'], 'b.')
     plt.semilogy(update_df.index, update_df['GPU'], 'rx')
-    plt.semilogy(resample_df.index, resample_df['GPU'], 'g^')
 
-    plt.legend(['Predict', 'Update', 'Resample'])
+    plt.legend(['Resample', 'Predict', 'Update'])
     plt.ylabel('Time (s)')
     plt.xlabel('$ \log_2(N) $ particles')
     plt.title('GPU')
@@ -67,4 +67,4 @@ def plot_times():
 
 
 plot_times()
-# plot_speedup()
+plot_speedup()
