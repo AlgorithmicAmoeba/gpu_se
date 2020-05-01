@@ -171,7 +171,7 @@ class SMPC:
                      ]),
                 Bd)
         Aeq = scipy.sparse.hstack([Ax, Bu])
-        leq = numpy.hstack([-x0, numpy.zeros(P * Nx)])
+        leq = numpy.hstack([-x0, numpy.kron(numpy.ones(P),  -lin_model.f_bar)])
         ueq = leq
 
         # x_min <= x_k <= x_max and u_min <= u_k <= u_max for all k
