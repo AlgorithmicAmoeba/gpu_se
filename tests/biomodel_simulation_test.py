@@ -8,7 +8,7 @@ import scipy.optimize
 import scipy.signal
 
 # Simulation set-up
-end_time = 1000
+end_time = 100
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 dt_control = 1
@@ -19,7 +19,9 @@ assert dt <= dt_control
 X0 = numpy.array([0.28/180, 0.639773/24.6, 1/116, 0, 1e-5, 0, 4.857e-3, 1.077, 35])
 bioreactor = model.Bioreactor(X0, pH_calculations=True)
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
-X_op = numpy.array([0.28/180, 0.639773/24.6, 2/116, 0, 1e-5, 0, 4.857e-3, 1.077, 35])
+X_op = numpy.array([0.28/180, 0.639773/24.6, 2/116, 0, 0e-6, 3e-2, 4.857e-3, 1.077, 35])
+bioreactor1 = model.Bioreactor(X_op, pH_calculations=True)
+pH_op = bioreactor1.calculate_pH()
 # Inputs
 Cn_in = 0.625 * 10 / 60  # (g/L) / (g/mol) = mol/L
 CgFg = 0.23
@@ -61,43 +63,63 @@ lin_model.Ni = len(inputs)
 lin_model.No = len(outputs)
 bioreactor.high_N = False
 
+lin_model.A = numpy.eye(2)
+lin_model.B = lin_model.C @ lin_model.B
+lin_model.f_bar = lin_model.C @ lin_model.f_bar
+lin_model.C = numpy.eye(2)
+lin_model.D = numpy.zeros((2, 2))
+lin_model.x_bar = numpy.array([2/1.077, 5])
+lin_model.g_bar = numpy.zeros_like(lin_model.g_bar)
+lin_model.Nx = 2
+# lin_model.B[0, 2] = -1
+
 # Noise
 lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-4, 1e-8, 1e-8, 1e-2]))
 lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-3, 1e-2]))
 
 # set point
-r = (X_op - X_op)[states]
+# r = (X_op - X_op)[states]
+r = numpy.array([0, 6-pH_op])
 
 # Controller parameters
-P = 150
+P = 200
 M = 100
-Q = numpy.diag([1e4, 0, 0, 0])
-R = numpy.diag([1, 0, 1])
-D = numpy.array([[0, 0, 0, 0]])
+# Q = numpy.diag([1e4, 0, 0, 0])
+Q = numpy.diag([1e0, 1e1])
+R = numpy.diag([1e1, 1e1, 1])
+# D = numpy.array([[0, 0, 0, 0]])
+D = numpy.array([[0, 0]])
 e = numpy.array([0])
 
 # Bounds
 # x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
-u_bounds = [numpy.array([0, 1e-8]) - U_op[[inputs[0]]],
-            numpy.array([0, 1e-8]) - U_op[[inputs[1]]],
-            numpy.array([0, 10]) - U_op[[inputs[2]]]]
+u_bounds = [numpy.array([0, 1e-5]) - U_op[[inputs[0]]],
+            numpy.array([0, 1e-1]) - U_op[[inputs[1]]],
+            numpy.array([0, 0.5]) - U_op[[inputs[2]]]]
 
-K = controller.SMPC(P, M, Q, R, D, e, lin_model, r, u_bounds=u_bounds)
+u_step_bounds = [numpy.array([0, 1e-3]),
+                 numpy.array([0, 1e-3]),
+                 numpy.array([0, 1e-1])]
+
+K = controller.SMPC(P, M, Q, R, D, e, lin_model, r, u_bounds=u_bounds, u_step_bounds=u_step_bounds)
 
 # Controller initial params
 sigma0 = numpy.zeros((4, 4))
 
-ys = [numpy.array([1/116/1.077, 5])]
-us = [numpy.zeros_like(U_op)]
-xs = [numpy.array([1/116, 1e-5, 0, 1.077])]
+ys = [numpy.array([1/1.077, 5])]
+us = [U_op]
+# xs = [numpy.array([1/116, 1e-5, 0, 1.077])]
+xs = [numpy.array([1, 5])]
 
 t_next = dt_control
 U_temp = U_op.copy()
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
-        U_temp[inputs] = K.step(xs[-1][states] - X_op[states], sigma0)
+        # U_temp[inputs] = K.step(xs[-1][states] - X_op[states], sigma0)
+        U_temp[inputs] = K.step(ys[-1] - lin_model.x_bar, sigma0) + U_op[inputs]
         U_temp[-3] = Fg_in + Fn_in + sum(U_temp[inputs])
-        us.append(U_temp)
+        U_temp = numpy.maximum(U_temp, numpy.zeros_like(U_temp))
+        us.append(U_temp.copy())
         t_next += dt_control
     else:
         us.append(us[-1])
@@ -106,12 +128,13 @@ for t in tqdm.tqdm(ts[1:]):
     # ys.append(lin_model.C @ (xs[-1] - X_op[states]) + lin_model.D @ (us[-1] - U_op)[inputs] + lin_model.g_bar)
     bioreactor.step(dt, us[-1])
     ys.append(bioreactor.outputs(us[-1])[outputs])
+    ys[-1][0] *= 116
     xs.append(bioreactor.X)
 
 ys = numpy.array(ys)
 us = numpy.array(us)
 
-plt.plot(ts, ys[:, 0]*116)
+plt.plot(ts, ys[:, 0])
 plt.show()
 
 plt.plot(ts, ys[:, 1])
