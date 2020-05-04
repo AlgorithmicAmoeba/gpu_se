@@ -217,7 +217,7 @@ class SMPC:
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
-
+        self.A_matrix = A_matrix
         # Setup workspace
         self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True,
                         verbose=False, eps_abs=1e-10, eps_rel=1e-4, eps_prim_inf=1e-10,
@@ -264,8 +264,8 @@ class SMPC:
         res = self.prob.solve()
 
         # Check solver status
-        if res.info.status != 'solved':
-            raise ValueError('OSQP did not solve the problem!')
+        if res.info.status_val not in [1, 2]:
+            raise ValueError(f'OSQP did not solve the problem! Status value: {res.info.status_val}')
 
         # Apply first control input to the plant
         ctrl = res.x[-self.M * self.model.Ni: -(self.M - 1) * self.model.Ni]
