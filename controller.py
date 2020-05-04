@@ -219,7 +219,9 @@ class SMPC:
         self.prob = osqp.OSQP()
 
         # Setup workspace
-        self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True, verbose=False)
+        self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True,
+                        verbose=False, eps_abs=1e-10, eps_rel=1e-4, eps_prim_inf=1e-10,
+                        max_iter=100000)
 
     def _inv_chi2(self):
         Nx = self.model.Nx
