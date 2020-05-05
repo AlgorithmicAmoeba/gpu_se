@@ -185,7 +185,8 @@ class Bioreactor(model.NonlinearModel):
             outs = numpy.append(self.X, pH)
         else:
             outs = self.X
-        outs[:7] /= outs[7]
+        molar_mass = numpy.array([180, 24.6, 116, 46, 36.5, 40, 1])
+        outs[:7] = outs[:7] * molar_mass / outs[7]
         return outs
 
     def raw_outputs(self, inputs):
