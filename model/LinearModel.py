@@ -129,11 +129,11 @@ class LinearModel:
                     matrix.append(gradient)
                 matrices[i][j] = numpy.array(matrix).T
 
-        nonlinear_model.X = old_X
         (A, B), (C, D) = matrices
         Ad, Bd, Cd, Dd, _ = scipy.signal.cont2discrete((A, B, C, D), T)
         f_bar = nonlinear_model.DEs(u_bar)
         g_bar = nonlinear_model.outputs(u_bar)
         linear_model = model.LinearModel(Ad, Bd, Cd, Dd, T, x_bar, u_bar, f_bar, g_bar)
+        nonlinear_model.X = old_X
 
         return linear_model
