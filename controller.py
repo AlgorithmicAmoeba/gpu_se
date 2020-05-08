@@ -71,12 +71,6 @@ class SMPC:
     Q, R : ndarray
         2D arrays of the diagonal tuning matrices
 
-    D : ndarray
-        2D array defining the linear constraints
-
-    e : ndarray
-        1D array defining the linear constraints
-
     lin_model : model.LinearModel
         Internal model for the controller
 
@@ -89,37 +83,20 @@ class SMPC:
     Q, R : ndarray
         2D arrays of the diagonal tuning matrices
 
-    D : ndarray
-        1D array defining the linear constraints
-
-    e : int
-        Value defining the linear constraints
-
     lin_model : model.LinearModel
         Internal model for the controller
-
-    p : float
-        Constant that depends on :math:`p`
     """
-    def __init__(self, P, M, Q, R, D, e,
+    def __init__(self, P, M, Q, R,
                  lin_model: model.LinearModel,
                  r, y_bounds=None,
-                 u_bounds=None, u_step_bounds=None,
-                 p=0):
+                 u_bounds=None, u_step_bounds=None):
         assert P >= M
 
         self.P = P
         self.M = M
         self.Q = Q
         self.R = R
-        self.D = D
-        self.e = e
         self.model = lin_model
-        self.p = p
-        self.k = 0
-
-        if self.p:
-            self.k = self._inv_chi2()
 
         Nx = self.model.Nx
         Ni = self.model.Ni
@@ -150,174 +127,190 @@ class SMPC:
         else:
             u_step_min, u_step_max = [numpy.array(u) for u in zip(*u_step_bounds)]
 
-        # Initial and reference states
-        x0 = numpy.zeros(Nx)
-        sigma0 = numpy.zeros((Nx, Nx))
+        # Initial state, initial input, and bias
+        mu0 = numpy.zeros(Nx)
+        um1 = numpy.zeros(Ni)
+        b = numpy.zeros(No)
 
         # Cast MPC problem to a QP: x = (x(0),x(1),...,x(P),y(1), ..., y(P), u(0),...,u(M-1))
         # min x^T P x + q^T x
         # such that l <= Ax <= u
 
-        P_matrix = scipy.sparse.block_diag([scipy.sparse.csc_matrix(((P+1)*Nx, (P+1)*Nx)),
-                                            scipy.sparse.kron(scipy.sparse.eye(P), Q),
-                                            scipy.sparse.kron(scipy.sparse.eye(M), R)], format='csc')
+        H = scipy.sparse.block_diag([scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
+                                     scipy.sparse.kron(scipy.sparse.eye(P), Q),
+                                     scipy.sparse.csc_matrix((Ni, Ni)),
+                                     scipy.sparse.kron(scipy.sparse.eye(M), R)], format='csc')
 
-        q_matrix = numpy.hstack([numpy.zeros((P+1)*Nx),
-                                 numpy.kron(numpy.ones(P), -r.T @ Q),
-                                 numpy.zeros(M * Ni)])
+        qT = numpy.hstack([numpy.zeros((P + 1) * Nx),
+                           numpy.kron(numpy.ones(P), -r.T @ Q),
+                           numpy.zeros((M + 1) * Ni)])
 
-        # x_{k+1} = A x_k + B u_k
-        Ax = scipy.sparse.kron(scipy.sparse.eye(P + 1), -scipy.sparse.eye(Nx))
-        Ax += scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), Ad)
-
-        Ay = scipy.sparse.csc_matrix(((P+1)*Nx, P*No))
-
-        Bu = scipy.sparse.kron(
-                scipy.sparse.vstack([
-                    scipy.sparse.csc_matrix((1, M)),
-                    scipy.sparse.eye(M),
-                    scipy.sparse.hstack([scipy.sparse.csc_matrix((P-M, M-1)), numpy.ones((P-M, 1))])
-                     ]),
-                Bd)
-        Aeq = scipy.sparse.hstack([Ax, Ay, Bu])
-        leq = numpy.hstack([-x0, numpy.kron(numpy.ones(P),  -lin_model.f_bar*0)])
-        ueq = leq
-
-        # y_k = C x_k + D u_k
-        Cx = scipy.sparse.hstack([
-            scipy.sparse.csc_matrix((P*No, Nx)),
-            scipy.sparse.kron(scipy.sparse.eye(P), Cd),
-            ])
-
-        Cy = -scipy.sparse.eye(P*No)
-
-        Du = scipy.sparse.kron(
+        # Init
+        A_init = scipy.sparse.vstack([
             scipy.sparse.hstack([
-                scipy.sparse.csc_matrix((P, 1)),
-                scipy.sparse.vstack([
-                    scipy.sparse.eye(M-1),
-                    scipy.sparse.hstack([scipy.sparse.csc_matrix((P - M + 1, M - 2)), numpy.ones((P - M + 1, 1))])
-                ])
+                -scipy.sparse.eye(Nx),
+                scipy.sparse.csc_matrix((Nx, P*Nx + P*No + (M+1)*Ni))
             ]),
-            Dd)
-        Ceq = scipy.sparse.hstack([Cx, Cy, Du])
-        lCeq = numpy.kron(numpy.ones(P), -lin_model.g_bar*0)
-        uCeq = lCeq
+            scipy.sparse.hstack([
+                scipy.sparse.csc_matrix((Ni, (P+1)*Nx + P*No)),
+                -scipy.sparse.eye(Ni),
+                scipy.sparse.csc_matrix((Ni, (M+1)*Ni))
+            ])
+        ])
+        l_init = numpy.hstack([-mu0, -um1])
+        u_init = l_init
 
-        # y_min <= y_k <= y_max and u_min <= u_k <= u_max for all k
-        A_bound = scipy.sparse.hstack([
-            scipy.sparse.csc_matrix((P * No + M * Ni, (P+1)*Nx)),
-            scipy.sparse.eye(P * No + M * Ni)])
-        lower_bound = numpy.hstack([numpy.kron(numpy.ones(P), y_min), numpy.kron(numpy.ones(M), u_min)])
-        upper_bound = numpy.hstack([numpy.kron(numpy.ones(P), y_max), numpy.kron(numpy.ones(M), u_max)])
+        # d\mu_{k+1} = A d\mu_k + B du_k
+        A_state_x = scipy.sparse.hstack([
+            scipy.sparse.vstack([
+                Ad - scipy.sparse.eye(Nx),
+                scipy.sparse.csc_matrix(((P-1)*Nx, Nx))
+            ]),
+            -scipy.sparse.eye(P*Nx) + scipy.sparse.kron(
+                scipy.sparse.eye(P, k=-1),
+                Ad
+            )
+        ])
 
-        # u_step_min <= u_k - u_{k-1} <= u_step_max for all k >= 1
-        if M >= 2:
-            Ax_step_bound = scipy.sparse.csc_matrix(((M - 1)*Ni, (P+1)*Nx + P*No))
-            Bu_step_bound = scipy.sparse.kron(scipy.sparse.hstack([
-                -scipy.sparse.eye(M-1) + scipy.sparse.eye(M-1, k=1),
+        A_state_u = scipy.sparse.vstack([
+            scipy.sparse.hstack([
                 scipy.sparse.vstack([
-                    scipy.sparse.csc_matrix((M-2, 1)),
-                    1
-                ])
-            ]), scipy.sparse.eye(Ni))
+                    Bd,
+                    scipy.sparse.csc_matrix(((M-1)*Nx, Ni))
+                ]),
+                scipy.sparse.kron(
+                    scipy.sparse.eye(M),
+                    Bd
+                )
+            ]),
+            scipy.sparse.csc_matrix(((P-M)*Nx, (M+1)*Ni))
+        ])
 
-            A_step = scipy.sparse.hstack([Ax_step_bound, Bu_step_bound])
-            lower_step_bound = numpy.kron(numpy.ones(M-1), u_step_min)
-            upper_step_bound = numpy.kron(numpy.ones(M-1), u_step_max)
-        else:
-            A_step = scipy.sparse.csc_matrix((1, (P+1)*Nx + P*No + M*Ni))
-            lower_step_bound = numpy.array(0)
-            upper_step_bound = numpy.array(0)
+        A_state = scipy.sparse.hstack([
+            A_state_x,
+            scipy.sparse.csc_matrix((P*Nx, P*No)),
+            A_state_u
+        ])
+        l_state = numpy.zeros(P*Nx)
+        u_state = l_state
 
-        # Stochastic constraints
-        if D.ndim != 2:
-            raise ValueError("D must be 2D")
-        Nd = D.shape[0]
-        Ax_stochastic = scipy.sparse.csc_matrix((P*Nd, (P+1)*Nx))
-        Ay_stochastic = scipy.sparse.kron(scipy.sparse.eye(P), D)
-        Bu_stochastic = scipy.sparse.csc_matrix((P*Nd, M*Ni))
+        # y_k = y_{k-1} + C d\mu_k + D du_k + b
+        A_output_x = scipy.sparse.hstack([
+            scipy.sparse.vstack([
+                Cd,
+                scipy.sparse.csc_matrix(((P - 1) * No, Nx))
+            ]),
+            scipy.sparse.kron(
+                scipy.sparse.eye(P),
+                Cd
+            )
+        ])
 
-        A_stochastic = scipy.sparse.hstack([Ax_stochastic, Ay_stochastic,  Bu_stochastic])
-        lower_stochastic = numpy.full(P * Nd, -numpy.inf)
-        upper_stochastic = numpy.full(P*Nd, numpy.inf)
-        self._stochastic_bounds(sigma0, lower_stochastic)
+        A_output_y = scipy.sparse.kron(
+            -scipy.sparse.eye(P) + scipy.sparse.eye(P, k=-1),
+            scipy.sparse.eye(No)
+        )
+
+        A_output_u = scipy.sparse.vstack([
+            scipy.sparse.hstack([
+                scipy.sparse.vstack([
+                    scipy.sparse.kron(
+                        numpy.ones(2),
+                        Dd
+                    ),
+                    scipy.sparse.csc_matrix(((M - 1) * No, Ni))
+                ]),
+                scipy.sparse.kron(
+                    scipy.sparse.eye(M-1),
+                    Dd
+                )
+            ]),
+            scipy.sparse.csc_matrix(((P - M) * No, (M + 1) * Ni))
+        ])
+
+        A_output = scipy.sparse.hstack([
+            A_output_x,
+            A_output_y,
+            A_output_u
+        ])
+        l_output = numpy.kron(
+            -numpy.hstack([
+                2,
+                numpy.ones(P-1)
+            ]),
+            -b
+        )
+        u_output = l_output
+
+        # y_min <= y_k <= y_max
+        A_output_ineq = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((P*No, (P+1)*Nx)),
+            scipy.sparse.eye(P*No),
+            scipy.sparse.csc_matrix((P*No, (M+1)*Ni))
+        ])
+        l_output_ineq = numpy.kron(numpy.ones(P), y_min)
+        u_output_ineq = numpy.kron(numpy.ones(P), y_max)
+
+        # du_min <= du_k <= du_max
+        A_input_steps = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((M*Ni, (P+1)*Nx + P*No + Ni)),
+            scipy.sparse.eye(M*Ni)
+        ])
+        l_input_steps = numpy.kron(numpy.ones(M), u_step_min)
+        u_input_steps = numpy.kron(numpy.ones(M), u_step_max)
+
+        # u_min <= u_k <= u_max
+        A_input_ineq = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((M*Ni, (P+1)*Nx + P*No)),
+            scipy.sparse.csc_matrix(numpy.ones((M*Ni, Ni))),
+            scipy.sparse.csc_matrix(numpy.tril(numpy.ones((M*Ni, M*Ni))))
+        ])
+        l_input_ineq = numpy.kron(numpy.ones(M), u_min)
+        u_input_ineq = numpy.kron(numpy.ones(M), u_max)
 
         # OSQP constraints
-        A_matrix = scipy.sparse.vstack([Aeq, Ceq, A_bound, A_step, A_stochastic], format='csc')
-        self.lower = numpy.hstack([leq, lCeq, lower_bound, lower_step_bound, lower_stochastic])
-        self.upper = numpy.hstack([ueq, uCeq, upper_bound, upper_step_bound, upper_stochastic])
-
-        # A_matrix = scipy.sparse.vstack([Aeq, Ceq], format='csc')
-        # self.lower = numpy.hstack([leq, lCeq])
-        # self.upper = numpy.hstack([ueq, uCeq])
-        self.A_matrix = A_matrix
+        self.A_matrix = scipy.sparse.vstack([A_init, A_state, A_output, A_output_ineq, A_input_steps, A_input_ineq], format='csc')
+        self.lower = numpy.hstack([l_init, l_state, l_output, l_output_ineq, l_input_steps, l_input_ineq])
+        self.upper = numpy.hstack([u_init, u_state, u_output, u_output_ineq, u_input_steps, u_input_ineq])
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
 
         # Setup workspace
-        self.prob.setup(P_matrix, q_matrix, A_matrix, self.lower, self.upper, warm_start=True,
+        self.prob.setup(H, qT, self.A_matrix, self.lower, self.upper, warm_start=True,
                         verbose=False, eps_abs=1e-10, eps_rel=1e-5, eps_prim_inf=1e-10,
                         max_iter=100000)
 
-    def _inv_chi2(self):
-        Nx = self.model.Nx
-
-        def fun(k2):
-            return abs(scipy.stats.chi2.cdf(k2, df=Nx) - self.p)
-
-        ans = scipy.optimize.minimize_scalar(fun)
-        k = numpy.sqrt(ans.x)
-        return numpy.sqrt(k)
-
-    def _stochastic_bounds(self, sigma0, array):
-        if self.k == 0:
-            return
-        sigma = sigma0
-        Nd = self.D.shape[0]
-        for k in range(self.P+1):
-            sigma = self.model.state_noise.cov() + self.model.A @ sigma @ self.model.A.T
-            for i in range(Nd):
-                d_i = self.D[i]
-                e_i = self.e[i]
-                bound = self.k * numpy.sqrt(d_i @ sigma @ d_i.T) - e_i
-                array[k*Nd + i] = bound
-
-    def step(self, x0, sigma0, y0):
+    def step(self, mu0, um1, y0):
         # Added due to OSQP bug
-        x0 = numpy.maximum(numpy.minimum(x0, 1e30), -1e30)
-        sigma0 = numpy.maximum(numpy.minimum(sigma0, 1e30), -1e30)
+        mu0 = numpy.maximum(numpy.minimum(mu0, 1e30), -1e30)
 
         Nx = self.model.Nx
         Ni = self.model.Ni
         No = self.model.No
 
         # Update initial state
-        self.lower[:Nx] = -x0
-        self.upper[:Nx] = -x0
+        self.lower[:Nx+Ni] = numpy.hstack([-mu0, -um1])
+        self.upper[:Nx+Ni] = numpy.hstack([-mu0, -um1])
 
         # Update bias
-        bias = (y0 - self.y_predicted)*1
-        # assert numpy.sum(bias) < 1e-2
-        self.lower[(self.P + 1)*Nx:(self.P + 1)*Nx + self.P*No] = numpy.tile(-bias, self.P)
-        self.upper[(self.P + 1) * Nx:(self.P + 1) * Nx + self.P * No] = numpy.tile(-bias, self.P)
+        b = y0 - self.model.C @ mu0
+        n = Nx + Ni + self.P*Nx
+        self.lower[n: n + self.P*No] = numpy.tile(-b, self.P)
+        self.upper[n: n + self.P*No] = numpy.tile(-b, self.P)
 
         self.prob.update(l=self.lower, u=self.upper)
-
-        # Update stochastic constraints
-        Nd = self.D.shape[0]
-        self._stochastic_bounds(sigma0, self.lower[-(self.P + 1) * Nd:])
 
         # Solve
         res = self.prob.solve()
 
         # Check solver status
-        if res.info.status_val not in [1, 2]:
+        if res.info.status_val not in [1]:
             raise ValueError(f'OSQP did not solve the problem! Status value: {res.info.status_val}')
 
         # Apply first control input to the plant
-        ctrl = res.x[-self.M * Ni: -(self.M - 1) * Ni]
+        m = (self.P+1)*Nx + self.P*No + Ni
+        ctrl = res.x[m: m + Ni]
         self.y_predicted = res.x[(self.P + 1)*Nx: (self.P + 1)*Nx + No]
 
         return ctrl
