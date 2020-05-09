@@ -106,8 +106,6 @@ class SMPC:
         Cd = self.model.C
         Dd = self.model.D
 
-        self.y_predicted = numpy.zeros(No)
-
         # Limit constraints
         if y_bounds is None:
             y_min = numpy.full(No, -numpy.inf)
@@ -315,6 +313,5 @@ class SMPC:
         # Apply first control input to the plant
         m = (self.P+1)*Nx + self.P*No + Ni
         ctrl = res.x[m: m + Ni]
-        self.y_predicted = res.x[(self.P + 1)*Nx: (self.P + 1)*Nx + No]
 
         return ctrl
