@@ -125,7 +125,7 @@ for t in tqdm.tqdm(ts[1:]):
     xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
               + lin_model.x_bar)
 
-    if t > 50 and count < 1e5: # Distrubance for linear model
+    if t > 50 and count < 1e5:  # Distrubance for linear model
         xs[-1][0] += 0.001
         count += 1
 
