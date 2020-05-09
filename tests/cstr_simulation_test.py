@@ -77,11 +77,9 @@ for t in tqdm.tqdm(ts[1:]):
 ys = numpy.array(ys)
 us = numpy.array(us)
 
-plt.plot(ts, ys[:, 0])
-plt.show()
+plt.subplot(1, 2, 1)
+plt.plot(ts, ys)
 
-plt.plot(ts, ys[:, 1])
-plt.show()
-
+plt.subplot(1, 2, 2)
 plt.plot(ts, us[:, 0])
 plt.show()
