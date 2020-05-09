@@ -314,7 +314,7 @@ class SMPC:
 
         # Check solver status
         if res.info.status_val not in [1]:
-            raise ValueError(f'OSQP did not solve the problem! Status value: {res.info.status_val}')
+            raise ValueError(f'OSQP did not solve the problem! Status: {res.info.status}')
 
         # Apply first control input to the plant
         m = (self.P+1)*Nx + self.P*No + Ni
