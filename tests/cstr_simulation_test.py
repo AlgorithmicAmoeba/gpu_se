@@ -19,7 +19,7 @@ X0 = numpy.array([0.6, 420.])
 cstr = model.CSTRModel(X0)
 
 # Linear CSTR model
-x_ss_guess = [0.21, 467.0]
+x_ss_guess = [0.48, 412.0]
 
 
 def f(x_ss):
@@ -44,10 +44,10 @@ lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[
 r = numpy.array([0])
 
 # Controller parameters
-P = 80
-M = 20
-Q = numpy.diag([10000])
-R = numpy.diag([1e-5])
+P = 20
+M = 8
+Q = numpy.diag([1000])
+R = numpy.diag([1])
 
 # Bounds
 u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
@@ -57,11 +57,11 @@ u_step_bounds = [numpy.array([-100, 100])]
 K = controller.SMPC(P, M, Q, R, lin_model, r)
 
 # Controller initial params
-ys = [numpy.array([0.55])]
 us = [numpy.zeros_like(U_op)]
-xs = [numpy.array([0.55, 450])]
+xs = [cstr.X]
+ys = [cstr.outputs(us[-1])]
 
-t_next = dt_control
+t_next = 0
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
@@ -76,10 +76,14 @@ for t in tqdm.tqdm(ts[1:]):
 
 ys = numpy.array(ys)
 us = numpy.array(us)
+xs = numpy.array(xs)
 
-plt.subplot(1, 2, 1)
+plt.subplot(2, 2, 1)
 plt.plot(ts, ys)
 
-plt.subplot(1, 2, 2)
+plt.subplot(2, 2, 2)
+plt.plot(ts, xs[:, 1])
+
+plt.subplot(2, 2, 3)
 plt.plot(ts, us[:, 0])
 plt.show()
