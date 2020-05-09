@@ -80,6 +80,6 @@ class CSTRModel(model.NonlinearModel):
             List of all the outputs from the model
         """
 
-        outs = self.X
+        outs = numpy.array(self.X[0])
         _ = inputs
         return outs.copy()

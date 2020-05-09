@@ -24,9 +24,9 @@ A = numpy.array([[-F/V - k0*numpy.exp(-E/R/T), -k0*numpy.exp(-E/R/T)*Ca*E/R/T**2
 
 B = numpy.array([[0], [1/rho/Cp/V]])
 
-C = numpy.array([[1, 0], [0, 1]])
+C = numpy.array([[1, 0]])
 
-D = numpy.array([[0], [0]])
+D = numpy.array([[0]])
 
 Nx = A.shape[0]
 # We now have a continuous system, let's use the scipy.signal to get the discrete one

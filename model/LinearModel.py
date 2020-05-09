@@ -47,6 +47,7 @@ class LinearModel:
     """
     def __init__(self, A, B, C, D, dt,
                  x_bar, u_bar, f_bar, g_bar):
+        A, B, C, D = [numpy.atleast_2d(m) for m in [A, B, C, D]]
         self.A = A
         self.B = B
         self.C = C
