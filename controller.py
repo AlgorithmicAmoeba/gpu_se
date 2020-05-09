@@ -106,6 +106,8 @@ class SMPC:
         Cd = self.model.C
         Dd = self.model.D
 
+        self.x_predicted = numpy.zeros(Nx)
+
         # Limit constraints
         if y_bounds is None:
             y_min = numpy.full(No, -numpy.inf)
@@ -300,7 +302,7 @@ class SMPC:
         self.upper[:Nx+Ni] = numpy.hstack([mu0, um1])
 
         # Update bias
-        b = y0 - self.model.C @ mu0
+        b = y0 - self.model.C @ self.x_predicted
         n = Nx + Ni + self.P*Nx
         self.lower[n: n + self.P*No] = numpy.tile(-b, self.P)
         self.upper[n: n + self.P*No] = numpy.tile(-b, self.P)
@@ -317,5 +319,7 @@ class SMPC:
         # Apply first control input to the plant
         m = (self.P+1)*Nx + self.P*No + Ni
         ctrl = res.x[m: m + Ni]
+
+        self.x_predicted = mu0 + res.x[Nx:2*Nx]
 
         return ctrl

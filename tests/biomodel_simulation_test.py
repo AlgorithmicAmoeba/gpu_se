@@ -9,7 +9,7 @@ import noise
 end_time = 100
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
-dt_control = 1
+dt_control = 1*dt
 assert dt <= dt_control
 
 # Bioreactor model
@@ -71,10 +71,10 @@ lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e
 r = numpy.array([3, 5]) - Y_op
 
 # Controller parameters
-P = 200
-M = 100
+P = 3
+M = 2
 Q = numpy.diag([1e0, 1e0])
-R = numpy.diag([1e0, 1e0, 1e0])
+R = numpy.diag([1e0, 1e0, 1e0])*0
 
 # Bounds
 # x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
@@ -89,11 +89,19 @@ u_bounds = [numpy.array([0, 1]) - U_op[[inputs[0]]],
 K = controller.SMPC(P, M, Q, R, lin_model, r)
 
 # Controller initial params
-us = [U_op]
-ys = [bioreactor.outputs(us[-1])[outputs]]
-xs = [bioreactor.X[states]]
+# us = [U_op]
+# ys = [bioreactor.outputs(us[-1])[outputs]]
+# xs = [bioreactor.X[states]]
 
-t_next = dt_control
+us = [U_op]
+xs = [bioreactor.X[states]]
+ys = [lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
+      + lin_model.g_bar]
+
+K.x_predicted = xs[-1] - lin_model.x_bar
+
+t_next = 0
+count = 0
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         # For nonlinear model
@@ -111,11 +119,13 @@ for t in tqdm.tqdm(ts[1:]):
     # Linear model
     xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
               + lin_model.x_bar)
+    # Distrubance for linear model
+    if t > 50 and count < 1e5:
+        xs[-1][0] += 0.001
+        count += 1
+
     ys.append(lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
               + lin_model.g_bar)
-    # Distrubance for linear model
-    if t > 50:
-        xs[-1][0] += 0.001
     # Non-linear model
     # bioreactor.step(dt, us[-1])
     # ys.append(bioreactor.outputs(us[-1])[outputs])
