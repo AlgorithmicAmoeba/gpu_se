@@ -78,15 +78,15 @@ R = numpy.diag([1e0, 1e0, 1e0])
 
 # Bounds
 # x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
-u_bounds = [numpy.array([0, 1]) - U_op[[inputs[0]]],
-            numpy.array([0, 1]) - U_op[[inputs[1]]],
-            numpy.array([0, 1]) - U_op[[inputs[2]]]]
+u_bounds = [numpy.array([-0.75, 1]) - U_op[[inputs[0]]],
+            numpy.array([-0.75, 1]) - U_op[[inputs[1]]],
+            numpy.array([-0.75, 1]) - U_op[[inputs[2]]]]
 #
-# u_step_bounds = [numpy.array([0, 1e-4]),
-#                  numpy.array([0, 1e-4]),
-#                  numpy.array([0, 1e-3])]
+u_step_bounds = [numpy.array([-0.1, 0.1]),
+                 numpy.array([-0.1, 0.1]),
+                 numpy.array([-0.1, 0.1])]
 
-K = controller.SMPC(P, M, Q, R, lin_model, r)
+K = controller.SMPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds, u_step_bounds=u_step_bounds)
 
 # Controller initial params
 # Non-linear
