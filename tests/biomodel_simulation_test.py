@@ -39,6 +39,7 @@ Q = 5 / 9
 U_op = numpy.array([Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, F_out, T_amb, Q])
 
 lin_model = model.LinearModel.create_LinearModel(bioreactor, X_op, U_op, dt_control)
+#  Select states, outputs and inputs for MPC
 #        Nfa, Na, Nb, V
 states = [2, 4, 5, 7]
 #     Fa_in, Fb_in, Fm_in
@@ -93,10 +94,13 @@ ys = [bioreactor.outputs(us[-1])[outputs]]
 xs = [bioreactor.X[states]]
 
 t_next = dt_control
-U_temp = U_op.copy()
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
-        du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
+        # For nonlinear model
+        # du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
+        # For linear model
+        U_temp = us[-1].copy()
+        du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
         U_temp[inputs] = U_temp[inputs] + du
         U_temp[-3] = Fg_in + Fn_in + sum(U_temp[inputs])
         us.append(U_temp.copy())
@@ -104,14 +108,18 @@ for t in tqdm.tqdm(ts[1:]):
     else:
         us.append(us[-1])
 
-    # xs.append(lin_model.A @ (xs[-1] - X_op[states]) + lin_model.B @ (us[-1] - U_op)[inputs]
-    # + lin_model.x_bar + lin_model.f_bar)
-    # if t > 50:
-    #     xs[-1][0] += 0.001
-    # ys.append(lin_model.C @ (xs[-1] - X_op[states]) + lin_model.D @ (us[-1] - U_op)[inputs] + lin_model.g_bar)
-    bioreactor.step(dt, us[-1])
-    ys.append(bioreactor.outputs(us[-1])[outputs])
-    xs.append(bioreactor.X)
+    # Linear model
+    xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
+              + lin_model.x_bar)
+    ys.append(lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
+              + lin_model.g_bar)
+    # Distrubance for linear model
+    if t > 50:
+        xs[-1][0] += 0.001
+    # Non-linear model
+    # bioreactor.step(dt, us[-1])
+    # ys.append(bioreactor.outputs(us[-1])[outputs])
+    # xs.append(bioreactor.X)
 
     if t > 90:
         pass
