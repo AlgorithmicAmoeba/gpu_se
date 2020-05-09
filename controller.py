@@ -146,16 +146,16 @@ class SMPC:
         # Init
         A_init = scipy.sparse.vstack([
             scipy.sparse.hstack([
-                -scipy.sparse.eye(Nx),
+                scipy.sparse.eye(Nx),
                 scipy.sparse.csc_matrix((Nx, P*Nx + P*No + (M+1)*Ni))
             ]),
             scipy.sparse.hstack([
                 scipy.sparse.csc_matrix((Ni, (P+1)*Nx + P*No)),
-                -scipy.sparse.eye(Ni),
+                scipy.sparse.eye(Ni),
                 scipy.sparse.csc_matrix((Ni, M*Ni))
             ])
         ])
-        l_init = numpy.hstack([-mu0, -um1])
+        l_init = numpy.hstack([mu0, um1])
         u_init = l_init
 
         # d\mu_{k+1} = A d\mu_k + B du_k
@@ -292,8 +292,8 @@ class SMPC:
         No = self.model.No
 
         # Update initial state
-        self.lower[:Nx+Ni] = numpy.hstack([-mu0, -um1])
-        self.upper[:Nx+Ni] = numpy.hstack([-mu0, -um1])
+        self.lower[:Nx+Ni] = numpy.hstack([mu0, um1])
+        self.upper[:Nx+Ni] = numpy.hstack([mu0, um1])
 
         # Update bias
         b = y0 - self.model.C @ mu0
