@@ -106,7 +106,7 @@ class SMPC:
         Cd = self.model.C
         Dd = self.model.D
 
-        self.x_predicted = numpy.zeros(Nx)
+        self.x_predicted = None
 
         # Limit constraints
         if y_bounds is None:
@@ -301,7 +301,11 @@ class SMPC:
         self.upper[:Nx+Ni] = numpy.hstack([mu0, um1])
 
         # Update bias
-        b = y0 - self.model.C @ self.x_predicted
+        if self.x_predicted is not None:
+            b = y0 - self.model.C @ self.x_predicted
+        else:
+            b = numpy.zeros_like(y0)
+
         n = Nx + Ni + self.P*Nx
         self.lower[n: n + self.P*No] = numpy.tile(-b, self.P)
         self.upper[n: n + self.P*No] = numpy.tile(-b, self.P)

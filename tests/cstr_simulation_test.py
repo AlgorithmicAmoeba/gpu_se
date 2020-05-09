@@ -61,8 +61,6 @@ ys = [numpy.array([0.55])]
 us = [numpy.zeros_like(U_op)]
 xs = [numpy.array([0.55, 450])]
 
-K.x_predicted = xs[-1] - lin_model.x_bar
-
 t_next = dt_control
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
