@@ -25,13 +25,15 @@ x_ss_guess = [0.21, 467.0]
 def f(x_ss):
     temp = cstr.X
     cstr.X = x_ss
-    ans = cstr.DEs(numpy.array([0.0]))
+    ans = cstr.DEs(numpy.array([0.]))
     cstr.X = temp
     return ans
 
 
 X_op = numpy.asarray(scipy.optimize.fsolve(f, numpy.array(x_ss_guess)))
 U_op = numpy.array([0.])
+cstr1 = model.CSTRModel(X_op)
+Y_op = cstr1.outputs(U_op)
 
 lin_model = model.LinearModel.create_LinearModel(cstr, X_op, U_op, dt_control)
 # Noise
@@ -39,37 +41,40 @@ lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[1e-6, 
 lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[1e-3, 0], [0, 10]]))
 
 # set point
-r = X_op - X_op
+r = numpy.array([0])
 
 # Controller parameters
-P = 150
-M = 150
-Q = numpy.array([[10000, 0], [0, 0]])
-R = numpy.eye(1) * 1e-5
-D = numpy.array([[10, 1]])
-e = numpy.array([412])
+P = 80
+M = 20
+Q = numpy.diag([10000])
+R = numpy.diag([1e-5])
 
 # Bounds
-x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
+u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
+#
+u_step_bounds = [numpy.array([-100, 100])]
 
-K = controller.SMPC(P, M, Q, R, D, e, lin_model, r, x_bounds)
+K = controller.SMPC(P, M, Q, R, lin_model, r)
 
 # Controller initial params
-sigma0 = numpy.zeros((2, 2))
-
-ys = [numpy.array([0.55, 450])]
+ys = [numpy.array([0.55])]
 us = [numpy.zeros_like(U_op)]
 xs = [numpy.array([0.55, 450])]
+
+K.x_predicted = xs[-1] - lin_model.x_bar
 
 t_next = dt_control
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
-        us.append(K.step(xs[-1] - X_op, sigma0)+U_op)
+        du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
+        u = us[-1] + du
+        us.append(u)
         t_next += dt_control
     else:
         us.append(us[-1])
-    ys.append(cstr.step(dt, us[-1]))
-    xs.append(ys[-1])
+    cstr.step(dt, us[-1])
+    ys.append(cstr.outputs((us[-1])))
+    xs.append(cstr.X)
 
 ys = numpy.array(ys)
 us = numpy.array(us)
