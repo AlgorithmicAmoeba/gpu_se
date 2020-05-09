@@ -272,7 +272,8 @@ class SMPC:
         u_input_ineq = numpy.kron(numpy.ones(M), u_max)
 
         # OSQP constraints
-        self.A_matrix = scipy.sparse.vstack([A_init, A_state, A_output, A_output_ineq, A_input_steps, A_input_ineq], format='csc')
+        self.A_matrix = scipy.sparse.vstack([A_init, A_state, A_output, A_output_ineq, A_input_steps, A_input_ineq],
+                                            format='csc')
         self.lower = numpy.hstack([l_init, l_state, l_output, l_output_ineq, l_input_steps, l_input_ineq])
         self.upper = numpy.hstack([u_init, u_state, u_output, u_output_ineq, u_input_steps, u_input_ineq])
 
