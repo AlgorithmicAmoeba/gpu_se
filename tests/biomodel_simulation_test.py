@@ -74,7 +74,7 @@ r = numpy.array([3, 5]) - Y_op
 P = 3
 M = 2
 Q = numpy.diag([1e0, 1e0])
-R = numpy.diag([1e0, 1e0, 1e0])*0
+R = numpy.diag([1e0, 1e0, 1e0])
 
 # Bounds
 # x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
@@ -89,10 +89,13 @@ u_bounds = [numpy.array([0, 1]) - U_op[[inputs[0]]],
 K = controller.SMPC(P, M, Q, R, lin_model, r)
 
 # Controller initial params
+# Non-linear
 # us = [U_op]
 # ys = [bioreactor.outputs(us[-1])[outputs]]
-# xs = [bioreactor.X[states]]
+# xs = [bioreactor.X]
+# K.x_predicted = xs[-1][states] - lin_model.x_bar
 
+# Linear
 us = [U_op]
 xs = [bioreactor.X[states]]
 ys = [lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
@@ -104,11 +107,12 @@ t_next = 0
 count = 0
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
+        U_temp = us[-1].copy()
         # For nonlinear model
         # du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
         # For linear model
-        U_temp = us[-1].copy()
         du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
+
         U_temp[inputs] = U_temp[inputs] + du
         U_temp[-3] = Fg_in + Fn_in + sum(U_temp[inputs])
         us.append(U_temp.copy())
@@ -119,8 +123,8 @@ for t in tqdm.tqdm(ts[1:]):
     # Linear model
     xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
               + lin_model.x_bar)
-    # Distrubance for linear model
-    if t > 50 and count < 1e5:
+
+    if t > 50 and count < 1e5: # Distrubance for linear model
         xs[-1][0] += 0.001
         count += 1
 
