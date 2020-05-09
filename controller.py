@@ -263,7 +263,10 @@ class SMPC:
         A_input_ineq = scipy.sparse.hstack([
             scipy.sparse.csc_matrix((M*Ni, (P+1)*Nx + P*No)),
             scipy.sparse.csc_matrix(numpy.ones((M*Ni, Ni))),
-            scipy.sparse.csc_matrix(numpy.tril(numpy.ones((M*Ni, M*Ni))))
+            scipy.sparse.kron(
+                scipy.sparse.csc_matrix(numpy.tril(numpy.ones((M, M)))),
+                numpy.eye(Ni)
+            )
         ])
         l_input_ineq = numpy.kron(numpy.ones(M), u_min)
         u_input_ineq = numpy.kron(numpy.ones(M), u_max)
