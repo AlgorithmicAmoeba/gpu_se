@@ -154,7 +154,7 @@ class SMPC:
             scipy.sparse.hstack([
                 scipy.sparse.csc_matrix((Ni, (P+1)*Nx + P*No)),
                 -scipy.sparse.eye(Ni),
-                scipy.sparse.csc_matrix((Ni, (M+1)*Ni))
+                scipy.sparse.csc_matrix((Ni, M*Ni))
             ])
         ])
         l_init = numpy.hstack([-mu0, -um1])
@@ -218,14 +218,14 @@ class SMPC:
                         numpy.ones(2),
                         Dd
                     ),
-                    scipy.sparse.csc_matrix(((M - 1) * No, Ni))
+                    scipy.sparse.csc_matrix(((M - 2) * No, 2*Ni))
                 ]),
                 scipy.sparse.kron(
                     scipy.sparse.eye(M-1),
                     Dd
                 )
             ]),
-            scipy.sparse.csc_matrix(((P - M) * No, (M + 1) * Ni))
+            scipy.sparse.csc_matrix(((P - M + 1) * No, (M + 1) * Ni))
         ])
 
         A_output = scipy.sparse.hstack([
