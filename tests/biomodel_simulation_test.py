@@ -105,6 +105,7 @@ K.x_predicted = xs[-1] - lin_model.x_bar
 
 t_next = 0
 count = 0
+not_done = True
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         U_temp = us[-1].copy()
@@ -127,6 +128,10 @@ for t in tqdm.tqdm(ts[1:]):
     if t > 50 and count < 1e5: # Distrubance for linear model
         xs[-1][0] += 0.001
         count += 1
+
+    if t > 25 and not_done:
+        lin_model.A *= 0.9
+        not_done = False
 
     ys.append(lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
               + lin_model.g_bar)
