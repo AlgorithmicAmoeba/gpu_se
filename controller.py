@@ -334,17 +334,18 @@ class SMPC:
 
 
 class LQR:
-    def __init__(self, P, Q, R):
+    def __init__(self, P, Q, R, lin_model):
         self.P = P
         self.Q = Q
         self.R = R
+        self.model = lin_model
 
-    def mpc_lqr(self, x0, um1, lin_model, ysp, usp):
+    def mpc_lqr(self, x0, um1, ysp, usp):
         """return the MPC control input using a linear system"""
 
         P = self.P
-        Nx, Ni = lin_model.B.shape
-        No, _ = lin_model.C.shape
+        Nx, Ni = self.model.B.shape
+        No, _ = self.model.C.shape
 
         H = scipy.sparse.block_diag([
             scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
@@ -371,10 +372,10 @@ class LQR:
 
         # Handling of mu_(k+1) = A @ mu_k + B @ u_k
         temp1 = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
-        temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), lin_model.A)
+        temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), self.model.A)
         A_matrix = temp1 + temp2
 
-        temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), lin_model.B)])
+        temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), self.model.B)])
         temp2 = scipy.sparse.hstack([
             scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
             temp1,
@@ -387,10 +388,10 @@ class LQR:
 
         # Handling of y_k = C @ mu_k + D u_k
         temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, Nx)),
-                                     scipy.sparse.kron(scipy.sparse.eye(P), lin_model.C)])
+                                     scipy.sparse.kron(scipy.sparse.eye(P), self.model.C)])
         temp2 = -scipy.sparse.eye(P * No)
         temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, 2 * Ni)),
-                                     scipy.sparse.kron(scipy.sparse.eye(P), lin_model.D)])
+                                     scipy.sparse.kron(scipy.sparse.eye(P), self.model.D)])
         temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
         A_matrix = scipy.sparse.vstack([A_matrix, temp4])
 
