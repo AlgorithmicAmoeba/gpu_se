@@ -396,10 +396,13 @@ class LQR:
 
         self.b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
 
-        n = max(self.q.shape)
-        self.x = cvxpy.Variable(n)
+        # Create an OSQP object
+        self.prob = osqp.OSQP()
 
-        self.objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(self.x, self.H) + self.q * self.x)
+        # Setup workspace
+        self.H = scipy.sparse.csc_matrix(self.H)
+        self.A_matrix = scipy.sparse.csc_matrix(self.A_matrix)
+        self.prob.setup(self.H, self.q, self.A_matrix, self.b_matrix, self.b_matrix, verbose=False)
 
     def mpc_lqr(self, x0, um1):
         """return the MPC control input using a linear system"""
@@ -411,15 +414,17 @@ class LQR:
         self.b_matrix[:Ni] = um1
         self.b_matrix[Ni:Ni+Nx] = -x0
 
-        constraints = [self.A_matrix * self.x == self.b_matrix]
+        self.prob.update(l=self.b_matrix, u=self.b_matrix)
 
-        prob = cvxpy.Problem(self.objective, constraints)
-        prob.solve(solver='OSQP')
-        if not prob.status.startswith("optimal"):
-            print(prob.status)
-            print(prob.is_qp())
-            return None
+        # Solve
+        res = self.prob.solve()
 
-        ctrl = self.x.value[(P + 1) * Nx + P * No + Ni: (P + 1) * Nx + P * No + 2 * Ni]
+        # Check solver status
+        if res.info.status_val not in [1]:
+            raise ValueError(f'OSQP did not solve the problem! Status: {res.info.status}')
+
+        # Apply first control input to the plant
+        m = (self.P + 1) * Nx + self.P * No + Ni
+        ctrl = res.x[m: m + Ni]
 
         return ctrl
