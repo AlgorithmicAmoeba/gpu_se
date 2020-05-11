@@ -370,8 +370,9 @@ class LQR:
         l_um1_init = um1
 
         # Handling of mu_(k+1) = A @ mu_k + B @ u_k
-        A_state_x = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
+        A_state_x = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx), format='csc')
         A_state_x += scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), self.model.A)
+        A_state_x[Nx:2*Nx, :Nx] -= scipy.sparse.eye(Nx)
 
         A_state_u = scipy.sparse.hstack([
             scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
@@ -380,7 +381,9 @@ class LQR:
                 scipy.sparse.kron(scipy.sparse.eye(P), self.model.B)
             ]),
             scipy.sparse.csc_matrix(((P + 1) * Nx, Ni))
-        ])
+        ], format='csc')
+        A_state_u[Nx:2*Nx, :Ni] += self.model.B
+
         A_state = scipy.sparse.hstack([
             A_state_x,
             scipy.sparse.csc_matrix(((P + 1) * Nx, P * No)),
@@ -393,12 +396,17 @@ class LQR:
         A_output_x = scipy.sparse.hstack([
             scipy.sparse.csc_matrix((P * No, Nx)),
             scipy.sparse.kron(scipy.sparse.eye(P), self.model.C)
-        ])
-        A_output_y = -scipy.sparse.eye(P * No)
+        ], format='csc')
+        A_output_x[:No, :Nx] += self.model.C
+
+        A_output_y = -scipy.sparse.eye(P * No) + scipy.sparse.eye(P * No, k=-No)
+
         A_output_u = scipy.sparse.hstack([
             scipy.sparse.csc_matrix((P * No, 2 * Ni)),
             scipy.sparse.kron(scipy.sparse.eye(P), self.model.D)
-        ])
+        ], format='csc')
+        A_output_u[:No, :2*Ni] += scipy.sparse.kron(numpy.ones(2), self.model.D)
+
         A_output = scipy.sparse.hstack([A_output_x, A_output_y, A_output_u])
 
         b_output = numpy.zeros(P * No)
@@ -438,6 +446,6 @@ class LQR:
 
         # Apply first control input to the plant
         m = (self.P + 1) * Nx + self.P * No + Ni
-        ctrl = res.x[m: m + Ni]
+        ctrl = res.x[m: m + Ni] + um1
 
         return ctrl
