@@ -386,9 +386,11 @@ class LQR:
             A_state_u
         ])
 
+        b_state = numpy.hstack([-x0, numpy.zeros(P * Nx)])
+
         A_matrix = scipy.sparse.vstack([A_um1_init, A_state])
 
-        b_matrix = numpy.hstack([l_um1_init, -x0, numpy.zeros(P * Nx)])
+        b_matrix = numpy.hstack([l_um1_init, b_state])
 
         # Handling of y_k = C @ mu_k + D u_k
         temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, Nx)),
