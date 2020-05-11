@@ -396,6 +396,11 @@ class LQR:
 
         self.b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
 
+        n = max(self.q.shape)
+        self.x = cvxpy.Variable(n)
+
+        self.objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(self.x, self.H) + self.q * self.x)
+
     def mpc_lqr(self, x0, um1):
         """return the MPC control input using a linear system"""
 
@@ -407,16 +412,14 @@ class LQR:
         self.b_matrix[Ni:Ni+Nx] = -x0
 
         n = max(self.q.shape)
-        x = cvxpy.Variable(n)
-        objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, self.H) + self.q * x)
-        constraints = [self.A_matrix * x == self.b_matrix]
+        constraints = [self.A_matrix * self.x == self.b_matrix]
 
-        prob = cvxpy.Problem(objective, constraints)
+        prob = cvxpy.Problem(self.objective, constraints)
         prob.solve(solver='OSQP')
         if not prob.status.startswith("optimal"):
             print(prob.status)
             print(prob.is_qp())
             return None
-        res = numpy.array(x.value).reshape((n,))
+        res = numpy.array(self.x.value).reshape((n,))
 
         return res[(P + 1) * Nx + P * No + Ni: (P + 1) * Nx + P * No + 2 * Ni]
