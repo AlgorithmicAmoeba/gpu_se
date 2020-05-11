@@ -110,7 +110,7 @@ for t in tqdm.tqdm(ts[1:]):
         U_temp = us[-1].copy()
         # For nonlinear model
         # du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
-        u = LQR.mpc_lqr(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar)
+        u = LQR.mpc_lqr(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
         # For linear model
         # du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
         # u = controller.mpc_lqr(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, P, lin_model, Q, R, r, lin_model.u_bar)

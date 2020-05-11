@@ -8,8 +8,8 @@ import scipy.optimize
 import scipy.signal
 
 # Simulation set-up
-end_time = 80
-ts = numpy.linspace(0, end_time, end_time*11)
+end_time = 200
+ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 dt_control = 1
 assert dt <= dt_control
@@ -46,7 +46,7 @@ r = numpy.array([0])
 # Controller parameters
 P = 150
 M = 150
-Q = numpy.diag([1e4])
+Q = numpy.diag([1e3])
 R = numpy.diag([1e-5])
 
 # Bounds
@@ -67,7 +67,7 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         # du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
         # u = us[-1] + du
-        u = LQR.mpc_lqr(xs[-1]-X_op, us[-1] - U_op)
+        u = LQR.mpc_lqr(xs[-1]-X_op, us[-1] - U_op, ys[-1] - Y_op)
         us.append(u)
         t_next += dt_control
     else:
@@ -82,6 +82,7 @@ xs = numpy.array(xs)
 
 plt.subplot(2, 2, 1)
 plt.plot(ts, ys)
+plt.axhline(Y_op, color='r')
 
 plt.subplot(2, 2, 2)
 plt.plot(ts, xs[:, 1])

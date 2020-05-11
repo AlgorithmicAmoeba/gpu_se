@@ -414,7 +414,7 @@ class LQR:
         self.A_matrix = scipy.sparse.csc_matrix(self.A_matrix)
         self.prob.setup(self.H, self.q, self.A_matrix, self.b_matrix, self.b_matrix, verbose=False)
 
-    def mpc_lqr(self, x0, um1):
+    def mpc_lqr(self, x0, um1, y0):
         """return the MPC control input using a linear system"""
 
         Nx, Ni = self.model.B.shape
@@ -422,6 +422,10 @@ class LQR:
 
         self.b_matrix[:Ni] = um1
         self.b_matrix[Ni:Ni+Nx] = -x0
+
+        bias = y0 - self.model.C @ x0
+
+        self.b_matrix[Ni + (self.P+1)*Nx:] = numpy.tile(-bias, self.P)
 
         self.prob.update(l=self.b_matrix, u=self.b_matrix)
 
