@@ -411,7 +411,6 @@ class LQR:
         self.b_matrix[:Ni] = um1
         self.b_matrix[Ni:Ni+Nx] = -x0
 
-        n = max(self.q.shape)
         constraints = [self.A_matrix * self.x == self.b_matrix]
 
         prob = cvxpy.Problem(self.objective, constraints)
