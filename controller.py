@@ -339,11 +339,17 @@ def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
     B = B.T
     nx, nu = B.shape
 
-    P = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N+1), QQ),
-                                 scipy.sparse.kron(scipy.sparse.eye(N), RR)])
+    P = scipy.sparse.block_diag([
+        scipy.sparse.csc_matrix((nx, nx)),
+        scipy.sparse.kron(scipy.sparse.eye(N), QQ),
+        scipy.sparse.kron(scipy.sparse.eye(N), RR)
+    ])
 
-    q = numpy.hstack([numpy.kron(numpy.ones(N+1), -QQ @ ysp),
-                      numpy.kron(numpy.ones(N), -RR @ usp)])
+    q = numpy.hstack([
+        numpy.zeros(nx),
+        numpy.kron(numpy.ones(N), -QQ @ ysp),
+        numpy.kron(numpy.ones(N), -RR @ usp)
+    ])
 
     # Handling of mu_(k+1) = A @ mu_k + B @ u_k
     temp1 = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N + 1), -numpy.eye(nx))])
