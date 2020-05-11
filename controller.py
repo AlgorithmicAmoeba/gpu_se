@@ -360,7 +360,7 @@ class LQR:
             numpy.kron(numpy.ones(P + 1), -self.R @ usp)
         ])
 
-        # Handeling of initial condition um1
+        # Handling of initial condition um1
         A_um1_init = scipy.sparse.hstack([
             scipy.sparse.csc_matrix((Ni, (P + 1) * Nx + P * No)),
             scipy.sparse.eye(Ni),
@@ -370,18 +370,23 @@ class LQR:
         l_um1_init = um1
 
         # Handling of mu_(k+1) = A @ mu_k + B @ u_k
-        temp1 = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
-        temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), self.model.A)
-        A_matrix = temp1 + temp2
+        A_state_x = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
+        A_state_x += scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), self.model.A)
 
-        temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), self.model.B)])
-        temp2 = scipy.sparse.hstack([
+        A_state_u = scipy.sparse.hstack([
             scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
-            temp1,
+            scipy.sparse.vstack([
+                numpy.zeros([Nx, P * Ni]),
+                scipy.sparse.kron(scipy.sparse.eye(P), self.model.B)
+            ]),
             scipy.sparse.csc_matrix(((P + 1) * Nx, Ni))])
-        A_matrix = scipy.sparse.hstack([A_matrix, scipy.sparse.csc_matrix(((P + 1) * Nx, P * No)), temp2])
+        A_state = scipy.sparse.hstack([
+            A_state_x,
+            scipy.sparse.csc_matrix(((P + 1) * Nx, P * No)),
+            A_state_u
+        ])
 
-        A_matrix = scipy.sparse.vstack([A_um1_init, A_matrix])
+        A_matrix = scipy.sparse.vstack([A_um1_init, A_state])
 
         b_matrix = numpy.hstack([l_um1_init, -x0, numpy.zeros(P * Nx)])
 
