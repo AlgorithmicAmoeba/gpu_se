@@ -4,6 +4,7 @@ import scipy.stats
 import scipy.optimize
 import model
 import osqp
+import cvxpy
 
 
 class SMPC:
@@ -286,7 +287,7 @@ class SMPC:
         # Setup workspace
         self.prob.setup(H, qT, self.A_matrix, self.lower, self.upper, warm_start=True,
                         verbose=False, eps_abs=1e-10, eps_rel=1e-5, eps_prim_inf=1e-10,
-                        max_iter=100000)
+                        max_iter=100000, polish=True)
 
     def step(self, mu0, um1, y0):
         # Added due to OSQP bug
@@ -326,3 +327,43 @@ class SMPC:
         self.x_predicted = mu0 + res.x[Nx:2*Nx]
 
         return ctrl
+
+
+def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
+    """return the MPC control input using a linear system"""
+
+    B = B.T
+    nx, nu = B.shape
+    QN = QQ
+
+    P = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N), QQ), QN,
+                                 scipy.sparse.kron(scipy.sparse.eye(N), RR)])
+
+    q = numpy.hstack([numpy.kron(numpy.ones(N), -QQ @ ysp), -QN @ ysp,
+                      numpy.kron(numpy.ones(N), -RR @ usp)])
+
+    # Handling of mu_(k+1) = A @ mu_k + B @ u_k
+    temp1 = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N + 1), -numpy.eye(nx))])
+    temp2 = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N + 1, k=-1), A)])
+    AA = temp1 + temp2
+
+    temp1 = scipy.sparse.vstack([numpy.zeros([nx, N * nu]), scipy.sparse.kron(scipy.sparse.eye(N), B)])
+    AA = scipy.sparse.hstack([AA, temp1])
+
+    bb = numpy.hstack([-x0, numpy.zeros(N * nx)])
+
+    n = max(q.shape)
+    x = cvxpy.Variable(n)
+    P = cvxpy.Constant(P)
+    objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, P) + q * x)
+    constraints = [AA * x == bb]
+
+    prob = cvxpy.Problem(objective, constraints)
+    prob.solve(solver='OSQP')
+    if not prob.status.startswith("optimal"):
+        print(prob.status)
+        print(prob.is_qp())
+        return None
+    res = numpy.array(x.value).reshape((n,))
+
+    return res[(N + 1) * nx: (N + 1) * nx + nu]
