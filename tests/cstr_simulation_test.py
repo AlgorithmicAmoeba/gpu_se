@@ -55,7 +55,7 @@ u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
 u_step_bounds = [numpy.array([-100, 100])]
 
 K = controller.SMPC(P, M, Q, R, lin_model, r)
-LQR = controller.LQR(P, Q, R, lin_model)
+LQR = controller.LQR(P, Q, R, lin_model, r, U_op)
 
 # Controller initial params
 us = [numpy.zeros_like(U_op)]

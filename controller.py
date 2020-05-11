@@ -334,7 +334,7 @@ class SMPC:
 
 
 class LQR:
-    def __init__(self, P, Q, R, lin_model):
+    def __init__(self, P, Q, R, lin_model, ysp, usp):
         self.P = P
         self.Q = Q
         self.R = R
@@ -350,19 +350,19 @@ class LQR:
             scipy.sparse.kron(scipy.sparse.eye(P + 1), self.R)
         ])
 
+        self.q = numpy.hstack([
+            numpy.zeros((P + 1) * Nx),
+            numpy.kron(numpy.ones(P), -self.Q @ ysp),
+            numpy.zeros(Ni),
+            numpy.kron(numpy.ones(P + 1), -self.R @ usp)
+        ])
+
     def mpc_lqr(self, x0, um1, ysp, usp):
         """return the MPC control input using a linear system"""
 
         P = self.P
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
-
-        q = numpy.hstack([
-            numpy.zeros((P + 1) * Nx),
-            numpy.kron(numpy.ones(P), -self.Q @ ysp),
-            numpy.zeros(Ni),
-            numpy.kron(numpy.ones(P + 1), -self.R @ usp)
-        ])
 
         # Handeling of initial condition um1
         A_um1_init = scipy.sparse.hstack([
@@ -400,9 +400,9 @@ class LQR:
 
         b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
 
-        n = max(q.shape)
+        n = max(self.q.shape)
         x = cvxpy.Variable(n)
-        objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, self.H) + q * x)
+        objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, self.H) + self.q * x)
         constraints = [A_matrix * x == b_matrix]
 
         prob = cvxpy.Problem(objective, constraints)
