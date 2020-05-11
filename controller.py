@@ -334,9 +334,13 @@ class SMPC:
 
 
 class LQR:
-    def mpc_lqr(self, x0, um1, P, lin_model, Q, R, ysp, usp):
+    def __init__(self, P):
+        self.P = P
+
+    def mpc_lqr(self, x0, um1, lin_model, Q, R, ysp, usp):
         """return the MPC control input using a linear system"""
 
+        P = self.P
         Nx, Ni = lin_model.B.shape
         No, _ = lin_model.C.shape
 

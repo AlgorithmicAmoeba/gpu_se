@@ -55,7 +55,7 @@ u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
 u_step_bounds = [numpy.array([-100, 100])]
 
 K = controller.SMPC(P, M, Q, R, lin_model, r)
-LQR = controller.LQR()
+LQR = controller.LQR(P)
 
 # Controller initial params
 us = [numpy.zeros_like(U_op)]
@@ -67,7 +67,7 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         # du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
         # u = us[-1] + du
-        u = LQR.mpc_lqr(xs[-1]-X_op, us[-1] - U_op, P, lin_model, Q, R, r, U_op)
+        u = LQR.mpc_lqr(xs[-1]-X_op, us[-1] - U_op, lin_model, Q, R, r, U_op)
         us.append(u)
         t_next += dt_control
     else:
