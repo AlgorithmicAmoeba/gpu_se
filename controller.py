@@ -340,19 +340,22 @@ class LQR:
         self.R = R
         self.model = lin_model
 
+        Nx, Ni = self.model.B.shape
+        No, _ = self.model.C.shape
+
+        self.H = scipy.sparse.block_diag([
+            scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
+            scipy.sparse.kron(scipy.sparse.eye(P), self.Q),
+            scipy.sparse.csc_matrix((Ni, Ni)),
+            scipy.sparse.kron(scipy.sparse.eye(P + 1), self.R)
+        ])
+
     def mpc_lqr(self, x0, um1, ysp, usp):
         """return the MPC control input using a linear system"""
 
         P = self.P
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
-
-        H = scipy.sparse.block_diag([
-            scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
-            scipy.sparse.kron(scipy.sparse.eye(P), self.Q),
-            scipy.sparse.csc_matrix((Ni, Ni)),
-            scipy.sparse.kron(scipy.sparse.eye(P + 1), self.R)
-        ])
 
         q = numpy.hstack([
             numpy.zeros((P + 1) * Nx),
@@ -399,7 +402,7 @@ class LQR:
 
         n = max(q.shape)
         x = cvxpy.Variable(n)
-        H = cvxpy.Constant(H)
+        H = cvxpy.Constant(self.H)
         objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, H) + q * x)
         constraints = [A_matrix * x == b_matrix]
 
