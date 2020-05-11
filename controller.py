@@ -336,7 +336,6 @@ class SMPC:
 def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
     """return the MPC control input using a linear system"""
 
-    B = B.T
     nx, nu = B.shape
 
     P = scipy.sparse.block_diag([
