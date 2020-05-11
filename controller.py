@@ -334,10 +334,12 @@ class SMPC:
 
 
 class LQR:
-    def __init__(self, P):
+    def __init__(self, P, Q, R):
         self.P = P
+        self.Q = Q
+        self.R = R
 
-    def mpc_lqr(self, x0, um1, lin_model, Q, R, ysp, usp):
+    def mpc_lqr(self, x0, um1, lin_model, ysp, usp):
         """return the MPC control input using a linear system"""
 
         P = self.P
@@ -346,16 +348,16 @@ class LQR:
 
         H = scipy.sparse.block_diag([
             scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
-            scipy.sparse.kron(scipy.sparse.eye(P), Q),
+            scipy.sparse.kron(scipy.sparse.eye(P), self.Q),
             scipy.sparse.csc_matrix((Ni, Ni)),
-            scipy.sparse.kron(scipy.sparse.eye(P + 1), R)
+            scipy.sparse.kron(scipy.sparse.eye(P + 1), self.R)
         ])
 
         q = numpy.hstack([
             numpy.zeros((P + 1) * Nx),
-            numpy.kron(numpy.ones(P), -Q @ ysp),
+            numpy.kron(numpy.ones(P), -self.Q @ ysp),
             numpy.zeros(Ni),
-            numpy.kron(numpy.ones(P + 1), -R @ usp)
+            numpy.kron(numpy.ones(P + 1), -self.R @ usp)
         ])
 
         # Handeling of initial condition um1
