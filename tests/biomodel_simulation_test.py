@@ -9,7 +9,7 @@ import noise
 end_time = 100
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
-dt_control = 1*dt
+dt_control = 1
 assert dt <= dt_control
 
 # Bioreactor model
@@ -73,7 +73,7 @@ r = numpy.array([3, 5]) - Y_op
 # Controller parameters
 P = 3
 M = 2
-Q = numpy.diag([1e0, 1e0])
+Q = numpy.diag([1e3, 1e3])
 R = numpy.diag([1e0, 1e0, 1e0])
 
 # Bounds
@@ -90,16 +90,16 @@ K = controller.SMPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds, u_step_bounds=u
 
 # Controller initial params
 # Non-linear
-# us = [U_op]
-# ys = [bioreactor.outputs(us[-1])[outputs]]
-# xs = [bioreactor.X]
-# K.x_predicted = xs[-1][states] - lin_model.x_bar
+us = [U_op]
+ys = [bioreactor.outputs(us[-1])[outputs]]
+xs = [bioreactor.X]
+K.x_predicted = xs[-1][states] - lin_model.x_bar
 
 # Linear
-us = [U_op]
-xs = [bioreactor.X[states]]
-ys = [lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
-      + lin_model.g_bar]
+# us = [U_op]
+# xs = [bioreactor.X[states]]
+# ys = [lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
+#       + lin_model.g_bar]
 
 t_next = 0
 count = 0
@@ -109,10 +109,14 @@ for t in tqdm.tqdm(ts[1:]):
         U_temp = us[-1].copy()
         # For nonlinear model
         # du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
+        u = controller.mpc_lqr(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, P, lin_model, Q, R,
+                               r, lin_model.u_bar)
         # For linear model
-        du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
+        # du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
+        # u = controller.mpc_lqr(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, P, lin_model, Q, R, r, lin_model.u_bar)
 
-        U_temp[inputs] = U_temp[inputs] + du
+        # U_temp[inputs] = U_temp[inputs] + du
+        U_temp[inputs] = u
         U_temp[-3] = Fg_in + Fn_in + sum(U_temp[inputs])
         us.append(U_temp.copy())
         t_next += dt_control
@@ -120,23 +124,23 @@ for t in tqdm.tqdm(ts[1:]):
         us.append(us[-1])
 
     # Linear model
-    xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
-              + lin_model.x_bar)
-
-    if t > 50 and count < 1e5:  # Disturbance for linear model
-        xs[-1][0] += 0.001
-        count += 1
-
-    if t > 25 and not_done:
-        lin_model.A *= 0.9
-        not_done = False
-
-    ys.append(lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
-              + lin_model.g_bar)
+    # xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
+    #           + lin_model.x_bar)
+    #
+    # if t > 50 and count < 1e5:  # Disturbance for linear model
+    #     xs[-1][0] += 0.001
+    #     count += 1
+    #
+    # if t > 25 and not_done:
+    #     lin_model.A *= 0.9
+    #     not_done = False
+    #
+    # ys.append(lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
+    #           + lin_model.g_bar)
     # Non-linear model
-    # bioreactor.step(dt, us[-1])
-    # ys.append(bioreactor.outputs(us[-1])[outputs])
-    # xs.append(bioreactor.X)
+    bioreactor.step(dt, us[-1])
+    ys.append(bioreactor.outputs(us[-1])[outputs])
+    xs.append(bioreactor.X)
 
     if t > 90:
         pass
