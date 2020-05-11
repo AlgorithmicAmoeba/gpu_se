@@ -402,8 +402,7 @@ class LQR:
 
         n = max(q.shape)
         x = cvxpy.Variable(n)
-        H = cvxpy.Constant(self.H)
-        objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, H) + q * x)
+        objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, self.H) + q * x)
         constraints = [A_matrix * x == b_matrix]
 
         prob = cvxpy.Problem(objective, constraints)
