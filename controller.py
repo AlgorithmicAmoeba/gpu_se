@@ -351,8 +351,8 @@ def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
     ])
 
     # Handling of mu_(k+1) = A @ mu_k + B @ u_k
-    temp1 = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N + 1), -numpy.eye(nx))])
-    temp2 = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N + 1, k=-1), A)])
+    temp1 = scipy.sparse.kron(scipy.sparse.eye(N + 1), -numpy.eye(nx))
+    temp2 = scipy.sparse.kron(scipy.sparse.eye(N + 1, k=-1), A)
     AA = temp1 + temp2
 
     temp1 = scipy.sparse.vstack([numpy.zeros([nx, N * nu]), scipy.sparse.kron(scipy.sparse.eye(N), B)])
