@@ -343,6 +343,9 @@ class LQR:
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
 
+        x0 = numpy.zeros(Nx)
+        um1 = numpy.zeros(Ni)
+
         self.H = scipy.sparse.block_diag([
             scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
             scipy.sparse.kron(scipy.sparse.eye(P), self.Q),
@@ -356,13 +359,6 @@ class LQR:
             numpy.zeros(Ni),
             numpy.kron(numpy.ones(P + 1), -self.R @ usp)
         ])
-
-    def mpc_lqr(self, x0, um1, ysp, usp):
-        """return the MPC control input using a linear system"""
-
-        P = self.P
-        Nx, Ni = self.model.B.shape
-        No, _ = self.model.C.shape
 
         # Handeling of initial condition um1
         A_um1_init = scipy.sparse.hstack([
@@ -396,14 +392,24 @@ class LQR:
         temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, 2 * Ni)),
                                      scipy.sparse.kron(scipy.sparse.eye(P), self.model.D)])
         temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
-        A_matrix = scipy.sparse.vstack([A_matrix, temp4])
+        self.A_matrix = scipy.sparse.vstack([A_matrix, temp4])
 
-        b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
+        self.b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
+
+    def mpc_lqr(self, x0, um1):
+        """return the MPC control input using a linear system"""
+
+        P = self.P
+        Nx, Ni = self.model.B.shape
+        No, _ = self.model.C.shape
+
+        self.b_matrix[:Ni] = um1
+        self.b_matrix[Ni:Ni+Nx] = -x0
 
         n = max(self.q.shape)
         x = cvxpy.Variable(n)
         objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, self.H) + self.q * x)
-        constraints = [A_matrix * x == b_matrix]
+        constraints = [self.A_matrix * x == self.b_matrix]
 
         prob = cvxpy.Problem(objective, constraints)
         prob.solve(solver='OSQP')
