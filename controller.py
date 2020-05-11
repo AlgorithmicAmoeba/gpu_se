@@ -353,6 +353,15 @@ def mpc_lqr(x0, um1, N, A, B, C, D, QQ, RR, ysp, usp):
         numpy.kron(numpy.ones(N+1), -RR @ usp)
     ])
 
+    # Handeling of initial condition um1
+    A_um1_init = scipy.sparse.hstack([
+        scipy.sparse.csc_matrix((nu, (N+1)*nx + N*no)),
+        scipy.sparse.eye(nu),
+        scipy.sparse.csc_matrix((nu, (N+1) * nu))
+    ])
+
+    l_um1_init = um1
+
     # Handling of mu_(k+1) = A @ mu_k + B @ u_k
     temp1 = scipy.sparse.kron(scipy.sparse.eye(N + 1), -numpy.eye(nx))
     temp2 = scipy.sparse.kron(scipy.sparse.eye(N + 1, k=-1), A)
@@ -365,7 +374,9 @@ def mpc_lqr(x0, um1, N, A, B, C, D, QQ, RR, ysp, usp):
         scipy.sparse.csc_matrix(((N+1)*nx, nu))])
     AA = scipy.sparse.hstack([AA, scipy.sparse.csc_matrix(((N+1)*nx, N*no)), temp2])
 
-    bb = numpy.hstack([-x0, numpy.zeros(N * nx)])
+    AA = scipy.sparse.vstack([A_um1_init, AA])
+
+    bb = numpy.hstack([l_um1_init, -x0, numpy.zeros(N * nx)])
 
     # Handling of y_k = C @ mu_k + D u_k
     temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((N*no, nx)),
