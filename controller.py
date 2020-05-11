@@ -333,74 +333,75 @@ class SMPC:
         return ctrl
 
 
-def mpc_lqr(x0, um1, P, lin_model, Q, R, ysp, usp):
-    """return the MPC control input using a linear system"""
+class LQR:
+    def mpc_lqr(self, x0, um1, P, lin_model, Q, R, ysp, usp):
+        """return the MPC control input using a linear system"""
 
-    Nx, Ni = lin_model.B.shape
-    No, _ = lin_model.C.shape
+        Nx, Ni = lin_model.B.shape
+        No, _ = lin_model.C.shape
 
-    H = scipy.sparse.block_diag([
-        scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
-        scipy.sparse.kron(scipy.sparse.eye(P), Q),
-        scipy.sparse.csc_matrix((Ni, Ni)),
-        scipy.sparse.kron(scipy.sparse.eye(P + 1), R)
-    ])
+        H = scipy.sparse.block_diag([
+            scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
+            scipy.sparse.kron(scipy.sparse.eye(P), Q),
+            scipy.sparse.csc_matrix((Ni, Ni)),
+            scipy.sparse.kron(scipy.sparse.eye(P + 1), R)
+        ])
 
-    q = numpy.hstack([
-        numpy.zeros((P + 1) * Nx),
-        numpy.kron(numpy.ones(P), -Q @ ysp),
-        numpy.zeros(Ni),
-        numpy.kron(numpy.ones(P + 1), -R @ usp)
-    ])
+        q = numpy.hstack([
+            numpy.zeros((P + 1) * Nx),
+            numpy.kron(numpy.ones(P), -Q @ ysp),
+            numpy.zeros(Ni),
+            numpy.kron(numpy.ones(P + 1), -R @ usp)
+        ])
 
-    # Handeling of initial condition um1
-    A_um1_init = scipy.sparse.hstack([
-        scipy.sparse.csc_matrix((Ni, (P + 1) * Nx + P * No)),
-        scipy.sparse.eye(Ni),
-        scipy.sparse.csc_matrix((Ni, (P + 1) * Ni))
-    ])
+        # Handeling of initial condition um1
+        A_um1_init = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((Ni, (P + 1) * Nx + P * No)),
+            scipy.sparse.eye(Ni),
+            scipy.sparse.csc_matrix((Ni, (P + 1) * Ni))
+        ])
 
-    l_um1_init = um1
+        l_um1_init = um1
 
-    # Handling of mu_(k+1) = A @ mu_k + B @ u_k
-    temp1 = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
-    temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), lin_model.A)
-    A_matrix = temp1 + temp2
+        # Handling of mu_(k+1) = A @ mu_k + B @ u_k
+        temp1 = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
+        temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), lin_model.A)
+        A_matrix = temp1 + temp2
 
-    temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), lin_model.B)])
-    temp2 = scipy.sparse.hstack([
-        scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
-        temp1,
-        scipy.sparse.csc_matrix(((P + 1) * Nx, Ni))])
-    A_matrix = scipy.sparse.hstack([A_matrix, scipy.sparse.csc_matrix(((P + 1) * Nx, P * No)), temp2])
+        temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), lin_model.B)])
+        temp2 = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
+            temp1,
+            scipy.sparse.csc_matrix(((P + 1) * Nx, Ni))])
+        A_matrix = scipy.sparse.hstack([A_matrix, scipy.sparse.csc_matrix(((P + 1) * Nx, P * No)), temp2])
 
-    A_matrix = scipy.sparse.vstack([A_um1_init, A_matrix])
+        A_matrix = scipy.sparse.vstack([A_um1_init, A_matrix])
 
-    b_matrix = numpy.hstack([l_um1_init, -x0, numpy.zeros(P * Nx)])
+        b_matrix = numpy.hstack([l_um1_init, -x0, numpy.zeros(P * Nx)])
 
-    # Handling of y_k = C @ mu_k + D u_k
-    temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, Nx)),
-                                 scipy.sparse.kron(scipy.sparse.eye(P), lin_model.C)])
-    temp2 = -scipy.sparse.eye(P * No)
-    temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, 2 * Ni)),
-                                 scipy.sparse.kron(scipy.sparse.eye(P), lin_model.D)])
-    temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
-    A_matrix = scipy.sparse.vstack([A_matrix, temp4])
+        # Handling of y_k = C @ mu_k + D u_k
+        temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, Nx)),
+                                     scipy.sparse.kron(scipy.sparse.eye(P), lin_model.C)])
+        temp2 = -scipy.sparse.eye(P * No)
+        temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, 2 * Ni)),
+                                     scipy.sparse.kron(scipy.sparse.eye(P), lin_model.D)])
+        temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
+        A_matrix = scipy.sparse.vstack([A_matrix, temp4])
 
-    b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
+        b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
 
-    n = max(q.shape)
-    x = cvxpy.Variable(n)
-    H = cvxpy.Constant(H)
-    objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, H) + q * x)
-    constraints = [A_matrix * x == b_matrix]
+        n = max(q.shape)
+        x = cvxpy.Variable(n)
+        H = cvxpy.Constant(H)
+        objective = cvxpy.Minimize(0.5 * cvxpy.quad_form(x, H) + q * x)
+        constraints = [A_matrix * x == b_matrix]
 
-    prob = cvxpy.Problem(objective, constraints)
-    prob.solve(solver='OSQP')
-    if not prob.status.startswith("optimal"):
-        print(prob.status)
-        print(prob.is_qp())
-        return None
-    res = numpy.array(x.value).reshape((n,))
+        prob = cvxpy.Problem(objective, constraints)
+        prob.solve(solver='OSQP')
+        if not prob.status.startswith("optimal"):
+            print(prob.status)
+            print(prob.is_qp())
+            return None
+        res = numpy.array(x.value).reshape((n,))
 
-    return res[(P + 1) * Nx + P * No + Ni: (P + 1) * Nx + P * No + 2 * Ni]
+        return res[(P + 1) * Nx + P * No + Ni: (P + 1) * Nx + P * No + 2 * Ni]
