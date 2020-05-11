@@ -420,6 +420,7 @@ class LQR:
             print(prob.status)
             print(prob.is_qp())
             return None
-        res = numpy.array(self.x.value).reshape((n,))
 
-        return res[(P + 1) * Nx + P * No + Ni: (P + 1) * Nx + P * No + 2 * Ni]
+        ctrl = self.x.value[(P + 1) * Nx + P * No + Ni: (P + 1) * Nx + P * No + 2 * Ni]
+
+        return ctrl
