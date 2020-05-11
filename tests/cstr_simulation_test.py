@@ -66,8 +66,8 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         # du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
         # u = us[-1] + du
-        u = controller.mpc_lqr(xs[-1]-X_op, P, lin_model.A, lin_model.B, numpy.diag([1e4, 0]),
-                               R, numpy.array([0, 0]), U_op)
+        u = controller.mpc_lqr(xs[-1]-X_op, P, lin_model.A, lin_model.B, lin_model.C, lin_model.D, numpy.diag([1e4]),
+                               R, numpy.array([0]), U_op)
         us.append(u)
         t_next += dt_control
     else:

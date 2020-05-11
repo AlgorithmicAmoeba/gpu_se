@@ -333,21 +333,22 @@ class SMPC:
         return ctrl
 
 
-def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
+def mpc_lqr(x0, N, A, B, C, D, QQ, RR, ysp, usp):
     """return the MPC control input using a linear system"""
 
     nx, nu = B.shape
+    no, _ = C.shape
 
     P = scipy.sparse.block_diag([
-        scipy.sparse.csc_matrix((nx, nx)),
+        scipy.sparse.csc_matrix(((N + 1) * nx, (N + 1) * nx)),
         scipy.sparse.kron(scipy.sparse.eye(N), QQ),
-        scipy.sparse.kron(scipy.sparse.eye(N), RR)
+        scipy.sparse.kron(scipy.sparse.eye(N+1), RR)
     ])
 
     q = numpy.hstack([
-        numpy.zeros(nx),
+        numpy.zeros((N + 1) * nx),
         numpy.kron(numpy.ones(N), -QQ @ ysp),
-        numpy.kron(numpy.ones(N), -RR @ usp)
+        numpy.kron(numpy.ones(N+1), -RR @ usp)
     ])
 
     # Handling of mu_(k+1) = A @ mu_k + B @ u_k
@@ -356,9 +357,21 @@ def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
     AA = temp1 + temp2
 
     temp1 = scipy.sparse.vstack([numpy.zeros([nx, N * nu]), scipy.sparse.kron(scipy.sparse.eye(N), B)])
-    AA = scipy.sparse.hstack([AA, temp1])
+    temp2 = scipy.sparse.hstack([temp1, scipy.sparse.csc_matrix(((N+1)*nx, nu))])
+    AA = scipy.sparse.hstack([AA, scipy.sparse.csc_matrix(((N+1)*nx, N*no)), temp2])
 
     bb = numpy.hstack([-x0, numpy.zeros(N * nx)])
+
+    # Handling of y_k = C @ mu_k + D u_k
+    temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((N*no, nx)),
+                                 scipy.sparse.kron(scipy.sparse.eye(N), C)])
+    temp2 = -scipy.sparse.eye(N*no)
+    temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((N*no, nu)),
+                                 scipy.sparse.kron(scipy.sparse.eye(N), D)])
+    temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
+    AA = scipy.sparse.vstack([AA, temp4])
+
+    bb = numpy.hstack([bb, numpy.zeros(N*no)])
 
     n = max(q.shape)
     x = cvxpy.Variable(n)
@@ -374,4 +387,4 @@ def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
         return None
     res = numpy.array(x.value).reshape((n,))
 
-    return res[(N + 1) * nx: (N + 1) * nx + nu]
+    return res[(N + 1) * nx + N*nu: (N + 1) * nx + N*nu + nu]
