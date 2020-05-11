@@ -379,7 +379,8 @@ class LQR:
                 numpy.zeros([Nx, P * Ni]),
                 scipy.sparse.kron(scipy.sparse.eye(P), self.model.B)
             ]),
-            scipy.sparse.csc_matrix(((P + 1) * Nx, Ni))])
+            scipy.sparse.csc_matrix(((P + 1) * Nx, Ni))
+        ])
         A_state = scipy.sparse.hstack([
             A_state_x,
             scipy.sparse.csc_matrix(((P + 1) * Nx, P * No)),
@@ -388,20 +389,23 @@ class LQR:
 
         b_state = numpy.hstack([-x0, numpy.zeros(P * Nx)])
 
-        A_matrix = scipy.sparse.vstack([A_um1_init, A_state])
-
-        b_matrix = numpy.hstack([l_um1_init, b_state])
-
         # Handling of y_k = C @ mu_k + D u_k
-        temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, Nx)),
-                                     scipy.sparse.kron(scipy.sparse.eye(P), self.model.C)])
-        temp2 = -scipy.sparse.eye(P * No)
-        temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, 2 * Ni)),
-                                     scipy.sparse.kron(scipy.sparse.eye(P), self.model.D)])
-        temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
-        self.A_matrix = scipy.sparse.vstack([A_matrix, temp4])
+        A_output_x = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((P * No, Nx)),
+            scipy.sparse.kron(scipy.sparse.eye(P), self.model.C)
+        ])
+        A_output_y = -scipy.sparse.eye(P * No)
+        A_output_u = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((P * No, 2 * Ni)),
+            scipy.sparse.kron(scipy.sparse.eye(P), self.model.D)
+        ])
+        A_output = scipy.sparse.hstack([A_output_x, A_output_y, A_output_u])
 
-        self.b_matrix = numpy.hstack([b_matrix, numpy.zeros(P * No)])
+        b_output = numpy.zeros(P * No)
+
+        self.A_matrix = scipy.sparse.vstack([A_um1_init, A_state, A_output])
+
+        self.b_matrix = numpy.hstack([l_um1_init, b_state, b_output])
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
