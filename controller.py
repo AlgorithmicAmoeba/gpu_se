@@ -351,7 +351,7 @@ class LQR:
             scipy.sparse.kron(scipy.sparse.eye(P), self.Q),
             scipy.sparse.csc_matrix((Ni, Ni)),
             scipy.sparse.kron(scipy.sparse.eye(P + 1), self.R)
-        ])
+        ], format='csc')
 
         self.q = numpy.hstack([
             numpy.zeros((P + 1) * Nx),
@@ -400,14 +400,12 @@ class LQR:
         self.prob = osqp.OSQP()
 
         # Setup workspace
-        self.H = scipy.sparse.csc_matrix(self.H)
         self.A_matrix = scipy.sparse.csc_matrix(self.A_matrix)
         self.prob.setup(self.H, self.q, self.A_matrix, self.b_matrix, self.b_matrix, verbose=False)
 
     def mpc_lqr(self, x0, um1):
         """return the MPC control input using a linear system"""
 
-        P = self.P
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
 
