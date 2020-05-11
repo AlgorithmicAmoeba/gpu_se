@@ -333,7 +333,7 @@ class SMPC:
         return ctrl
 
 
-def mpc_lqr(x0, N, A, B, C, D, QQ, RR, ysp, usp):
+def mpc_lqr(x0, um1, N, A, B, C, D, QQ, RR, ysp, usp):
     """return the MPC control input using a linear system"""
 
     nx, nu = B.shape
@@ -342,12 +342,14 @@ def mpc_lqr(x0, N, A, B, C, D, QQ, RR, ysp, usp):
     P = scipy.sparse.block_diag([
         scipy.sparse.csc_matrix(((N + 1) * nx, (N + 1) * nx)),
         scipy.sparse.kron(scipy.sparse.eye(N), QQ),
+        scipy.sparse.csc_matrix((nu, nu)),
         scipy.sparse.kron(scipy.sparse.eye(N+1), RR)
     ])
 
     q = numpy.hstack([
         numpy.zeros((N + 1) * nx),
         numpy.kron(numpy.ones(N), -QQ @ ysp),
+        numpy.zeros(nu),
         numpy.kron(numpy.ones(N+1), -RR @ usp)
     ])
 
@@ -357,7 +359,10 @@ def mpc_lqr(x0, N, A, B, C, D, QQ, RR, ysp, usp):
     AA = temp1 + temp2
 
     temp1 = scipy.sparse.vstack([numpy.zeros([nx, N * nu]), scipy.sparse.kron(scipy.sparse.eye(N), B)])
-    temp2 = scipy.sparse.hstack([temp1, scipy.sparse.csc_matrix(((N+1)*nx, nu))])
+    temp2 = scipy.sparse.hstack([
+        scipy.sparse.csc_matrix(((N+1)*nx, nu)),
+        temp1,
+        scipy.sparse.csc_matrix(((N+1)*nx, nu))])
     AA = scipy.sparse.hstack([AA, scipy.sparse.csc_matrix(((N+1)*nx, N*no)), temp2])
 
     bb = numpy.hstack([-x0, numpy.zeros(N * nx)])
@@ -366,7 +371,7 @@ def mpc_lqr(x0, N, A, B, C, D, QQ, RR, ysp, usp):
     temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((N*no, nx)),
                                  scipy.sparse.kron(scipy.sparse.eye(N), C)])
     temp2 = -scipy.sparse.eye(N*no)
-    temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((N*no, nu)),
+    temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((N*no, 2*nu)),
                                  scipy.sparse.kron(scipy.sparse.eye(N), D)])
     temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
     AA = scipy.sparse.vstack([AA, temp4])
@@ -387,4 +392,4 @@ def mpc_lqr(x0, N, A, B, C, D, QQ, RR, ysp, usp):
         return None
     res = numpy.array(x.value).reshape((n,))
 
-    return res[(N + 1) * nx + N*nu: (N + 1) * nx + N*nu + nu]
+    return res[(N + 1) * nx + N*no + nu: (N + 1) * nx + N*no + 2*nu]
