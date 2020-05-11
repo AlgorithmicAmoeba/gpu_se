@@ -47,7 +47,7 @@ r = numpy.array([0])
 P = 150
 M = 150
 Q = numpy.diag([1e3])
-R = numpy.diag([1e-5])
+R = numpy.diag([1e-4])
 
 # Bounds
 u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
