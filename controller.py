@@ -326,6 +326,10 @@ class SMPC:
 
         self.x_predicted = mu0 + res.x[Nx:2*Nx]
 
+        dxs = res.x[:(self.P+1)*Nx]
+        ys = res.x[(self.P+1)*Nx: (self.P+1)*Nx + self.P*No]
+        dus = res.x[(self.P+1)*Nx + self.P*No:]
+
         return ctrl
 
 
@@ -334,12 +338,11 @@ def mpc_lqr(x0, N, A, B, QQ, RR, ysp, usp):
 
     B = B.T
     nx, nu = B.shape
-    QN = QQ
 
-    P = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N), QQ), QN,
+    P = scipy.sparse.block_diag([scipy.sparse.kron(scipy.sparse.eye(N+1), QQ),
                                  scipy.sparse.kron(scipy.sparse.eye(N), RR)])
 
-    q = numpy.hstack([numpy.kron(numpy.ones(N), -QQ @ ysp), -QN @ ysp,
+    q = numpy.hstack([numpy.kron(numpy.ones(N+1), -QQ @ ysp),
                       numpy.kron(numpy.ones(N), -RR @ usp)])
 
     # Handling of mu_(k+1) = A @ mu_k + B @ u_k
