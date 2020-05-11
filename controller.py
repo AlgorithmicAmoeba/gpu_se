@@ -333,11 +333,11 @@ class SMPC:
         return ctrl
 
 
-def mpc_lqr(x0, um1, P, A, B, C, D, Q, R, ysp, usp):
+def mpc_lqr(x0, um1, P, model, Q, R, ysp, usp):
     """return the MPC control input using a linear system"""
 
-    Nx, Ni = B.shape
-    No, _ = C.shape
+    Nx, Ni = model.B.shape
+    No, _ = model.C.shape
 
     H = scipy.sparse.block_diag([
         scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
@@ -364,10 +364,10 @@ def mpc_lqr(x0, um1, P, A, B, C, D, Q, R, ysp, usp):
 
     # Handling of mu_(k+1) = A @ mu_k + B @ u_k
     temp1 = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx))
-    temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), A)
+    temp2 = scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), model.A)
     A_matrix = temp1 + temp2
 
-    temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), B)])
+    temp1 = scipy.sparse.vstack([numpy.zeros([Nx, P * Ni]), scipy.sparse.kron(scipy.sparse.eye(P), model.B)])
     temp2 = scipy.sparse.hstack([
         scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
         temp1,
@@ -380,10 +380,10 @@ def mpc_lqr(x0, um1, P, A, B, C, D, Q, R, ysp, usp):
 
     # Handling of y_k = C @ mu_k + D u_k
     temp1 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, Nx)),
-                                 scipy.sparse.kron(scipy.sparse.eye(P), C)])
+                                 scipy.sparse.kron(scipy.sparse.eye(P), model.C)])
     temp2 = -scipy.sparse.eye(P * No)
     temp3 = scipy.sparse.hstack([scipy.sparse.csc_matrix((P * No, 2 * Ni)),
-                                 scipy.sparse.kron(scipy.sparse.eye(P), D)])
+                                 scipy.sparse.kron(scipy.sparse.eye(P), model.D)])
     temp4 = scipy.sparse.hstack([temp1, temp2, temp3])
     A_matrix = scipy.sparse.vstack([A_matrix, temp4])
 
