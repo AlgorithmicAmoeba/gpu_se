@@ -87,6 +87,7 @@ u_step_bounds = [numpy.array([-0.1, 0.1]),
                  numpy.array([-0.1, 0.1])]
 
 K = controller.SMPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds, u_step_bounds=u_step_bounds)
+LQR = controller.LQR(P, Q, R, lin_model, r, lin_model.u_bar)
 
 # Controller initial params
 # Non-linear
@@ -109,8 +110,7 @@ for t in tqdm.tqdm(ts[1:]):
         U_temp = us[-1].copy()
         # For nonlinear model
         # du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
-        u = controller.mpc_lqr(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, P, lin_model, Q, R,
-                               r, lin_model.u_bar)
+        u = LQR.mpc_lqr(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar)
         # For linear model
         # du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
         # u = controller.mpc_lqr(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, P, lin_model, Q, R, r, lin_model.u_bar)
