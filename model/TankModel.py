@@ -3,10 +3,10 @@ import model.NonlinearModel
 
 
 class TankModel(model.NonlinearModel):
-    def __init__(self, X0, t0=0, simple=False):
+    def __init__(self, X0, t0=0, linear=False):
         self.X = numpy.array(X0)
         self.t = t0
-        self.simple = simple
+        self.simple = linear
 
     def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
