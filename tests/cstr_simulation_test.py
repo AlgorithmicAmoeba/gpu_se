@@ -68,7 +68,7 @@ for t in tqdm.tqdm(ts[1:]):
         # du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
         # u = us[-1] + du
         u = LQR.mpc_lqr(xs[-1]-X_op, us[-1] - U_op, ys[-1] - Y_op)
-        us.append(u)
+        us.append(u + U_op)
         t_next += dt_control
     else:
         us.append(us[-1])

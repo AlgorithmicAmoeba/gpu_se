@@ -443,6 +443,8 @@ class LQR:
         self.A_matrix = scipy.sparse.csc_matrix(self.A_matrix)
         self.prob.setup(self.H, self.q, self.A_matrix, self.b_matrix, self.b_matrix, verbose=False)
 
+        self.y_predicted = None
+
     def mpc_lqr(self, x0, um1, y0):
         """return the MPC control input using a linear system"""
 
@@ -452,7 +454,10 @@ class LQR:
         self.b_matrix[:Ni] = um1
         self.b_matrix[Ni:Ni+Nx] = -x0
 
-        bias = y0 - self.model.C @ x0
+        if self.y_predicted is not None:
+            bias = y0 - self.y_predicted
+        else:
+            bias = numpy.zeros_like(y0)
 
         self.b_matrix[Ni + (self.P+1)*Nx:] = numpy.tile(-bias, self.P)
 
@@ -468,5 +473,7 @@ class LQR:
         # Apply first control input to the plant
         m = (self.P + 1) * Nx + self.P * No + Ni
         ctrl = res.x[m: m + Ni] + um1
+
+        self.y_predicted = res.x[(self.P+1)*Nx:(self.P+1)*Nx + No]
 
         return ctrl
