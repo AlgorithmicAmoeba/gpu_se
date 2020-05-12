@@ -350,21 +350,21 @@ class LQR:
             scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
             scipy.sparse.kron(scipy.sparse.eye(P), self.Q),
             scipy.sparse.csc_matrix((Ni, Ni)),
-            scipy.sparse.kron(scipy.sparse.eye(M + 1), self.R)
+            scipy.sparse.kron(scipy.sparse.eye(M), self.R)
         ], format='csc')
 
         self.q = numpy.hstack([
             numpy.zeros((P + 1) * Nx),
             numpy.kron(numpy.ones(P), -self.Q @ ysp),
             numpy.zeros(Ni),
-            numpy.zeros((M + 1)*Ni)
+            numpy.zeros(M*Ni)
         ])
 
         # Handling of initial condition um1
         A_um1_init = scipy.sparse.hstack([
             scipy.sparse.csc_matrix((Ni, (P + 1) * Nx + P * No)),
             scipy.sparse.eye(Ni),
-            scipy.sparse.csc_matrix((Ni, (M + 1) * Ni))
+            scipy.sparse.csc_matrix((Ni, M * Ni))
         ])
 
         l_um1_init = um1
@@ -386,16 +386,16 @@ class LQR:
         ])
 
         A_state_u = scipy.sparse.vstack([
-            scipy.sparse.csc_matrix((Nx, (M + 2)*Ni)),
+            scipy.sparse.csc_matrix((Nx, (M + 1)*Ni)),
             scipy.sparse.kron(
                 scipy.sparse.hstack([
-                    scipy.sparse.csc_matrix(([1], ([0], [0])), shape=(M, 1)),
-                    scipy.sparse.eye(M),
-                    scipy.sparse.csc_matrix((M, 1))
+                    scipy.sparse.csc_matrix(([1], ([0], [0])), shape=(M-1, 1)),
+                    scipy.sparse.eye(M-1),
+                    scipy.sparse.csc_matrix((M-1, 1))
                 ]),
                 self.model.B
             ),
-            scipy.sparse.csc_matrix(((P - M) * Nx, (M + 2) * Ni))
+            scipy.sparse.csc_matrix(((P - M + 1) * Nx, (M + 1) * Ni))
         ])
 
         A_state = scipy.sparse.hstack([
@@ -420,12 +420,12 @@ class LQR:
         A_output_u = scipy.sparse.vstack([
             scipy.sparse.kron(
                 scipy.sparse.hstack([
-                    scipy.sparse.csc_matrix(([1, 1], ([0, 0], [0, 1])), shape=(M, 2)),
-                    scipy.sparse.eye(M)
+                    scipy.sparse.csc_matrix(([1, 1], ([0, 0], [0, 1])), shape=(M-1, 2)),
+                    scipy.sparse.eye(M-1)
                 ]),
                 self.model.D
             ),
-            scipy.sparse.csc_matrix(((P-M)*No, (M+2)*Ni))
+            scipy.sparse.csc_matrix(((P-M+1)*No, (M+1)*Ni))
         ])
 
         A_output = scipy.sparse.hstack([A_output_x, A_output_y, A_output_u])
