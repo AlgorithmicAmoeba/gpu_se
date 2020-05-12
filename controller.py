@@ -419,11 +419,16 @@ class LQR:
 
         A_output_y = -scipy.sparse.eye(P * No) + scipy.sparse.eye(P * No, k=-No)
 
-        A_output_u = scipy.sparse.hstack([
-            scipy.sparse.csc_matrix((P * No, 2 * Ni)),
-            scipy.sparse.kron(scipy.sparse.eye(P), self.model.D)
-        ], format='csc')
-        A_output_u[:No, :2*Ni] += scipy.sparse.kron(numpy.ones(2), self.model.D)
+        A_output_u = scipy.sparse.vstack([
+            scipy.sparse.kron(
+                scipy.sparse.hstack([
+                    scipy.sparse.csc_matrix(([1, 1], ([0, 0], [0, 1])), shape=(M, 2)),
+                    scipy.sparse.eye(M)
+                ]),
+                self.model.D
+            ),
+            scipy.sparse.csc_matrix(((P-M)*No, (M+2)*Ni))
+        ])
 
         A_output = scipy.sparse.hstack([A_output_x, A_output_y, A_output_u])
 
