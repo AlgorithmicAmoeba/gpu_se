@@ -4,7 +4,6 @@ import scipy.stats
 import scipy.optimize
 import model
 import osqp
-import cvxpy
 
 
 class SMPC:
@@ -334,7 +333,7 @@ class SMPC:
 
 
 class LQR:
-    def __init__(self, P, Q, R, lin_model, ysp, usp):
+    def __init__(self, P, Q, R, lin_model, ysp):
         self.P = P
         self.Q = Q
         self.R = R
@@ -357,7 +356,7 @@ class LQR:
             numpy.zeros((P + 1) * Nx),
             numpy.kron(numpy.ones(P), -self.Q @ ysp),
             numpy.zeros(Ni),
-            numpy.kron(numpy.ones(P + 1), -self.R @ usp)
+            numpy.zeros((P + 1)*Ni)
         ])
 
         # Handling of initial condition um1

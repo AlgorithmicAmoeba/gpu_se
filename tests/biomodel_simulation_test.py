@@ -87,7 +87,7 @@ u_step_bounds = [numpy.array([-0.1, 0.1]),
                  numpy.array([-0.1, 0.1])]
 
 K = controller.SMPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds, u_step_bounds=u_step_bounds)
-LQR = controller.LQR(P, Q, R, lin_model, r, lin_model.u_bar)
+LQR = controller.LQR(P, Q, R, lin_model, r)
 
 # Controller initial params
 # Non-linear
