@@ -44,8 +44,8 @@ lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[
 r = numpy.array([0])
 
 # Controller parameters
-P = 150
-M = 150
+P = 80
+M = 60
 Q = numpy.diag([1e3])
 R = numpy.diag([1e-4])
 
@@ -55,7 +55,7 @@ u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
 u_step_bounds = [numpy.array([-100, 100])]
 
 K = controller.SMPC(P, M, Q, R, lin_model, r)
-LQR = controller.LQR(P, Q, R, lin_model, r)
+LQR = controller.LQR(P, M, Q, R, lin_model, r)
 
 # Controller initial params
 us = [numpy.zeros_like(U_op)]

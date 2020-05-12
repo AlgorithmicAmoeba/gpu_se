@@ -333,14 +333,12 @@ class SMPC:
 
 
 class LQR:
-    def __init__(self, P, Q, R, lin_model, ysp):
+    def __init__(self, P, M, Q, R, lin_model, ysp):
         self.P = P
-        self.M = P
+        self.M = M
         self.Q = Q
         self.R = R
         self.model = lin_model
-
-        M = self.M
 
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
@@ -366,7 +364,7 @@ class LQR:
         A_um1_init = scipy.sparse.hstack([
             scipy.sparse.csc_matrix((Ni, (P + 1) * Nx + P * No)),
             scipy.sparse.eye(Ni),
-            scipy.sparse.csc_matrix((Ni, (P + 1) * Ni))
+            scipy.sparse.csc_matrix((Ni, (M + 1) * Ni))
         ])
 
         l_um1_init = um1
