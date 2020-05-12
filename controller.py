@@ -409,11 +409,18 @@ class LQR:
         b_state = numpy.hstack([-x0, numpy.zeros(P * Nx)])
 
         # Handling of y_k = C @ mu_k + D u_k
-        A_output_x = scipy.sparse.hstack([
-            scipy.sparse.csc_matrix((P * No, Nx)),
-            scipy.sparse.kron(scipy.sparse.eye(P), self.model.C)
-        ], format='csc')
-        A_output_x[:No, :Nx] += self.model.C
+        # A_output_x = scipy.sparse.hstack([
+        #     scipy.sparse.csc_matrix((P * No, Nx)),
+        #     scipy.sparse.kron(scipy.sparse.eye(P), self.model.C)
+        # ], format='csc')
+        # A_output_x[:No, :Nx] += self.model.C
+        A_output_x = scipy.sparse.kron(
+            scipy.sparse.hstack([
+                scipy.sparse.csc_matrix(([1], ([0], [0])), shape=(P, 1)),
+                scipy.sparse.eye(P)
+            ]),
+            self.model.C
+        )
 
         A_output_y = -scipy.sparse.eye(P * No) + scipy.sparse.eye(P * No, k=-No)
 
