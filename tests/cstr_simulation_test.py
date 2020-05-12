@@ -82,7 +82,7 @@ xs = numpy.array(xs)
 
 plt.subplot(2, 2, 1)
 plt.plot(ts, ys)
-plt.axhline(Y_op, color='r')
+plt.axhline(Y_op + r, color='r')
 
 plt.subplot(2, 2, 2)
 plt.plot(ts, xs[:, 1])
