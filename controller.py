@@ -445,7 +445,7 @@ class LQR:
 
         self.y_predicted = None
 
-    def mpc_lqr(self, x0, um1, y0):
+    def step(self, x0, um1, y0):
         """return the MPC control input using a linear system"""
 
         Nx, Ni = self.model.B.shape
@@ -474,6 +474,6 @@ class LQR:
         m = (self.P + 1) * Nx + self.P * No + Ni
         ctrl = res.x[m: m + Ni] + um1
 
-        self.y_predicted = res.x[(self.P+1)*Nx:(self.P+1)*Nx + No]
+        self.y_predicted = res.x[(self.P+1)*Nx:(self.P+1)*Nx + No] - bias
 
         return ctrl

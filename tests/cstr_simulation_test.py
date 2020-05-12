@@ -44,8 +44,8 @@ lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[
 r = numpy.array([0])
 
 # Controller parameters
-P = 80
-M = 60
+P = 150
+M = 150
 Q = numpy.diag([1e3])
 R = numpy.diag([1e-4])
 
@@ -67,7 +67,7 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         # du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
         # u = us[-1] + du
-        u = LQR.mpc_lqr(xs[-1]-X_op, us[-1] - U_op, ys[-1] - Y_op)
+        u = LQR.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
         us.append(u + U_op)
         t_next += dt_control
     else:

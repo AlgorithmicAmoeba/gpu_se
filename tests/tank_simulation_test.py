@@ -36,7 +36,7 @@ u_bounds = [numpy.array([0, 0.2]) - U_op[0]]
 #
 u_step_bounds = [numpy.array([-50, 10])]
 
-K = controller.SMPC(P, M, Q, R, lin_model, r)
+K = controller.LQR(P, M, Q, R, lin_model, r)
 
 # Controller initial params
 us = [numpy.asarray(U_op)]
