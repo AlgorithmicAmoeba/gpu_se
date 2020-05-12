@@ -369,9 +369,20 @@ class LQR:
         l_um1_init = um1
 
         # Handling of mu_(k+1) = A @ mu_k + B @ u_k
-        A_state_x = scipy.sparse.kron(scipy.sparse.eye(P + 1), -numpy.eye(Nx), format='csc')
-        A_state_x += scipy.sparse.kron(scipy.sparse.eye(P + 1, k=-1), self.model.A)
-        A_state_x[Nx:2*Nx, :Nx] -= scipy.sparse.eye(Nx)
+        A_state_x = scipy.sparse.hstack([
+            scipy.sparse.vstack([
+                -scipy.sparse.eye(Nx),
+                self.model.A - scipy.sparse.eye(Nx),
+                scipy.sparse.csc_matrix(((P-1)*Nx, Nx))
+            ]),
+            scipy.sparse.vstack([
+                scipy.sparse.csc_matrix((Nx, P*Nx)),
+                scipy.sparse.kron(
+                    scipy.sparse.eye(P, k=-1),
+                    self.model.A
+                ) - scipy.sparse.eye(P*Nx)
+            ])
+        ])
 
         A_state_u = scipy.sparse.hstack([
             scipy.sparse.csc_matrix(((P + 1) * Nx, Ni)),
