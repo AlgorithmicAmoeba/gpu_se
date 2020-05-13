@@ -80,7 +80,7 @@ def test_diag_tank_bias():
 
 def test_diag_tank_SS():
     a = ys[500:] - r
-    assert a == pytest.approx(0, abs=1e3)
+    assert a == pytest.approx(0, abs=1e-3)
 
 
 if __name__ == '__main__':

@@ -123,12 +123,12 @@ def test_nonlinear_tank_bias():
 
 def test_linear_tank_SS():
     a = ys_linear[500:] - r
-    assert a == pytest.approx(0)
+    assert a == pytest.approx(0, abs=1e-3)
 
 
 def test_nonlinear_tank_SS():
     a = ys_nonlinear[500:] - r
-    assert a == pytest.approx(0)
+    assert a == pytest.approx(0, abs=1e-3)
 
 
 if __name__ == '__main__':

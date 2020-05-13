@@ -14,7 +14,7 @@ assert dt <= dt_control
 
 # Plant
 X0 = numpy.array([50., 60.])
-diag_tank = model.LinkedTanksgit add (X0)
+diag_tank = model.LinkedTanks(X0)
 
 # Linearise plant for MPC model
 lin_model = model.LinearModel.create_LinearModel(
@@ -72,13 +72,14 @@ us = numpy.array(us)
 biass = numpy.array(biass)
 
 
-def test_diag_tank_bias():
-    assert numpy.max(biass) < 0.1
+def test_linked_tank_bias():
+    a = biass[100:]
+    assert numpy.array(a) - numpy.average(a) == pytest.approx(0)
 
 
-def test_diag_tank_SS():
+def test_linked_tank_SS():
     a = ys[500:] - r
-    assert a == pytest.approx(0)
+    assert a == pytest.approx(0, abs=1e-3)
 
 
 if __name__ == '__main__':
@@ -87,18 +88,18 @@ if __name__ == '__main__':
     plt.title('h')
 
     plt.subplot(2, 2, 2)
-    plt.plot(ts, us[:, 0])
+    plt.plot(ts, us)
     plt.title('Fin')
 
     plt.subplot(2, 2, 3)
     plt.plot(biass)
     plt.title('bias')
 
-    plt.subplot(2, 2, 4)
-    plt.stem(
-        numpy.arange(0, (K.M + 2) * dt_control, dt_control),
-        numpy.cumsum(ctrl_moves0) + U_op,
-        use_line_collection=True
-    )
-    plt.title('ctrl_moves0')
+    # plt.subplot(2, 2, 4)
+    # plt.stem(
+    #     numpy.arange(0, (K.M + 2) * dt_control, dt_control),
+    #     numpy.cumsum(ctrl_moves0) + U_op,
+    #     use_line_collection=True
+    # )
+    # plt.title('ctrl_moves0')
     plt.show()
