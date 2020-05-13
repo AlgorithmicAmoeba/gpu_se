@@ -73,12 +73,14 @@ biass = numpy.array(biass)
 
 
 def test_diag_tank_bias():
-    assert numpy.max(biass) < 0.1
+    assert numpy.max(biass[:, 0]) == pytest.approx(0, abs=1e-3)
+    a = biass[:, 1][100:]
+    assert numpy.array(a) - numpy.average(a) == pytest.approx(0)
 
 
 def test_diag_tank_SS():
     a = ys[500:] - r
-    assert a == pytest.approx(0)
+    assert a == pytest.approx(0, abs=1e3)
 
 
 if __name__ == '__main__':
@@ -94,11 +96,11 @@ if __name__ == '__main__':
     plt.plot(biass)
     plt.title('bias')
 
-    plt.subplot(2, 2, 4)
-    plt.stem(
-        numpy.arange(0, (K.M + 2) * dt_control, dt_control),
-        numpy.cumsum(ctrl_moves0) + U_op,
-        use_line_collection=True
-    )
-    plt.title('ctrl_moves0')
+    # plt.subplot(2, 2, 4)
+    # plt.stem(
+    #     numpy.arange(0, (K.M + 2) * dt_control, dt_control),
+    #     numpy.cumsum(ctrl_moves0) + U_op,
+    #     use_line_collection=True
+    # )
+    # plt.title('ctrl_moves0')
     plt.show()
