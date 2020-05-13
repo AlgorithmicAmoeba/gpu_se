@@ -8,7 +8,7 @@ import scipy.optimize
 import scipy.signal
 
 # Simulation set-up
-end_time = 200
+end_time = 80
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 dt_control = 1
