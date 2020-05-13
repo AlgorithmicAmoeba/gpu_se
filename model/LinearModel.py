@@ -24,7 +24,7 @@ class LinearModel:
     x_bar, u_bar : array-like
         The state and input linearisation points
 
-    f_bar, g_bar : array-lke
+    f_bar, y_bar : array-lke
         The constants at linearisation
 
     Attributes
@@ -38,7 +38,7 @@ class LinearModel:
     x_bar, u_bar : array-like
         The state and input linearisation points
 
-    f_bar, g_bar : array-lke
+    f_bar, y_bar : array-lke
         The constants at linearisation
 
     Nx, Ni, No : int
@@ -46,7 +46,7 @@ class LinearModel:
 
     """
     def __init__(self, A, B, C, D, dt,
-                 x_bar, u_bar, f_bar, g_bar):
+                 x_bar, u_bar, f_bar, y_bar):
         A, B, C, D = [numpy.atleast_2d(m) for m in [A, B, C, D]]
         self.A = A
         self.B = B
@@ -57,7 +57,7 @@ class LinearModel:
         self.x_bar = x_bar
         self.u_bar = u_bar
         self.f_bar = f_bar
-        self.g_bar = g_bar
+        self.y_bar = y_bar
 
         self.Nx = self.A.shape[0]
         self.Ni = self.B.shape[1]
@@ -138,3 +138,23 @@ class LinearModel:
         nonlinear_model.X = old_X
 
         return linear_model
+
+    def xd2n(self, x):
+        return x + self.x_bar
+
+    def xn2d(self, x):
+        return x - self.x_bar
+
+    def yd2n(self, y):
+        return y + self.y_bar
+
+    def yn2d(self, y):
+        return y - self.y_bar
+
+    def ud2n(self, u):
+        return u + self.u_bar
+
+    def un2d(self, u):
+        return u - self.u_bar
+
+
