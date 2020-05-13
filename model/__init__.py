@@ -3,5 +3,6 @@ from model.BioreactorModel import Bioreactor
 from model.CSTRModel import CSTRModel
 from model.LinearModel import LinearModel
 from model.TankModel import TankModel
+from model.DiagTank import DiagTank
 
-__all__ = ['Bioreactor', 'CSTRModel', 'LinearModel', 'TankModel']
+__all__ = ['Bioreactor', 'CSTRModel', 'LinearModel', 'TankModel', 'DiagTank']
