@@ -8,8 +8,8 @@ class DiagTank(model.NonlinearModel):
         self.X = numpy.array(X0)
         self.t = t0
 
-        self.linear_tank = model.TankModel(X0[0], linear=True)
-        self.nonlinear_tank = model.TankModel(X0[1], linear=False)
+        self.linear_tank = model.TankModel(numpy.atleast_1d(X0[0]), linear=True)
+        self.nonlinear_tank = model.TankModel(numpy.atleast_1d(X0[1]), linear=False)
 
     def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
@@ -25,8 +25,8 @@ class DiagTank(model.NonlinearModel):
             The differential changes to the state variables
         """
 
-        dh_lin = self.linear_tank.DEs(inputs[0])
-        dh_nonlin = self.linear_tank.DEs(inputs[1])
+        dh_lin = self.linear_tank.DEs(numpy.atleast_1d(inputs[0]))
+        dh_nonlin = self.linear_tank.DEs(numpy.atleast_1d(inputs[1]))
 
         dX = numpy.hstack([dh_lin, dh_nonlin])
 
