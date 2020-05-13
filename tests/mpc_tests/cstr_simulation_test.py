@@ -3,90 +3,121 @@ import tqdm
 import matplotlib.pyplot as plt
 import controller
 import model.LinearModel
-import noise
 import scipy.optimize
 import scipy.signal
 
 # Simulation set-up
 end_time = 80
-ts = numpy.linspace(0, end_time, end_time*10)
+ts = numpy.linspace(0, end_time, end_time*100)
 dt = ts[1]
-dt_control = 1
+dt_control = 0.1
 assert dt <= dt_control
 
-# CSTR model
-X0 = numpy.array([0.55, 450.])
-cstr = model.CSTRModel(X0)
-
-# Linear CSTR model
-x_ss_guess = [0.48, 412.0]
+cstr_SS = model.CSTRModel(X0=numpy.array([0.1, 500]))
 
 
-def f(x_ss):
-    temp = cstr.X
-    cstr.X = x_ss
-    ans = cstr.DEs(numpy.array([0.]))
-    cstr.X = temp
+def find_SS(x_ss):
+    temp = cstr_SS.X
+    cstr_SS.X = x_ss
+    ans = cstr_SS.DEs(numpy.array([0.]))
+    cstr_SS.X = temp
     return ans
 
 
-X_op = numpy.asarray(scipy.optimize.fsolve(f, numpy.array(x_ss_guess)))
-U_op = numpy.array([0.])
-cstr1 = model.CSTRModel(X_op)
-Y_op = cstr1.outputs(U_op)
+# CSTR model
+cstr = model.CSTRModel(
+    X0=numpy.asarray(
+        scipy.optimize.fsolve(
+            find_SS,
+            numpy.array([0.48, 412.0])
+        ) + numpy.array([0.02, 10])
+    )
+)
 
-lin_model = model.LinearModel.create_LinearModel(cstr, X_op, U_op, dt_control)
-# Noise
-lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[1e-6, 0], [0, 0.001]]))
-lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.array([[1e-3, 0], [0, 10]]))
+# Linear CSTR model
+lin_model = model.LinearModel.create_LinearModel(
+    cstr,
+    x_bar=numpy.asarray(
+        scipy.optimize.fsolve(
+            find_SS,
+            numpy.array([0.48, 412.0])
+        )
+    ),
+    u_bar=numpy.array([0.]),
+    T=dt_control)
 
 # set point
-r = numpy.array([0])
+r = numpy.array([0.])
 
 # Controller parameters
-P = 150
-M = 150
-Q = numpy.diag([1e3])
-R = numpy.diag([1e-4])
-
-# Bounds
-u_bounds = [numpy.array([-1000, 1000]) - U_op[0]]
-#
-u_step_bounds = [numpy.array([-100, 100])]
-
-K = controller.SMPC(P, M, Q, R, lin_model, r)
-LQR = controller.LQR(P, M, Q, R, lin_model, r)
+K = controller.LQR(
+    P=300,
+    M=300,
+    Q=numpy.diag([1e3]),
+    R=numpy.diag([1e-4]),
+    lin_model=lin_model,
+    ysp=r)
 
 # Controller initial params
-us = [numpy.zeros_like(U_op)]
+us = [lin_model.u_bar]
 xs = [cstr.X.copy()]
 ys = [cstr.outputs(us[-1])]
 
+biass = []
+ctrl_moves0 = []
+
 t_next = 0
 for t in tqdm.tqdm(ts[1:]):
-    if t > t_next:
-        # du = K.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
-        # u = us[-1] + du
-        u = LQR.step(xs[-1] - X_op, us[-1] - U_op, ys[-1] - Y_op)
-        us.append(u + U_op)
-        t_next += dt_control
-    else:
-        us.append(us[-1])
     cstr.step(dt, us[-1])
     ys.append(cstr.outputs((us[-1])))
     xs.append(cstr.X.copy())
+
+    if t > t_next:
+        if K.y_predicted is not None:
+            biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
+
+        u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+        us.append(lin_model.ud2n(u))
+
+        if t_next == 0:
+            res = K.prob.solve()
+            ctrl_moves0 = res.x[(K.P + 1) * 2 + K.P * 1:]
+
+        t_next += dt_control
+    else:
+        us.append(us[-1])
 
 ys = numpy.array(ys)
 us = numpy.array(us)
 xs = numpy.array(xs)
 
-plt.subplot(2, 2, 1)
+biass = numpy.array(biass)
+
+plt.subplot(3, 2, 1)
 plt.plot(ts, ys)
-plt.axhline(Y_op + r, color='r')
+plt.axhline(lin_model.y_bar + r, color='r')
+plt.title('C')
 
-plt.subplot(2, 2, 2)
+plt.subplot(3, 2, 2)
 plt.plot(ts, xs[:, 1])
+plt.title('T')
 
-plt.subplot(2, 2, 3)
+plt.subplot(3, 2, 3)
 plt.plot(ts, us[:, 0]/60)
+plt.title('Q')
+
+plt.subplot(3, 2, 5)
+plt.plot(
+    numpy.arange(0, end_time, dt_control),
+    biass
+)
+plt.title('bias')
+
+plt.subplot(3, 2, 6)
+plt.stem(
+    numpy.arange(0, (K.M + 2) * dt_control, dt_control),
+    numpy.cumsum(ctrl_moves0)/60 + lin_model.u_bar,
+    use_line_collection=True
+)
+plt.title('ctrl_moves0')
 plt.show()
