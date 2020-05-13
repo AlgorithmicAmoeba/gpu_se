@@ -474,6 +474,10 @@ class LQR:
         m = (self.P + 1) * Nx + self.P * No + Ni
         ctrl = res.x[m: m + Ni] + um1
 
+        dxs = res.x[:(self.P + 1) * Nx]
+        ys = res.x[(self.P + 1) * Nx: (self.P + 1) * Nx + self.P * No]
+        dus = res.x[(self.P + 1) * Nx + self.P * No:]
+
         self.y_predicted = res.x[(self.P+1)*Nx:(self.P+1)*Nx + No] - bias
 
         return ctrl
