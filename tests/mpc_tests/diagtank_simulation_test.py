@@ -89,7 +89,7 @@ if __name__ == '__main__':
     plt.title('h')
 
     plt.subplot(2, 2, 2)
-    plt.plot(ts, us[:, 0])
+    plt.plot(ts, us)
     plt.title('Fin')
 
     plt.subplot(2, 2, 3)
