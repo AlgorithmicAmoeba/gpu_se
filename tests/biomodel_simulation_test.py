@@ -6,7 +6,7 @@ import model.LinearModel
 import noise
 
 # Simulation set-up
-end_time = 100
+end_time = 1000
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 dt_control = 1
@@ -14,37 +14,21 @@ assert dt <= dt_control
 
 # Bioreactor model
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
-X0 = numpy.array([0.28/180, 0.639773/24.6, 1/116, 0, 1e-5, 0, 4.857e-3, 1.077, 35])
+X0 = numpy.array([0.186/180, 0.639773/24.6, 0.86/116, 0, 0])
 bioreactor = model.Bioreactor(X0)
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
-X_op = numpy.array([0.28/180, 0.639773/24.6, 2/116, 0, 0, 3.43e-2, 4.857e-3, 1.077, 35])
+X_op = numpy.array([0.17992/180, 0.639773/24.6, 0.764/116, 0, 0])
 # Inputs
-Cn_in = 0.625 * 10 / 60  # (g/L) / (g/mol) = mol/L
-CgFg = 0.23
-
-Cg_in = 314.19206 / 180  # (g/L) / (g/mol) = mol/L
-Ca_in = 0.1  # mol/L
-Cb_in = 0.1  # mol/L
-Fm_in = 0.1
-
-Fg_in = CgFg / 180 / Cg_in  # (g/h) / (g/mol) / (mol/L) = L/h
-Fn_in = 0.625 / 1000 / Cn_in / 60  # (mg/h) / (mg/g) / (mol/L) / (g/mol) = L/h
-Fa_in = 6e-9
-Fb_in = 6e-9  # L/h
-F_out = Fg_in + Fn_in + Fa_in + Fb_in + Fm_in
-
-T_amb = 25
-Q = 5 / 9
-
-U_op = numpy.array([Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, F_out, T_amb, Q])
+#          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
+U_op = numpy.array([4.65, 1/180, 0.5])
 
 lin_model = model.LinearModel.create_LinearModel(bioreactor, X_op, U_op, dt_control)
 #  Select states, outputs and inputs for MPC
-#        Nfa, Na, Nb, V
-states = [2, 7]
-#     Fa_in, Fb_in, Fm_in
-inputs = [6]
-#      Cfa, pH
+#        Nfa
+states = [2]
+#     Fm_in
+inputs = [2]
+#         Cfa
 outputs = [2]
 
 lin_model.A = lin_model.A[states][:, states]
@@ -72,33 +56,17 @@ r = numpy.array([3]) - Y_op
 
 # Controller parameters
 P = 100
-M = 50
-Q = numpy.diag([1e0])
+M = 80
+Q = numpy.diag([1e3])
 R = numpy.diag([1e0])
-
-# Bounds
-# x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
-# u_bounds = [numpy.array([-0.75, 1]) - U_op[[inputs[0]]],
-#             numpy.array([-0.75, 1]) - U_op[[inputs[1]]],
-#             numpy.array([-0.75, 1]) - U_op[[inputs[2]]]]
-#
-u_step_bounds = [numpy.array([-0.1, 0.1]),
-                 numpy.array([-0.1, 0.1]),
-                 numpy.array([-0.1, 0.1])]
 
 LQR = controller.LQR(P, M, Q, R, lin_model, r)
 
 # Controller initial params
 # Non-linear
-us = [U_op]
-ys = [bioreactor.outputs(us[-1])[outputs]]
-xs = [bioreactor.X]
-
-# Linear
-# us = [U_op]
-# xs = [bioreactor.X[states]]
-# ys = [lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
-#       + lin_model.g_bar]
+us = [numpy.array([4.65, 1/180, 0.])]
+ys = [bioreactor.outputs(us[-1])]
+xs = [bioreactor.X.copy()]
 
 t_next = 0
 count = 0
@@ -106,58 +74,42 @@ not_done = True
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         U_temp = us[-1].copy()
-        # For nonlinear model
-        # du = K.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - U_op[inputs], ys[-1] - Y_op)
-        u = LQR.step(xs[-1][states] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
-        # For linear model
-        # du = K.step(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, ys[-1] - Y_op)
-        # u = controller.mpc_lqr(xs[-1] - lin_model.x_bar, us[-1][inputs] - lin_model.u_bar, P, lin_model, Q, R, r, lin_model.u_bar)
-
-        # U_temp[inputs] = U_temp[inputs] + du
-        U_temp[inputs] = u
-        U_temp[-3] = Fg_in + Fn_in + sum(U_temp[inputs])
+        u = LQR.step(lin_model.xn2d(xs[-1][states]), lin_model.un2d(us[-1][inputs]), lin_model.yn2d(ys[-1][outputs]))
+        U_temp[inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
         t_next += dt_control
     else:
         us.append(us[-1])
 
-    # Linear model
-    # xs.append(lin_model.A @ (xs[-1] - lin_model.x_bar) + lin_model.B @ (us[-1][inputs] - lin_model.u_bar)
-    #           + lin_model.x_bar)
-    #
-    # if t > 50 and count < 1e5:  # Disturbance for linear model
-    #     xs[-1][0] += 0.001
-    #     count += 1
-    #
-    # if t > 25 and not_done:
-    #     lin_model.A *= 0.9
-    #     not_done = False
-    #
-    # ys.append(lin_model.C @ (xs[-1] - lin_model.x_bar) + lin_model.D @ (us[-1][inputs] - lin_model.u_bar)
-    #           + lin_model.g_bar)
-    # Non-linear model
     bioreactor.step(dt, us[-1])
-    ys.append(bioreactor.outputs(us[-1])[outputs])
-    xs.append(bioreactor.X)
-
-    if t > 90:
-        pass
+    ys.append(bioreactor.outputs(us[-1]))
+    xs.append(bioreactor.X.copy())
 
 ys = numpy.array(ys)
 us = numpy.array(us)
+xs = numpy.array(xs)
 
 plt.subplot(2, 3, 1)
-plt.plot(ts, ys[:, 0])
+plt.plot(ts, ys[:, 2])
+plt.title('Cfa')
 
-# plt.subplot(2, 3, 2)
-# plt.plot(ts, ys[:, 1])
+plt.subplot(2, 3, 2)
+plt.plot(ts, us[:, inputs[0]])
+plt.title('Fm_in')
+
+plt.subplot(2, 3, 3)
+plt.plot(ts, ys[:, 0])
+plt.title('Cg')
 
 plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, inputs[0]])
+plt.plot(ts, ys[:, 1])
+plt.title('Cx')
 
-# plt.subplot(2, 3, 5)
-# plt.plot(ts, us[:, inputs[1]])
-#
-# plt.subplot(2, 3, 6)
-# plt.plot(ts, us[:, inputs[2]])
+plt.subplot(2, 3, 5)
+plt.plot(ts, ys[:, 3])
+plt.title('Ce')
+
+plt.subplot(2, 3, 6)
+plt.plot(ts, ys[:, 4])
+plt.title('Ch')
 plt.show()
