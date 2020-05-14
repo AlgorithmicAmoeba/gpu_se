@@ -41,11 +41,11 @@ U_op = numpy.array([Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, F_out, T_am
 lin_model = model.LinearModel.create_LinearModel(bioreactor, X_op, U_op, dt_control)
 #  Select states, outputs and inputs for MPC
 #        Nfa, Na, Nb, V
-states = [2, 4, 5, 7]
+states = [2, 7]
 #     Fa_in, Fb_in, Fm_in
-inputs = [2, 4, 6]
+inputs = [6]
 #      Cfa, pH
-outputs = [2, 9]
+outputs = [2]
 
 lin_model.A = lin_model.A[states][:, states]
 lin_model.B = lin_model.B[states][:, inputs]
@@ -68,25 +68,24 @@ lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-4, 1e
 lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-3, 1e-2]))
 
 # set point
-r = numpy.array([3, 5]) - Y_op
+r = numpy.array([3]) - Y_op
 
 # Controller parameters
-P = 3
-M = 3
-Q = numpy.diag([1e3, 1e3])
-R = numpy.diag([1e0, 1e0, 1e0])
+P = 100
+M = 50
+Q = numpy.diag([1e0])
+R = numpy.diag([1e0])
 
 # Bounds
 # x_bounds = [numpy.array([0, 5]) - X_op[0], numpy.array([0, 600]) - X_op[1]]
-u_bounds = [numpy.array([-0.75, 1]) - U_op[[inputs[0]]],
-            numpy.array([-0.75, 1]) - U_op[[inputs[1]]],
-            numpy.array([-0.75, 1]) - U_op[[inputs[2]]]]
+# u_bounds = [numpy.array([-0.75, 1]) - U_op[[inputs[0]]],
+#             numpy.array([-0.75, 1]) - U_op[[inputs[1]]],
+#             numpy.array([-0.75, 1]) - U_op[[inputs[2]]]]
 #
 u_step_bounds = [numpy.array([-0.1, 0.1]),
                  numpy.array([-0.1, 0.1]),
                  numpy.array([-0.1, 0.1])]
 
-K = controller.SMPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds, u_step_bounds=u_step_bounds)
 LQR = controller.LQR(P, M, Q, R, lin_model, r)
 
 # Controller initial params
@@ -94,7 +93,6 @@ LQR = controller.LQR(P, M, Q, R, lin_model, r)
 us = [U_op]
 ys = [bioreactor.outputs(us[-1])[outputs]]
 xs = [bioreactor.X]
-K.x_predicted = xs[-1][states] - lin_model.x_bar
 
 # Linear
 # us = [U_op]
@@ -151,15 +149,15 @@ us = numpy.array(us)
 plt.subplot(2, 3, 1)
 plt.plot(ts, ys[:, 0])
 
-plt.subplot(2, 3, 2)
-plt.plot(ts, ys[:, 1])
+# plt.subplot(2, 3, 2)
+# plt.plot(ts, ys[:, 1])
 
 plt.subplot(2, 3, 4)
 plt.plot(ts, us[:, inputs[0]])
 
-plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, inputs[1]])
-
-plt.subplot(2, 3, 6)
-plt.plot(ts, us[:, inputs[2]])
+# plt.subplot(2, 3, 5)
+# plt.plot(ts, us[:, inputs[1]])
+#
+# plt.subplot(2, 3, 6)
+# plt.plot(ts, us[:, inputs[2]])
 plt.show()
