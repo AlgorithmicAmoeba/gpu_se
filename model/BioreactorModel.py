@@ -62,15 +62,12 @@ class Bioreactor(model.NonlinearModel):
         dX : array_like
             The differential changes to the state variables
         """
-        Ng, Nx, Nfa, Ne, _ = [max(0, N) for N in self.X]
-        Nh = self.X[4]
+        Cg, Cx, Cfa, Ce, _ = [max(0, N) for N in self.X]
+        Ch = self.X[4]
         Fg_in, Cg_in, Fm_in = inputs
         F_out = Fg_in + Fm_in
 
         V = self.V
-
-        # Concentrations
-        Cg, Cx, Cfa, Ce, Ch = [N/V for N in [Ng, Nx, Nfa, Ne, Nh]]
 
         if self.high_N:
             ks = 1/230, 1/12, 1/21
@@ -102,13 +99,13 @@ class Bioreactor(model.NonlinearModel):
             rH = 0
 
         # DE's
-        dNg = Fg_in * Cg_in - F_out * Cg + rG
-        dNx = rX
-        dNfa = -F_out * Cfa + rFA
-        dNe = -F_out * Ce + rE
-        dNh = rH
+        dCg = (Fg_in * Cg_in - F_out * Cg + rG)/V
+        dCx = rX/V
+        dCfa = (-F_out * Cfa + rFA)/V
+        dCe = (-F_out * Ce + rE)/V
+        dCh = rH/V
 
-        return numpy.array([dNg, dNx, dNfa, dNe, dNh])
+        return numpy.array([dCg, dCx, dCfa, dCe, dCh])
 
     def step(self, dt, inputs):
         """Updates the model with inputs
