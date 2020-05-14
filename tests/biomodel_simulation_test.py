@@ -16,6 +16,7 @@ assert dt <= dt_control
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
 X0 = numpy.array([0.186/180, 0.639773/24.6, 0.86/116, 0, 0])
 bioreactor = model.Bioreactor(X0)
+bioreactor.high_N = False
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
 X_op = numpy.array([0.17992/180, 0.639773/24.6, 0.764/116, 0, 0])
 # Inputs
@@ -42,7 +43,7 @@ lin_model.y_bar = lin_model.y_bar[outputs]
 lin_model.Nx = len(states)
 lin_model.Ni = len(inputs)
 lin_model.No = len(outputs)
-bioreactor.high_N = False
+lin_model.B *= 100
 
 bioreactor1 = model.Bioreactor(X_op)
 Y_op = bioreactor1.outputs(U_op)[outputs]
@@ -52,15 +53,15 @@ lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-4, 1e
 lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-3, 1e-2]))
 
 # set point
-r = numpy.array([3]) - Y_op
+r = numpy.array([0.7]) - Y_op
 
 # Controller parameters
 P = 100
 M = 80
-Q = numpy.diag([1e3])
+Q = numpy.diag([1e1])
 R = numpy.diag([1e0])
 
-LQR = controller.LQR(P, M, Q, R, lin_model, r)
+K = controller.LQR(P, M, Q, R, lin_model, r)
 
 # Controller initial params
 # Non-linear
@@ -68,13 +69,16 @@ us = [numpy.array([4.65, 1/180, 0.])]
 ys = [bioreactor.outputs(us[-1])]
 xs = [bioreactor.X.copy()]
 
+biass = []
+
 t_next = 0
-count = 0
-not_done = True
 for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         U_temp = us[-1].copy()
-        u = LQR.step(lin_model.xn2d(xs[-1][states]), lin_model.un2d(us[-1][inputs]), lin_model.yn2d(ys[-1][outputs]))
+        if K.y_predicted is not None:
+            biass.append(ys[-1][outputs] - Y_op - K.y_predicted)
+
+        u = K.step(lin_model.xn2d(xs[-1][states]), lin_model.un2d(us[-1][inputs]), lin_model.yn2d(ys[-1][outputs]))
         U_temp[inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
         t_next += dt_control
@@ -88,6 +92,7 @@ for t in tqdm.tqdm(ts[1:]):
 ys = numpy.array(ys)
 us = numpy.array(us)
 xs = numpy.array(xs)
+biass = numpy.array(biass)
 
 plt.subplot(2, 3, 1)
 plt.plot(ts, ys[:, 2])
@@ -102,8 +107,11 @@ plt.plot(ts, ys[:, 0])
 plt.title('Cg')
 
 plt.subplot(2, 3, 4)
-plt.plot(ts, ys[:, 1])
-plt.title('Cx')
+plt.plot(
+    numpy.arange(dt_control, end_time, dt_control),
+    biass
+)
+plt.title('bias')
 
 plt.subplot(2, 3, 5)
 plt.plot(ts, ys[:, 3])
