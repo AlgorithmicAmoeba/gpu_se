@@ -39,6 +39,7 @@ class Bioreactor(model.NonlinearModel):
                                    [0, 12, -1, 0, 6*beta]])
         self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
         self.high_N = True
+        self.V = 1  # L
 
     def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
@@ -61,12 +62,15 @@ class Bioreactor(model.NonlinearModel):
         dX : array_like
             The differential changes to the state variables
         """
-        Ng, Nx, Nfa, Ne, Na, Nb, _, V, T = [max(0, N) for N in self.X]
-        Nh = self.X[6]
-        Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, Fout, Tamb, Q = inputs
+        Ng, Nx, Nfa, Ne, _ = [max(0, N) for N in self.X]
+        Nh = self.X[4]
+        Fg_in, Cg_in, Fm_in = inputs
+        F_out = Fg_in + Fm_in
+
+        V = self.V
 
         # Concentrations
-        Cg, Cx, Cfa, Ce, Ca, Cb, Ch = [N/V for N in [Ng, Nx, Nfa, Ne, Na, Nb, Nh]]
+        Cg, Cx, Cfa, Ce, Ch = [N/V for N in [Ng, Nx, Nfa, Ne, Nh]]
 
         if self.high_N:
             ks = 1/230, 1/12, 1/21
@@ -103,17 +107,13 @@ class Bioreactor(model.NonlinearModel):
             rG = -rFA * (116/180) - r_theta1 - rE * (46/180) - r_theta2
 
         # DE's
-        dNg = Fg_in*Cg_in - Fout*Cg + rG
+        dNg = Fg_in * Cg_in - F_out * Cg + rG
         dNx = rX
-        dNfa = -Fout*Cfa + rFA
-        dNe = -Fout*Ce + rE
-        dNa = Fa_in*Ca_in - Fout * Ca
-        dNb = Fb_in*Cb_in - Fout*Cb
-        dV = Fg_in + Fa_in + Fb_in + Fm_in - Fout
-        dT = 4.5*Q - 0.25*(T - Tamb)
+        dNfa = -F_out * Cfa + rFA
+        dNe = -F_out * Ce + rE
         dNh = rH
 
-        return numpy.array([dNg, dNx, dNfa, dNe, dNa, dNb, dNh, dV, dT])
+        return numpy.array([dNg, dNx, dNfa, dNe, dNh])
 
     def step(self, dt, inputs):
         """Updates the model with inputs
@@ -138,9 +138,9 @@ class Bioreactor(model.NonlinearModel):
         outputs : array_like
             List of all the outputs from the model
         """
-        outs = self.X
-        molar_mass = numpy.array([180, 24.6, 116, 46, 36.5, 40, 1])
-        outs[:7] = outs[:7] * molar_mass / outs[7]
+        outs = self.X.copy()
+        molar_mass = numpy.array([180, 24.6, 116, 46, 1])
+        outs[:5] = outs[:5] * molar_mass / self.V
         return outs
 
     def raw_outputs(self, inputs):
