@@ -15,7 +15,7 @@ assert dt <= dt_control
 # Bioreactor model
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
 X0 = numpy.array([0.28/180, 0.639773/24.6, 1/116, 0, 1e-5, 0, 4.857e-3, 1.077, 35])
-bioreactor = model.Bioreactor(X0, pH_calculations=True)
+bioreactor = model.Bioreactor(X0)
 #                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
 X_op = numpy.array([0.28/180, 0.639773/24.6, 2/116, 0, 0, 3.43e-2, 4.857e-3, 1.077, 35])
 # Inputs
@@ -60,7 +60,7 @@ lin_model.Ni = len(inputs)
 lin_model.No = len(outputs)
 bioreactor.high_N = False
 
-bioreactor1 = model.Bioreactor(X_op, pH_calculations=True)
+bioreactor1 = model.Bioreactor(X_op)
 Y_op = bioreactor1.outputs(U_op)[outputs]
 
 # Noise

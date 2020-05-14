@@ -15,10 +15,6 @@ class Bioreactor(model.NonlinearModel):
         Initial time.
         Defaults to zero
 
-    pH_calculations : bool, optional
-        If `True` then pH calculations are made.
-        Defaults to `False`
-
     Attributes
     -----------
     X : array_like
@@ -27,17 +23,13 @@ class Bioreactor(model.NonlinearModel):
     t : float
         Initial time
 
-    pH_calculations : bool
-        If `True` then pH calculations are made
-
     rate_matrix_inv : 2d array_like
         The inverse of the rate matrix.
         Placed here so that it is only calculated once
     """
-    def __init__(self, X0, t=0, pH_calculations=False):
+    def __init__(self, X0, t=0):
         self.X = numpy.array(X0)
         self.t = t
-        self.pH_calculations = pH_calculations
 
         gamma, beta = 1.8, 0.1
         rate_matrix = numpy.array([[1, 0, 0, 0, 0],
@@ -138,40 +130,6 @@ class Bioreactor(model.NonlinearModel):
         dX = self.DEs(inputs)
         self.X += numpy.array(dX)*dt
 
-    def calculate_pH(self):
-        """Calculates the pH in the vessel.
-
-        Returns
-        -------
-        pH : float
-            The pH of the tank
-        """
-        K_fa1, K_fa2,  K_a, K_b, K_w = 10 ** (-3.03), 10 ** 4.44, 10 ** 8.08, 10 ** 0.56, 10 ** (-14)
-        _, _, Nfa, _, Na, Nb, _, V, _ = self.X
-        C_fa = Nfa/V
-        C_a = Na/V
-        C_b = Nb/V
-
-        def charge_balance(pH_guess):
-            Ch = 10 ** (-pH_guess)
-            C_fa_minus = K_fa1 * C_fa / (K_fa1 + Ch)
-            C_fa_minus2 = K_fa2 * C_fa_minus / (K_fa2 + Ch)
-            C_cl_minus = K_a * C_a / (K_a + Ch)
-            C_oh_minus = K_w / Ch
-            C_na_plus = K_b * C_b / (K_b + C_oh_minus)
-
-            balance = Ch + C_na_plus - C_fa_minus - C_fa_minus2 - C_cl_minus - C_oh_minus
-            return balance
-
-        pHs = numpy.linspace(0, 14, 100)
-        CBs = charge_balance(pHs)
-        index = numpy.argmin(abs(CBs))
-        pH = pHs[index]
-        # if abs(CBs[index]) > 1e-1:
-        #     print('ph CB:', CBs[index])
-
-        return pH
-
     def outputs(self, inputs):
         """Returns all the outputs (state and calculated)
 
@@ -180,11 +138,7 @@ class Bioreactor(model.NonlinearModel):
         outputs : array_like
             List of all the outputs from the model
         """
-        if self.pH_calculations:
-            pH = self.calculate_pH()
-            outs = numpy.append(self.X, pH)
-        else:
-            outs = self.X
+        outs = self.X
         molar_mass = numpy.array([180, 24.6, 116, 46, 36.5, 40, 1])
         outs[:7] = outs[:7] * molar_mass / outs[7]
         return outs
@@ -198,9 +152,5 @@ class Bioreactor(model.NonlinearModel):
             List of all the outputs from the model
         """
         _ = inputs
-        if self.pH_calculations:
-            pH = self.calculate_pH()
-            outs = numpy.append(self.X, pH)
-        else:
-            outs = self.X
+        outs = self.X
         return outs
