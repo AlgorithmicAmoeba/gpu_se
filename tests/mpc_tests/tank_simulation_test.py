@@ -39,7 +39,7 @@ lin_model_nonlinear = model.LinearModel.create_LinearModel(
 # MPC
 r = numpy.array([100.])
 
-K_linear = controller.LQR(
+K_linear = controller.MPC(
     P=20,
     M=8,
     Q=numpy.diag([10]),
@@ -48,7 +48,7 @@ K_linear = controller.LQR(
     ysp=lin_model_linear.yn2d(r)
 )
 
-K_nonlinear = controller.LQR(
+K_nonlinear = controller.MPC(
     P=20,
     M=8,
     Q=numpy.diag([10]),

@@ -80,7 +80,7 @@ R = numpy.diag([1e0, 1e0])
 
 u_bounds = [numpy.array([0, numpy.inf]) - lin_model.u_bar[0],
             numpy.array([0, numpy.inf]) - lin_model.u_bar[1]]
-K = controller.LQR(P, M, Q, R, lin_model, r, u_bounds=u_bounds)
+K = controller.MPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds)
 
 # Controller initial params
 # Non-linear

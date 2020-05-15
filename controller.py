@@ -6,7 +6,7 @@ import model
 import osqp
 
 
-class LQR:
+class MPC:
     r"""A deterministic reformulation of a linear chance constrained MPC
         that uses a discrete linear state space model of the system.
         The original stochastic problem is given by:

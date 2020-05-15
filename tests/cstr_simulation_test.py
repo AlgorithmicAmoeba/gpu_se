@@ -50,7 +50,7 @@ lin_model = model.LinearModel.create_LinearModel(
 r = numpy.array([0.])
 
 # Controller parameters
-K = controller.LQR(
+K = controller.MPC(
     P=300,
     M=300,
     Q=numpy.diag([1e3]),

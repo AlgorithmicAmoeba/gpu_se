@@ -30,7 +30,7 @@ Y_op = lin_model.y_bar
 # MPC
 r = numpy.array([100., 30])
 
-K = controller.LQR(
+K = controller.MPC(
     P=20,
     M=8,
     Q=numpy.diag([10, 10]),
