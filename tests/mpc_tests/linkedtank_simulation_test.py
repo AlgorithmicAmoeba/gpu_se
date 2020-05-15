@@ -78,7 +78,7 @@ def test_linked_tank_bias():
 
 
 def test_linked_tank_SS():
-    a = ys[500:] - r
+    a = ys[1000:] - r
     assert a == pytest.approx(0, abs=1e-3)
 
 
