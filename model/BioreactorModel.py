@@ -84,19 +84,24 @@ class Bioreactor(model.NonlinearModel):
             rE = 2 * rEf * Cx * V
             rH = 0
         else:
-            ks = 300 / 230, 1 / 120, 0
-            rFAf, rEf, rX = [k * (Cg / (1e-3 + Cg)) for k in ks]
-            theta_calc = 1.1 * (Cg / (1e-3 + Cg))
+            rX = 0
+            rH = (0.28 / 180 - Cg)
 
-            RHS = [rFAf, rEf, rX, theta_calc, 0]
+            rFA_max = 0.15 / 116
+            rFA = rFA_max * (Cg / (1e-5 + Cg))
 
-            rFAf, rTCA, rResp, rEf, rX = self.rate_matrix_inv @ RHS
+            r_theta1_max = 0.24 / 180 - 0.15 / 180
+            r_theta1_req = r_theta1_max - (r_theta1_max / 2 / (0.28 / 180) * rH + 0.01 * Ch)
+            r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-5 + Cg))
 
-            rG = (-rFAf - rTCA - rEf - rX) * Cx * V
-            rX = 6 * rX * Cx * V
-            rFA = 2 * rFAf * Cx * V
-            rE = 2 * rEf * Cx * V
-            rH = 0
+            rE_req = r_theta1_req - r_theta1_max
+            rE = min(3.804e-4, max(0, rE_req))
+
+            r_theta2_max = 0.06 / 180 - 0.0175 / 180
+            r_theta2_req = r_theta1_req - r_theta1_max - rE
+            r_theta2 = min(r_theta2_max, max(0, r_theta2_req))
+
+            rG = -rFA * (116 / 180) - r_theta1 - rE * (46 / 180) - r_theta2
 
         # DE's
         dCg = (Fg_in * Cg_in - F_out * Cg + rG)/V
