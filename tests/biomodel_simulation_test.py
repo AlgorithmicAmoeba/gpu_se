@@ -1,9 +1,23 @@
 import numpy
+import scipy.optimize
 import tqdm
 import matplotlib.pyplot as plt
 import controller
 import model.LinearModel
-import noise
+
+
+def find_SS(U_op, X0):
+    bioreactor_SS = model.Bioreactor(X0=[], high_N=False)
+
+    def fun(x_ss):
+        temp = bioreactor_SS.X
+        bioreactor_SS.X = x_ss
+        ans = bioreactor_SS.DEs(U_op)
+        bioreactor_SS.X = temp
+        return ans
+
+    return scipy.optimize.fsolve(fun, X0)
+
 
 # Simulation set-up
 end_time = 50
@@ -12,25 +26,36 @@ dt = ts[1]
 dt_control = 1
 assert dt <= dt_control
 
-# Bioreactor model
-#                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
-X0 = numpy.array([0.186/180, 0.639773/24.6, 0.86/116, 0, 0])
-bioreactor = model.Bioreactor(X0)
-bioreactor.high_N = False
-#                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
-X_op = numpy.array([0.17992/180, 0.639773/24.6, 0.764/116, 0, 0])
-# Inputs
-#          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
-U_op = numpy.array([1.65, 1/180, 0.5])
+# Bioreactor
 
-lin_model = model.LinearModel.create_LinearModel(bioreactor, X_op, U_op, dt_control)
+bioreactor = model.Bioreactor(
+    X0=find_SS(
+        numpy.array([0.06, 5/180, 0.2]),
+        #            Ng,         Nx,      Nfa, Ne, Nh
+        numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
+    ),
+    high_N=False
+)
+
+# Linear model
+lin_model = model.LinearModel.create_LinearModel(
+    bioreactor,
+    x_bar=find_SS(
+        numpy.array([0.04, 5/180, 0.1]),
+        #           Ng,         Nx,      Nfa, Ne, Nh
+        numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
+    ),
+    #          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
+    u_bar=numpy.array([0.04, 5/180, 0.1]),
+    T=dt_control
+)
 #  Select states, outputs and inputs for MPC
-#        Nfa
-states = [2]
+#        Cfa
+states = [0, 2]
 #     Fm_in
-inputs = [2]
+inputs = [0, 2]
 #         Cfa
-outputs = [2]
+outputs = [0, 2]
 
 lin_model.A = lin_model.A[states][:, states]
 lin_model.B = lin_model.B[states][:, inputs]
@@ -44,27 +69,22 @@ lin_model.Nx = len(states)
 lin_model.Ni = len(inputs)
 lin_model.No = len(outputs)
 
-bioreactor1 = model.Bioreactor(X_op)
-Y_op = bioreactor1.outputs(U_op)[outputs]
-
-# Noise
-lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-4, 1e-8, 1e-8, 1e-2]))
-lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-3, 1e-2]))
-
 # set point
-r = numpy.array([0.85]) - Y_op
+r = lin_model.yn2d(numpy.array([0.28, 0.85]))
 
 # Controller parameters
 P = 200
 M = 160
-Q = numpy.diag([1e3])
-R = numpy.diag([1e0])
+Q = numpy.diag([1e2, 1e3])
+R = numpy.diag([1e0, 1e0])
 
-K = controller.LQR(P, M, Q, R, lin_model, r)
+u_bounds = [numpy.array([0, numpy.inf]) - lin_model.u_bar[0],
+            numpy.array([0, numpy.inf]) - lin_model.u_bar[1]]
+K = controller.LQR(P, M, Q, R, lin_model, r, u_bounds=u_bounds)
 
 # Controller initial params
 # Non-linear
-us = [numpy.array([4.65, 1/180, 0.])]
+us = [numpy.array([0.06, 5/180, 0.2])]
 ys = [bioreactor.outputs(us[-1])]
 xs = [bioreactor.X.copy()]
 
@@ -75,7 +95,7 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         U_temp = us[-1].copy()
         if K.y_predicted is not None:
-            biass.append(ys[-1][outputs] - Y_op - K.y_predicted)
+            biass.append(lin_model.yn2d(ys[-1][outputs]) - K.y_predicted)
 
         u = K.step(lin_model.xn2d(xs[-1][states]), lin_model.un2d(us[-1][inputs]), lin_model.yn2d(ys[-1][outputs]))
         U_temp[inputs] = lin_model.ud2n(u)
@@ -117,6 +137,6 @@ plt.plot(ts, ys[:, 3])
 plt.title('Ce')
 
 plt.subplot(2, 3, 6)
-plt.plot(ts, ys[:, 4])
-plt.title('Ch')
+plt.plot(ts, us[:, inputs[1]])
+plt.title('Fg_in')
 plt.show()
