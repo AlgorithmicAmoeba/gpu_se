@@ -43,7 +43,6 @@ lin_model.y_bar = lin_model.y_bar[outputs]
 lin_model.Nx = len(states)
 lin_model.Ni = len(inputs)
 lin_model.No = len(outputs)
-lin_model.B *= 100
 
 bioreactor1 = model.Bioreactor(X_op)
 Y_op = bioreactor1.outputs(U_op)[outputs]
