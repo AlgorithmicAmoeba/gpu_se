@@ -27,7 +27,7 @@ class Bioreactor(model.NonlinearModel):
         The inverse of the rate matrix.
         Placed here so that it is only calculated once
     """
-    def __init__(self, X0, t=0):
+    def __init__(self, X0, t=0, high_N=True):
         self.X = numpy.array(X0)
         self.t = t
 
@@ -38,7 +38,7 @@ class Bioreactor(model.NonlinearModel):
                                    [-6, 4, 7/3, 2, -6*gamma],
                                    [0, 12, -1, 0, 6*beta]])
         self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
-        self.high_N = True
+        self.high_N = high_N
         self.V = 1  # L
 
     def DEs(self, inputs):
