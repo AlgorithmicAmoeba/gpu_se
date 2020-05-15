@@ -6,7 +6,7 @@ import model.LinearModel
 import noise
 
 # Simulation set-up
-end_time = 1000
+end_time = 50
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 dt_control = 1
@@ -21,7 +21,7 @@ bioreactor.high_N = False
 X_op = numpy.array([0.17992/180, 0.639773/24.6, 0.764/116, 0, 0])
 # Inputs
 #          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
-U_op = numpy.array([4.65, 1/180, 0.5])
+U_op = numpy.array([1.65, 1/180, 0.5])
 
 lin_model = model.LinearModel.create_LinearModel(bioreactor, X_op, U_op, dt_control)
 #  Select states, outputs and inputs for MPC
@@ -53,12 +53,12 @@ lin_model.state_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-4, 1e
 lin_model.measurement_noise = noise.WhiteGaussianNoise(covariance=numpy.diag([1e-3, 1e-2]))
 
 # set point
-r = numpy.array([0.7]) - Y_op
+r = numpy.array([0.85]) - Y_op
 
 # Controller parameters
-P = 100
-M = 80
-Q = numpy.diag([1e1])
+P = 200
+M = 160
+Q = numpy.diag([1e3])
 R = numpy.diag([1e0])
 
 K = controller.LQR(P, M, Q, R, lin_model, r)
