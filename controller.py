@@ -325,15 +325,12 @@ class SMPC:
 
         self.x_predicted = mu0 + res.x[Nx:2*Nx]
 
-        dxs = res.x[:(self.P+1)*Nx]
-        ys = res.x[(self.P+1)*Nx: (self.P+1)*Nx + self.P*No]
-        dus = res.x[(self.P+1)*Nx + self.P*No:]
-
         return ctrl
 
 
 class LQR:
-    def __init__(self, P, M, Q, R, lin_model, ysp):
+    def __init__(self, P, M, Q, R, lin_model, ysp,
+                 y_bounds=None, u_bounds=None, u_step_bounds=None):
         self.P = P
         self.M = M
         self.Q = Q
@@ -345,6 +342,25 @@ class LQR:
 
         x0 = numpy.zeros(Nx)
         um1 = numpy.zeros(Ni)
+
+        # Limit constraints
+        if y_bounds is None:
+            y_min = numpy.full(No, -numpy.inf)
+            y_max = numpy.full(No, numpy.inf)
+        else:
+            y_min, y_max = [numpy.asarray(y) for y in zip(*y_bounds)]
+
+        if u_bounds is None:
+            u_min = numpy.full(Ni, -numpy.inf)
+            u_max = numpy.full(Ni, numpy.inf)
+        else:
+            u_min, u_max = [numpy.asarray(u) for u in zip(*u_bounds)]
+
+        if u_step_bounds is None:
+            u_step_min = numpy.full(Ni, -numpy.inf)
+            u_step_max = numpy.full(Ni, numpy.inf)
+        else:
+            u_step_min, u_step_max = [numpy.array(u) for u in zip(*u_step_bounds)]
 
         self.H = scipy.sparse.block_diag([
             scipy.sparse.csc_matrix(((P + 1) * Nx, (P + 1) * Nx)),
@@ -432,36 +448,89 @@ class LQR:
 
         b_output = numpy.zeros(P * No)
 
-        self.A_matrix = scipy.sparse.vstack([A_um1_init, A_state, A_output])
+        # y_min <= y_k <= y_max
+        A_output_ineq = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((P * No, (P + 1) * Nx)),
+            scipy.sparse.eye(P * No),
+            scipy.sparse.csc_matrix((P * No, (M + 2) * Ni))
+        ])
+        l_output_ineq = numpy.kron(numpy.ones(P), y_min)
+        u_output_ineq = numpy.kron(numpy.ones(P), y_max)
 
-        self.b_matrix = numpy.hstack([l_um1_init, b_state, b_output])
+        # du_min <= du_k <= du_max
+        A_input_steps = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix(((M+1) * Ni, (P + 1) * Nx + P * No + Ni)),
+            scipy.sparse.eye((M+1) * Ni)
+        ])
+        l_input_steps = numpy.kron(numpy.ones(M+1), u_step_min)
+        u_input_steps = numpy.kron(numpy.ones(M+1), u_step_max)
+
+        # u_min <= u_k <= u_max
+        self.A_input_ineq = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix(((M+1) * Ni, (P + 1) * Nx + P * No)),
+            scipy.sparse.kron(
+                numpy.ones((M+1, 1)),
+                scipy.sparse.eye(Ni)
+            ),
+            scipy.sparse.kron(
+                scipy.sparse.csc_matrix(numpy.tril(numpy.ones((M+1, M+1)))),
+                numpy.eye(Ni)
+            )
+        ])
+        self.A_input_ineq = scipy.sparse.hstack([
+            scipy.sparse.csc_matrix((Ni, (P + 1) * Nx + P * No)),
+            scipy.sparse.kron(
+                numpy.ones((1, 2)),
+                scipy.sparse.eye(Ni)
+            ),
+            scipy.sparse.csc_matrix((Ni, M*Ni)),
+        ])
+        self.l_input_ineq = numpy.kron(numpy.ones(1), u_min)
+        self.u_input_ineq = numpy.kron(numpy.ones(1), u_max)
+
+        self.A_matrix = scipy.sparse.vstack([A_um1_init, A_state, A_output,
+                                             A_output_ineq, A_input_steps, self.A_input_ineq])
+
+        self.l_matrix = numpy.hstack([l_um1_init, b_state, b_output,
+                                      l_output_ineq, l_input_steps, self.l_input_ineq])
+
+        self.u_matrix = numpy.hstack([l_um1_init, b_state, b_output,
+                                      u_output_ineq, u_input_steps, self.u_input_ineq])
 
         # Create an OSQP object
         self.prob = osqp.OSQP()
 
         # Setup workspace
         self.A_matrix = scipy.sparse.csc_matrix(self.A_matrix)
-        self.prob.setup(self.H, self.q, self.A_matrix, self.b_matrix, self.b_matrix, verbose=False)
+        self.prob.setup(self.H, self.q, self.A_matrix, self.l_matrix, self.u_matrix, verbose=False)
 
         self.y_predicted = None
 
     def step(self, x0, um1, y0):
         """return the MPC control input using a linear system"""
+        # Added due to OSQP bug
+        x0 = numpy.maximum(numpy.minimum(x0, 1e10), -1e10)
+        um1 = numpy.maximum(numpy.minimum(um1, 1e10), -1e10)
+        y0 = numpy.maximum(numpy.minimum(y0, 1e10), -1e10)
 
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
 
-        self.b_matrix[:Ni] = um1
-        self.b_matrix[Ni:Ni+Nx] = -x0
+        self.l_matrix[:Ni] = um1
+        self.l_matrix[Ni:Ni+Nx] = -x0
+
+        self.u_matrix[:Ni] = um1
+        self.u_matrix[Ni:Ni + Nx] = -x0
 
         if self.y_predicted is not None:
             bias = y0 - self.y_predicted
         else:
             bias = numpy.zeros_like(y0)
 
-        self.b_matrix[Ni + (self.P+1)*Nx:] = numpy.tile(-bias, self.P)
+        self.l_matrix[Ni + (self.P+1)*Nx: Ni + (self.P+1)*Nx + self.P*No] = numpy.tile(-bias, self.P)
+        self.u_matrix[Ni + (self.P+1)*Nx: Ni + (self.P+1)*Nx + self.P*No] = numpy.tile(-bias, self.P)
 
-        self.prob.update(l=self.b_matrix, u=self.b_matrix)
+        self.prob.update(l=self.l_matrix, u=self.u_matrix)
 
         # Solve
         res = self.prob.solve()
@@ -473,10 +542,6 @@ class LQR:
         # Apply first control input to the plant
         m = (self.P + 1) * Nx + self.P * No + Ni
         ctrl = res.x[m: m + Ni] + um1
-
-        dxs = res.x[:(self.P + 1) * Nx]
-        ys = res.x[(self.P + 1) * Nx: (self.P + 1) * Nx + self.P * No]
-        dus = res.x[(self.P + 1) * Nx + self.P * No:]
 
         self.y_predicted = res.x[(self.P+1)*Nx:(self.P+1)*Nx + No] - bias
 
