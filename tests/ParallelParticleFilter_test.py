@@ -5,6 +5,7 @@ from gpu_funcs.MultivariateGaussianSum import MultivariateGaussianSum
 
 def f(x, u, dt):
     x1, x2 = x
+    u, = u
 
     dx1 = x1 - x2 * u
     dx2 = x1 / u + 2 * x2
@@ -14,6 +15,7 @@ def f(x, u, dt):
 
 def g(x, u):
     x1, x2 = x
+    u, = u
 
     return x1 * x2, x2 + u
 
@@ -53,12 +55,12 @@ pp = ParallelParticleFilter(f, g, 10, x0, state_noise, measurement_noise)
 
 
 def test_ParallelParticleFilter_predict():
-    pp.predict(1, 1)
+    pp.predict([1.], 1.)
 
 
 def test_ParallelParticleFilter_update():
     z = numpy.array([2.3, 1.2])
-    pp.update(1.0, z)
+    pp.update([1.], z)
 
 
 def test_ParallelParticleFilter_resample():
