@@ -116,10 +116,7 @@ class Bioreactor(model.NonlinearModel):
         outputs : array_like
             List of all the outputs from the model
         """
-        outs = self.X.copy()
-        molar_mass = numpy.array([180, 24.6, 116, 46, 1])
-        outs[:5] = outs[:5] * molar_mass
-        return outs
+        return numpy.array(Bioreactor.static_outputs(self.X, inputs))
 
     def raw_outputs(self, inputs):
         """Returns all the outputs (state and calculated)
@@ -182,3 +179,9 @@ class Bioreactor(model.NonlinearModel):
         dCh = rH / V * dt
 
         return dCg, dCx, dCfa, dCe, dCh
+
+    @staticmethod
+    def static_outputs(x, u):
+        Cg, Cx, Cfa, Ce, Ch = x
+        _= u
+        return Cg*180, Cx*24.6, Cfa*116, Ce*46, Ch
