@@ -1,0 +1,18 @@
+name: gpu_se_cuda102
+
+dependencies:
+  - python>=3.8.1
+  - numpy>=1.18.1
+  - matplotlib>=3.1.3
+  - tqdm>=4.40.2
+  - scipy>=1.4.0
+  - cupy>=7.2.0
+  - numba>=0.48.0
+  - pandas>=1.0.2
+  - pytorch>=1.4.0
+  - xlsxwriter>=1.2.8
+  - osqp>=0.6.1
+  - pytest>=5.4.1
+  - pip
+  - pip:
+    - cupy_cuda102>=7.4.0
