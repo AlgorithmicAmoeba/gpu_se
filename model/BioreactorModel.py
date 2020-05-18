@@ -40,7 +40,6 @@ class Bioreactor(model.NonlinearModel):
                                    [0, 12, -1, 0, 6*beta]])
         self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
         self.high_N = high_N
-        self.V = 1  # L
 
     def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.
@@ -64,11 +63,10 @@ class Bioreactor(model.NonlinearModel):
             The differential changes to the state variables
         """
         Cg, Cx, Cfa, Ce, _ = [max(0, N) for N in self.X]
-        Ch = self.X[4]
         Fg_in, Cg_in, Fm_in = inputs
         F_out = Fg_in + Fm_in
 
-        V = self.V
+        V = 1  # L
 
         if self.high_N:
             ks = 1/230, 1/12, 1/21
@@ -84,32 +82,14 @@ class Bioreactor(model.NonlinearModel):
             rFA = 2 * rFAf * Cx * V
             rE = 2 * rEf * Cx * V
             rH = 0
+
+            dCg = (Fg_in * Cg_in - F_out * Cg + rG) / V
+            dCx = rX / V
+            dCfa = (-F_out * Cfa + rFA) / V
+            dCe = (-F_out * Ce + rE) / V
+            dCh = rH / V
         else:
-            rX = 0
-            rH = (0.28 / 180 - Cg)
-
-            rFA_max = 0.15 / 116
-            rFA = rFA_max * (Cg / (1e-5 + Cg))
-
-            r_theta1_max = 0.24 / 180 - 0.15 / 180
-            r_theta1_req = r_theta1_max - (r_theta1_max / 2 / (0.28 / 180) * rH + 0.01 * Ch)
-            r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-5 + Cg))
-
-            rE_req = r_theta1_req - r_theta1_max
-            rE = min(3.804e-4, max(0, rE_req))
-
-            r_theta2_max = 0.06 / 180 - 0.0175 / 180
-            r_theta2_req = r_theta1_req - r_theta1_max - rE
-            r_theta2 = min(r_theta2_max, max(0, r_theta2_req))
-
-            rG = -rFA * (116 / 180) - r_theta1 - rE * (46 / 180) - r_theta2
-
-        # DE's
-        dCg = (Fg_in * Cg_in - F_out * Cg + rG)/V
-        dCx = rX/V
-        dCfa = (-F_out * Cfa + rFA)/V
-        dCe = (-F_out * Ce + rE)/V
-        dCh = rH/V
+            dCg, dCx, dCfa, dCe, dCh = Bioreactor.homeostatic_DEs(self.X, inputs)
 
         return numpy.array([dCg, dCx, dCfa, dCe, dCh])
 
@@ -138,7 +118,7 @@ class Bioreactor(model.NonlinearModel):
         """
         outs = self.X.copy()
         molar_mass = numpy.array([180, 24.6, 116, 46, 1])
-        outs[:5] = outs[:5] * molar_mass / self.V
+        outs[:5] = outs[:5] * molar_mass
         return outs
 
     def raw_outputs(self, inputs):
@@ -165,3 +145,40 @@ class Bioreactor(model.NonlinearModel):
             return ans
 
         return scipy.optimize.fsolve(fun, X0)
+
+    @staticmethod
+    def homeostatic_DEs(x, u, dt=1):
+        Cg, Cx, Cfa, Ce, Ch = x
+        Cg, Cx, Cfa, Ce = max(Cg, 0), max(Cx, 0), max(Cfa, 0), max(Ce, 0)
+
+        Fg_in, Cg_in, Fm_in = u
+        F_out = Fg_in + Fm_in
+
+        V = 1  # L
+
+        rX = 0
+        rH = (0.28 / 180 - Cg)
+
+        rFA_max = 0.15 / 116
+        rFA = rFA_max * (Cg / (1e-5 + Cg))
+
+        r_theta1_max = 0.24 / 180 - 0.15 / 180
+        r_theta1_req = r_theta1_max - (r_theta1_max / 2 / (0.28 / 180) * rH + 0.01 * Ch)
+        r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-5 + Cg))
+
+        rE_req = r_theta1_req - r_theta1_max
+        rE = min(3.804e-4, max(0, rE_req))
+
+        r_theta2_max = 0.06 / 180 - 0.0175 / 180
+        r_theta2_req = r_theta1_req - r_theta1_max - rE
+        r_theta2 = min(r_theta2_max, max(0, r_theta2_req))
+
+        rG = -rFA * (116 / 180) - r_theta1 - rE * (46 / 180) - r_theta2
+
+        dCg = (Fg_in * Cg_in - F_out * Cg + rG) / V * dt
+        dCx = rX / V * dt
+        dCfa = (-F_out * Cfa + rFA) / V * dt
+        dCe = (-F_out * Ce + rE) / V * dt
+        dCh = rH / V * dt
+
+        return dCg, dCx, dCfa, dCe, dCh
