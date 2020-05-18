@@ -183,5 +183,5 @@ class Bioreactor(model.NonlinearModel):
     @staticmethod
     def static_outputs(x, u):
         Cg, Cx, Cfa, Ce, Ch = x
-        _= u
+        _ = u
         return Cg*180, Cx*24.6, Cfa*116, Ce*46, Ch
