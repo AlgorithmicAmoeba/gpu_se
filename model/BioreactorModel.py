@@ -1,6 +1,7 @@
 # Contains code for the system model
 import numpy
 import model
+import scipy.optimize
 
 
 class Bioreactor(model.NonlinearModel):
@@ -151,3 +152,16 @@ class Bioreactor(model.NonlinearModel):
         _ = inputs
         outs = self.X
         return outs
+
+    @staticmethod
+    def find_SS(U_op, X0):
+        bioreactor_SS = model.Bioreactor(X0=[], high_N=False)
+
+        def fun(x_ss):
+            temp = bioreactor_SS.X
+            bioreactor_SS.X = x_ss
+            ans = bioreactor_SS.DEs(U_op)
+            bioreactor_SS.X = temp
+            return ans
+
+        return scipy.optimize.fsolve(fun, X0)

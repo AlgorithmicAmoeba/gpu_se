@@ -1,23 +1,8 @@
 import numpy
-import scipy.optimize
 import tqdm
 import matplotlib.pyplot as plt
 import controller
 import model.LinearModel
-
-
-def find_SS(U_op, X0):
-    bioreactor_SS = model.Bioreactor(X0=[], high_N=False)
-
-    def fun(x_ss):
-        temp = bioreactor_SS.X
-        bioreactor_SS.X = x_ss
-        ans = bioreactor_SS.DEs(U_op)
-        bioreactor_SS.X = temp
-        return ans
-
-    return scipy.optimize.fsolve(fun, X0)
-
 
 # Simulation set-up
 end_time = 50
@@ -27,9 +12,8 @@ dt_control = 1
 assert dt <= dt_control
 
 # Bioreactor
-
 bioreactor = model.Bioreactor(
-    X0=find_SS(
+    X0=model.Bioreactor.find_SS(
         numpy.array([0.06, 5/180, 0.2]),
         #            Ng,         Nx,      Nfa, Ne, Nh
         numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
@@ -40,7 +24,7 @@ bioreactor = model.Bioreactor(
 # Linear model
 lin_model = model.LinearModel.create_LinearModel(
     bioreactor,
-    x_bar=find_SS(
+    x_bar=model.Bioreactor.find_SS(
         numpy.array([0.04, 5/180, 0.1]),
         #           Ng,         Nx,      Nfa, Ne, Nh
         numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
