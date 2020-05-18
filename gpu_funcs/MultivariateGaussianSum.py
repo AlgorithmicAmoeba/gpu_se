@@ -1,6 +1,7 @@
+import warnings
 import numpy
-import numba.cuda as cuda
 import cupy
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 class MultivariateGaussianSum:
