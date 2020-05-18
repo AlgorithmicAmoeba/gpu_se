@@ -15,7 +15,7 @@ def f(x, u, dt):
 def g(x, u):
     x1, x2 = x
 
-    return [x1 * x2, x2 + u]
+    return x1 * x2, x2 + u
 
 
 x0 = MultivariateGaussianSum(
@@ -52,4 +52,15 @@ measurement_noise = MultivariateGaussianSum(
 
 p = ParticleFilter(f, g, 10, x0, state_noise, measurement_noise)
 
-p.predict(1, 1)
+
+def test_ParticleFilter_predict():
+    p.predict(1, 1)
+
+
+def test_ParticleFilter_update():
+    z = numpy.array([2.3, 1.2])
+    p.update(1.0, z)
+
+
+def test_ParticleFilter_resample():
+    p.resample()
