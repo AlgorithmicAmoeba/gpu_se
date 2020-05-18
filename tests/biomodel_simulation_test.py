@@ -40,21 +40,21 @@ lin_model.select_subset(
     outputs=[0, 2],  # Cg, Cfa
 )
 
-# set point
-r = lin_model.yn2d(numpy.array([0.28, 0.85]), subselect=False)
-
-# Controller parameters
-P = 200
-M = 160
-Q = numpy.diag([1e2, 1e3])
-R = numpy.diag([1e0, 1e0])
-
-u_bounds = [numpy.array([0, numpy.inf]) - lin_model.u_bar[0],
-            numpy.array([0, numpy.inf]) - lin_model.u_bar[1]]
-K = controller.MPC(P, M, Q, R, lin_model, r, u_bounds=u_bounds)
+# Controller
+K = controller.MPC(
+    P=200,
+    M=160,
+    Q=numpy.diag([1e2, 1e3]),
+    R=numpy.diag([1, 1]),
+    lin_model=lin_model,
+    ysp=lin_model.yn2d(numpy.array([0.28, 0.85]), subselect=False),
+    u_bounds=[
+        numpy.array([0, numpy.inf]) - lin_model.u_bar[0],
+        numpy.array([0, numpy.inf]) - lin_model.u_bar[1]
+    ]
+)
 
 # Controller initial params
-# Non-linear
 us = [numpy.array([0.06, 5/180, 0.2])]
 ys = [bioreactor.outputs(us[-1])]
 xs = [bioreactor.X.copy()]
