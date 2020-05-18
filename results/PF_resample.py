@@ -29,16 +29,21 @@ def generate_results(redo=False):
         pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, state_noise_gpu, measurement_noise_gpu)
 
         p.resample()
-        t_cpu = time.time()
+
         for j in range(count):
+            p.weights = numpy.random.random(size=p.N_particles)
+            p.weights /= numpy.sum(p.weights)
+            t_cpu = time.time()
             p.resample()
-        times[i, 0] = time.time() - t_cpu
+            times[i, 0] += time.time() - t_cpu
 
         pp.resample()
-        t_gpu = time.time()
         for j in range(count):
+            pp.weights = numpy.random.random(size=pp.N_particles)
+            pp.weights /= numpy.sum(pp.weights)
+            t_gpu = time.time()
             pp.resample()
-        times[i, 1] = time.time() - t_gpu
+            times[i, 1] += time.time() - t_gpu
 
     df_new = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(N_done+1, N+1))
     df = df.append(df_new)
