@@ -9,18 +9,19 @@ import cupy
 class ParticleFilter:
     """Implements a particle filter algorithm"""
 
-    def __init__(self, f, g, N_particles, x0, measurement_pdf):
+    def __init__(self, f, g, N_particles, x0, state_pdf, measurement_pdf):
         self.f = f
         self.g = g
         self.N_particles = N_particles
 
         self.particles = x0.draw(N_particles)
         self.weights = numpy.full(N_particles, 1 / N_particles)
+        self.state_pdf = state_pdf
         self.measurement_pdf = measurement_pdf
 
     def predict(self, u, dt):
         for i, particle in enumerate(self.particles):
-            self.particles[i] = self.f(particle, u, dt)
+            self.particles[i] = self.f(particle, u, dt) + self.state_pdf.draw()
 
     def update(self, u, z):
         for i, particle in enumerate(self.particles):
@@ -50,8 +51,8 @@ class ParallelParticleFilter(ParticleFilter):
     """Implements a parallel particle filter algorithm.
     """
 
-    def __init__(self, f, g, N_particles, x0, measurement_pdf):
-        super().__init__(f, g, N_particles, x0, measurement_pdf)
+    def __init__(self, f, g, N_particles, x0, state_pdf, measurement_pdf):
+        super().__init__(f, g, N_particles, x0, state_pdf, measurement_pdf)
 
         self.f_vectorize = self.__f_vec()
         self.g_vectorize = self.__g_vec()
@@ -132,6 +133,7 @@ class ParallelParticleFilter(ParticleFilter):
 
     def predict(self, u, dt):
         self.particles_device = self.f_vectorize(self.particles_device, u, dt)
+        self.particles_device += self.state_pdf.draw(self.N_particles)
 
     def update(self, u, z):
         z = cupy.asarray(z)
