@@ -34,27 +34,14 @@ lin_model = model.LinearModel.create_LinearModel(
     T=dt_control
 )
 #  Select states, outputs and inputs for MPC
-#        Cfa
-states = [0, 2]
-#     Fm_in
-inputs = [0, 2]
-#         Cfa
-outputs = [0, 2]
-
-lin_model.A = lin_model.A[states][:, states]
-lin_model.B = lin_model.B[states][:, inputs]
-lin_model.C = lin_model.C[outputs][:, states]
-lin_model.D = lin_model.D[outputs][:, inputs]
-lin_model.x_bar = lin_model.x_bar[states]
-lin_model.u_bar = lin_model.u_bar[inputs]
-lin_model.f_bar = lin_model.f_bar[states]
-lin_model.y_bar = lin_model.y_bar[outputs]
-lin_model.Nx = len(states)
-lin_model.Ni = len(inputs)
-lin_model.No = len(outputs)
+lin_model.select_subset(
+    states=[0, 2],  # Cg, Cfa
+    inputs=[0, 2],  # Fg_in, Fm_in
+    outputs=[0, 2],  # Cg, Cfa
+)
 
 # set point
-r = lin_model.yn2d(numpy.array([0.28, 0.85]))
+r = lin_model.yn2d(numpy.array([0.28, 0.85]), subselect=False)
 
 # Controller parameters
 P = 200
@@ -79,10 +66,10 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         U_temp = us[-1].copy()
         if K.y_predicted is not None:
-            biass.append(lin_model.yn2d(ys[-1][outputs]) - K.y_predicted)
+            biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
 
-        u = K.step(lin_model.xn2d(xs[-1][states]), lin_model.un2d(us[-1][inputs]), lin_model.yn2d(ys[-1][outputs]))
-        U_temp[inputs] = lin_model.ud2n(u)
+        u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+        U_temp[lin_model.inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
         t_next += dt_control
     else:
@@ -102,7 +89,7 @@ plt.plot(ts, ys[:, 2])
 plt.title('Cfa')
 
 plt.subplot(2, 3, 2)
-plt.plot(ts, us[:, inputs[0]])
+plt.plot(ts, us[:, lin_model.inputs[0]])
 plt.title('Fm_in')
 
 plt.subplot(2, 3, 3)
@@ -121,6 +108,6 @@ plt.plot(ts, ys[:, 3])
 plt.title('Ce')
 
 plt.subplot(2, 3, 6)
-plt.plot(ts, us[:, inputs[1]])
+plt.plot(ts, us[:, lin_model.inputs[1]])
 plt.title('Fg_in')
 plt.show()

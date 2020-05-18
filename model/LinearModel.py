@@ -63,6 +63,10 @@ class LinearModel:
         self.Ni = self.B.shape[1]
         self.No = self.C.shape[0]
 
+        self.states = range(self.Nx)
+        self.inputs = range(self.Ni)
+        self.outputs = range(self.No)
+
     @staticmethod
     def create_LinearModel(nonlinear_model: model.NonlinearModel,
                            x_bar, u_bar, T):
@@ -139,22 +143,44 @@ class LinearModel:
 
         return linear_model
 
+    def select_subset(self, states, inputs, outputs):
+        self.states = states
+        self.inputs = inputs
+        self.outputs = outputs
+        self.A = self.A[states][:, states]
+        self.B = self.B[states][:, inputs]
+        self.C = self.C[outputs][:, states]
+        self.D = self.D[outputs][:, inputs]
+        self.x_bar = self.x_bar[states]
+        self.u_bar = self.u_bar[inputs]
+        self.f_bar = self.f_bar[states]
+        self.y_bar = self.y_bar[outputs]
+        self.Nx = len(states)
+        self.Ni = len(inputs)
+        self.No = len(outputs)
+
     def xd2n(self, x):
         return x + self.x_bar
 
-    def xn2d(self, x):
+    def xn2d(self, x, subselect=True):
+        if subselect:
+            return x[self.states] - self.x_bar
         return x - self.x_bar
 
     def yd2n(self, y):
         return y + self.y_bar
 
-    def yn2d(self, y):
+    def yn2d(self, y, subselect=True):
+        if subselect:
+            return y[self.outputs] - self.y_bar
         return y - self.y_bar
 
     def ud2n(self, u):
         return u + self.u_bar
 
-    def un2d(self, u):
+    def un2d(self, u, subselect=True):
+        if subselect:
+            return u[self.inputs] - self.u_bar
         return u - self.u_bar
 
 
