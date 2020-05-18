@@ -19,40 +19,69 @@ def g(x, u):
     return x1 * x2, x2 + u
 
 
-x0_cpu = MultivariateGaussianSum(means=numpy.array([[10, 0],
-                                                    [-10, -10]]),
-                                 covariances=numpy.array([[[1, 0],
-                                                           [0, 1]],
+x0_cpu = MultivariateGaussianSum(
+    means=numpy.array([[10, 0],
+                       [-10, -10]]),
+    covariances=numpy.array([[[1, 0],
+                              [0, 1]],
 
-                                                          [[2, 0.5],
-                                                           [0.5, 0.5]]]),
-                                 weights=numpy.array([0.3, 0.7]),
-                                 library=numpy)
+                             [[2, 0.5],
+                              [0.5, 0.5]]]),
+    weights=numpy.array([0.3, 0.7]),
+    library=numpy
+)
 
-measurement_noise_cpu = MultivariateGaussianSum(means=numpy.array([[1, 0],
-                                                                   [0, -1]]),
-                                                covariances=numpy.array([[[0.6, 0],
-                                                                          [0, 0.6]],
+state_noise_cpu = MultivariateGaussianSum(
+    means=numpy.array([[1e-3, 0],
+                       [0, -1e-3]]),
+    covariances=numpy.array([[[1e-4, 0],
+                              [0, 1e-5]],
+                             [[2e-4, 1e-5],
+                              [1e-5, 5e-6]]]),
+    weights=numpy.array([0.5, 0.5]),
+    library=numpy
+)
 
-                                                                         [[0.5, 0.1],
-                                                                          [0.1, 0.5]]]),
-                                                weights=numpy.array([0.85, 0.15]),
-                                                library=numpy)
+measurement_noise_cpu = MultivariateGaussianSum(
+    means=numpy.array([[1, 0],
+                       [0, -1]]),
+    covariances=numpy.array([[[0.6, 0],
+                              [0, 0.6]],
 
-x0_gpu = MultivariateGaussianSum(means=numpy.array([[10, 0],
-                                                    [-10, -10]]),
-                                 covariances=numpy.array([[[1, 0],
-                                                           [0, 1]],
+                             [[0.5, 0.1],
+                              [0.1, 0.5]]]),
+    weights=numpy.array([0.85, 0.15]),
+    library=numpy
+)
 
-                                                          [[2, 0.5],
-                                                           [0.5, 0.5]]]),
-                                 weights=numpy.array([0.3, 0.7]))
+x0_gpu = MultivariateGaussianSum(
+    means=numpy.array([[10, 0],
+                       [-10, -10]]),
+    covariances=numpy.array([[[1, 0],
+                              [0, 1]],
 
-measurement_noise_gpu = MultivariateGaussianSum(means=numpy.array([[1, 0],
-                                                                   [0, -1]]),
-                                                covariances=numpy.array([[[0.6, 0],
-                                                                          [0, 0.6]],
+                             [[2, 0.5],
+                              [0.5, 0.5]]]),
+    weights=numpy.array([0.3, 0.7])
+)
 
-                                                                         [[0.5, 0.1],
-                                                                          [0.1, 0.5]]]),
-                                                weights=numpy.array([0.85, 0.15]))
+state_noise_gpu = MultivariateGaussianSum(
+    means=numpy.array([[1e-3, 0],
+                       [0, -1e-3]]),
+    covariances=numpy.array([[[1e-4, 0],
+                              [0, 1e-5]],
+                             [[2e-4, 1e-5],
+                              [1e-5, 5e-6]]]),
+    weights=numpy.array([0.5, 0.5])
+)
+
+measurement_noise_gpu = MultivariateGaussianSum(
+    means=numpy.array([[1, 0],
+                       [0, -1]]),
+    covariances=numpy.array([[[0.6, 0],
+                              [0, 0.6]],
+
+                             [[0.5, 0.1],
+                              [0.1, 0.5]]]),
+    weights=numpy.array([0.85, 0.15])
+)

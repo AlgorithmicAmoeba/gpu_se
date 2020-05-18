@@ -4,8 +4,6 @@ import pandas
 import matplotlib.pyplot as plt
 import tqdm
 from results.PF_base import *
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def generate_results(redo=False):
@@ -27,8 +25,8 @@ def generate_results(redo=False):
     times = numpy.zeros((N - N_done, 2))
     for i in tqdm.tqdm(range(N - N_done)):
 
-        p = ParticleFilter(f, g, 2**(N_done + i+1), x0_cpu, measurement_noise_cpu)
-        pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, measurement_noise_gpu)
+        p = ParticleFilter(f, g, 2**(N_done + i+1), x0_cpu, state_noise_cpu, measurement_noise_cpu)
+        pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, state_noise_gpu, measurement_noise_gpu)
 
         t_cpu = time.time()
         for j in range(count):
@@ -61,5 +59,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results()
+    generate_results(redo=True)
     plot_results()
