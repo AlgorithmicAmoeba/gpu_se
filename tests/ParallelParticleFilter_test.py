@@ -27,15 +27,28 @@ x0 = MultivariateGaussianSum(means=numpy.array([[10, 0],
                                                        [0.5, 0.5]]]),
                              weights=numpy.array([0.3, 0.7]))
 
-measurement_noise = MultivariateGaussianSum(means=numpy.array([[1, 0],
-                                                              [0, -1]]),
-                                            covariances=numpy.array([[[0.1, 0],
-                                                                      [0, 0.1]],
+state_noise = MultivariateGaussianSum(
+    means=numpy.array([[1e-3, 0],
+                       [0, -1e-3]]),
+    covariances=numpy.array([[[1e-4, 0],
+                              [0, 1e-5]],
+                             [[2e-4, 1e-5],
+                              [1e-5, 5e-6]]]),
+    weights=numpy.array([0.5, 0.5]),
+    library=numpy
+)
 
-                                                                     [[0.2, 0.01],
-                                                                      [0.01, 0.005]]]),
-                                            weights=numpy.array([0.85, 0.15]))
+measurement_noise = MultivariateGaussianSum(
+    means=numpy.array([[1, 0],
+                       [0, -1]]),
+    covariances=numpy.array([[[0.1, 0],
+                              [0, 0.1]],
+                             [[0.2, 0.01],
+                              [0.01, 0.005]]]),
+    weights=numpy.array([0.7, 0.9]),
+    library=numpy
+)
 
-pp = ParallelParticleFilter(f, g, 10, x0, measurement_noise)
+pp = ParallelParticleFilter(f, g, 10, x0, state_noise, measurement_noise)
 
 pp.predict(1, 1)
