@@ -77,8 +77,10 @@ class ParallelParticleFilter(ParticleFilter):
                             'void(f8[:], f4[:], f4, f8[:])',
                             'void(f8[:], f8[:], f8, f8[:])'],
                            '(n), (m), () -> (n)', target='cuda')
-        def f_vec(x, u, dt, _x_out=None):
-            _x_out = f_jit(x, u, dt)
+        def f_vec(x, u, dt, _x_out):
+            ans = f_jit(x, u, dt)
+            for i in range(len(ans)):
+                _x_out[i] = ans[i]
 
         return f_vec
 
@@ -90,8 +92,10 @@ class ParallelParticleFilter(ParticleFilter):
                             'void(f8[:], f4[:], f8[:], f8[:])',
                             'void(f8[:], f8[:], f8[:], f8[:])'],
                            '(n), (m), (p) -> (p)', target='cuda')
-        def g_vec(x, u, _y_dummy, _y_out=None):
-            _y_out = g_jit(x, u)
+        def g_vec(x, u, _y_dummy, _y_out):
+            ans = g_jit(x, u)
+            for i in range(len(ans)):
+                _y_out[i] = ans[i]
 
         return g_vec
 
