@@ -1,6 +1,7 @@
 import numpy
 import tqdm
 import matplotlib.pyplot as plt
+import cupy
 import controller
 import model.LinearModel
 import gpu_funcs.MultivariateGaussianSum
@@ -60,7 +61,7 @@ K = controller.MPC(
 pf = filter.ParallelParticleFilter(
     f=bioreactor.homeostatic_DEs,
     g=bioreactor.static_outputs,
-    N_particles=2**10,
+    N_particles=2**15,
     x0=gpu_funcs.MultivariateGaussianSum(
         means=bioreactor.X[numpy.newaxis, :],
         covariances=numpy.diag([1e-7, 1e-6, 1e-7, 1e-7, 1e-7])[numpy.newaxis, :, :],
@@ -68,17 +69,17 @@ pf = filter.ParallelParticleFilter(
     ),
     state_pdf=gpu_funcs.MultivariateGaussianSum(
         means=numpy.zeros(shape=(1, 5)),
-        covariances=numpy.diag([1e-7, 1e-6, 1e-7, 1e-7, 1e-7])[numpy.newaxis, :, :],
+        covariances=numpy.diag([1e-9, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :]*1e-10,
         weights=numpy.array([1.])
     ),
     measurement_pdf=gpu_funcs.MultivariateGaussianSum(
-        means=numpy.array([[1e-2, 0],
-                           [0, -1e-2]]),
-        covariances=numpy.array([[[6e-5, 0],
-                                  [0, 8e-5]],
+        means=numpy.array([[1e-4, 0],
+                           [0, -1e-4]]),
+        covariances=numpy.array([[[6e-7, 0],
+                                  [0, 8e-7]],
 
-                                 [[5e-5, 1e-5],
-                                  [1e-5, 7e-5]]]),
+                                 [[5e-7, 1e-7],
+                                  [1e-7, 7e-7]]]),
         weights=numpy.array([0.85, 0.15])
     )
 )
@@ -97,7 +98,10 @@ for t in tqdm.tqdm(ts[1:]):
         if K.y_predicted is not None:
             biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
 
-        u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+        pf.update(us[-1], ys[-1][lin_model.outputs])
+        pf.resample()
+        x_pf = cupy.mean(cupy.asarray(pf.particles_device), axis=1).get()
+        u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
         U_temp[lin_model.inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
         t_next += dt_control
@@ -110,6 +114,8 @@ for t in tqdm.tqdm(ts[1:]):
     outputs[lin_model.outputs] += pf.measurement_pdf.draw().get()
     ys.append(outputs)
     xs.append(bioreactor.X.copy())
+
+    pf.predict(us[-1], dt)
 
 ys = numpy.array(ys)
 us = numpy.array(us)
