@@ -107,6 +107,7 @@ class Bioreactor(model.NonlinearModel):
         self.t += dt
         dX = self.DEs(inputs)
         self.X += numpy.array(dX)*dt
+        self.X[:4] = numpy.maximum(self.X[:4], 0)
 
     def outputs(self, inputs):
         """Returns all the outputs (state and calculated)
@@ -116,7 +117,10 @@ class Bioreactor(model.NonlinearModel):
         outputs : array_like
             List of all the outputs from the model
         """
-        return numpy.array(Bioreactor.static_outputs(self.X, inputs))
+        outs = self.X.copy()
+        molar_mass = numpy.array([180, 24.6, 116, 46, 1])
+        outs[:5] = outs[:5] * molar_mass
+        return outs
 
     def raw_outputs(self, inputs):
         """Returns all the outputs (state and calculated)
@@ -182,6 +186,6 @@ class Bioreactor(model.NonlinearModel):
 
     @staticmethod
     def static_outputs(x, u):
-        Cg, Cx, Cfa, Ce, Ch = x
+        Cg, _, Cfa, _, _ = x
         _ = u
-        return Cg*180, Cx*24.6, Cfa*116, Ce*46, Ch
+        return Cg*180, Cfa*116
