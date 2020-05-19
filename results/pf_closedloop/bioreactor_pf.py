@@ -60,7 +60,7 @@ K = controller.MPC(
 pf = filter.ParallelParticleFilter(
     f=bioreactor.homeostatic_DEs,
     g=bioreactor.static_outputs,
-    N_particles=2**20,
+    N_particles=2**15,
     x0=gpu_funcs.MultivariateGaussianSum(
         means=bioreactor.X[numpy.newaxis, :],
         covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
@@ -74,19 +74,20 @@ pf = filter.ParallelParticleFilter(
     measurement_pdf=gpu_funcs.MultivariateGaussianSum(
         means=numpy.array([[1e-4, 0],
                            [0, -1e-4]]),
-        covariances=numpy.array([[[6e-7, 0],
-                                  [0, 8e-7]],
+        covariances=numpy.array([[[6e-5, 0],
+                                  [0, 8e-5]],
 
-                                 [[5e-7, 1e-7],
-                                  [1e-7, 7e-7]]]),
+                                 [[5e-5, 1e-5],
+                                  [1e-5, 7e-5]]]),
         weights=numpy.array([0.85, 0.15])
     )
 )
 
 # Initial values
 us = [numpy.array([0.06, 5/180, 0.2])]
-ys = [bioreactor.outputs(us[-1])]
 xs = [bioreactor.X.copy()]
+ys = [bioreactor.outputs(us[-1])]
+ys_meas = [bioreactor.outputs(us[-1])]
 ys_pf = [
     model.Bioreactor.static_outputs(
             (pf.weights_device @ pf.particles_device).get(),
@@ -101,12 +102,12 @@ for t in tqdm.tqdm(ts[1:]):
     if t > t_next:
         U_temp = us[-1].copy()
         if K.y_predicted is not None:
-            biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
+            biass.append(lin_model.yn2d(ys_meas[-1]) - K.y_predicted)
 
-        pf.update(us[-1], ys[-1][lin_model.outputs])
+        pf.update(us[-1], ys_meas[-1][lin_model.outputs])
         pf.resample()
         x_pf = (pf.weights_device @ pf.particles_device).get()
-        u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+        u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
         U_temp[lin_model.inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
         t_next += dt_control
@@ -116,8 +117,9 @@ for t in tqdm.tqdm(ts[1:]):
     bioreactor.step(dt, us[-1])
     bioreactor.X += pf.state_pdf.draw().get()
     outputs = bioreactor.outputs(us[-1])
+    ys.append(outputs.copy())
     outputs[lin_model.outputs] += pf.measurement_pdf.draw().get()
-    ys.append(outputs)
+    ys_meas.append(outputs)
     xs.append(bioreactor.X.copy())
 
     pf.predict(us[-1], dt)
@@ -131,23 +133,28 @@ for t in tqdm.tqdm(ts[1:]):
     )
 
 ys = numpy.array(ys)
+ys_meas = numpy.array(ys_meas)
 us = numpy.array(us)
 xs = numpy.array(xs)
 ys_pf = numpy.array(ys_pf)
 biass = numpy.array(biass)
 
 plt.subplot(2, 3, 1)
-plt.plot(ts, ys[:, 2])
+plt.plot(ts, ys_meas[:, 2])
 plt.plot(ts, ys_pf[:, 1])
+plt.plot(ts, ys[:, 2])
+plt.legend(['measured', 'predicted', 'true'])
 plt.title('Cfa')
 
 plt.subplot(2, 3, 2)
-plt.plot(ts, ys[:, 0])
+plt.plot(ts, ys_meas[:, 0])
 plt.plot(ts, ys_pf[:, 0])
+plt.plot(ts, ys[:, 0])
+plt.legend(['measured', 'predicted', 'true'])
 plt.title('Cg')
 
 plt.subplot(2, 3, 3)
-plt.plot(ts, ys[:, 3])
+plt.plot(ts, ys_meas[:, 3])
 plt.title('Ce')
 
 plt.subplot(2, 3, 4)
