@@ -157,7 +157,7 @@ class Bioreactor(model.NonlinearModel):
 
         V = 1  # L
 
-        rX = 0
+        rX = 0. * Cx
         rH = (0.28 / 180 - Cg)
 
         rFA_max = 0.15 / 116
