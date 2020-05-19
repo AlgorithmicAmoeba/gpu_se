@@ -21,7 +21,7 @@ class ParticleFilter:
 
     def predict(self, u, dt):
         for i, particle in enumerate(self.particles):
-            self.particles[i] = self.f(particle, u, dt) + self.state_pdf.draw()
+            self.particles[i] += self.f(particle, u, dt) + self.state_pdf.draw()
 
     def update(self, u, z):
         for i, particle in enumerate(self.particles):
@@ -138,7 +138,7 @@ class ParallelParticleFilter(ParticleFilter):
         sample_index[i] = k + 1
 
     def predict(self, u, dt):
-        self.particles_device = self.f_vectorize(self.particles_device, u, dt)
+        self.particles_device += self.f_vectorize(self.particles_device, u, dt)
         self.particles_device += self.state_pdf.draw(self.N_particles)
 
     def update(self, u, z):
