@@ -48,7 +48,7 @@ measurement_noise = MultivariateGaussianSum(
                               [0, 0.1]],
                              [[0.2, 0.01],
                               [0.01, 0.005]]]),
-    weights=numpy.array([0.7, 0.9]),
+    weights=numpy.array([0.7, 0.3]),
 )
 
 pp = ParallelParticleFilter(f, g, 10, x0, state_noise, measurement_noise)
