@@ -57,8 +57,8 @@ class ParallelParticleFilter(ParticleFilter):
         self.f_vectorize = self.__f_vec()
         self.g_vectorize = self.__g_vec()
 
-        self.particles_device = cuda.to_device(self.particles)
-        self.weights_device = cuda.to_device(self.weights)
+        self.particles_device = cupy.asarray(self.particles)
+        self.weights_device = cupy.asarray(self.weights)
 
         # This object should no longer have anything to do with these variables
         del self.particles
