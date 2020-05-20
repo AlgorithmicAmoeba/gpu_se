@@ -3,7 +3,7 @@ import time
 import pandas
 import matplotlib.pyplot as plt
 import tqdm
-from results.pf_openloop.PF_base import *
+from results.PF_base import *
 
 
 def generate_results(redo=False):
@@ -16,13 +16,13 @@ def generate_results(redo=False):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 25
+    N = 26
 
     if N_done >= N:
         return
 
     count = 20
-    times = numpy.zeros((N - N_done, 2))
+    times = numpy.full((N - N_done, 2), numpy.inf)
     for i in tqdm.tqdm(range(N - N_done)):
 
         p = ParticleFilter(f, g, 2**(N_done + i+1), x0_cpu, state_noise_cpu, measurement_noise_cpu)
@@ -61,5 +61,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results()
+    generate_results(redo=False)
     plot_results()

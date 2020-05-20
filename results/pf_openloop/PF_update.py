@@ -3,7 +3,7 @@ import time
 import pandas
 import matplotlib.pyplot as plt
 import tqdm
-from results.pf_openloop.PF_base import *
+from results.PF_base import *
 
 
 def generate_results(redo=False):
@@ -22,7 +22,7 @@ def generate_results(redo=False):
         return
 
     count = 10
-    times = numpy.zeros((N - N_done, 2))
+    times = numpy.full((N - N_done, 2),  numpy.inf)
 
     z = numpy.array([2.3, 1.2])
 
