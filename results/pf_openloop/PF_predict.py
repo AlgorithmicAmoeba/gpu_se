@@ -21,7 +21,7 @@ def generate_results(redo=False):
     if N_done >= N:
         return
 
-    count = 5
+    count = 10
     times = numpy.full((N - N_done, 2), numpy.inf)
     for i in tqdm.tqdm(range(N - N_done)):
 
@@ -30,15 +30,15 @@ def generate_results(redo=False):
 
         for j in range(count):
             t_cpu = time.time()
-            p.predict(1, 1)
-            p.predict(-1, 1)
+            p.predict([1], 1)
+            p.predict([-1], 1)
             times[i, 0] = min(time.time() - t_cpu, times[i, 0])
         times[i, 0] /= 2
 
         for j in range(count):
             t_gpu = time.time()
-            pp.predict(1, 1)
-            pp.predict(-1, 1)
+            pp.predict([1], 1)
+            pp.predict([-1], 1)
             times[i, 1] = min(time.time() - t_gpu, times[i, 1])
         times[i, 1] /= 2
 
