@@ -6,6 +6,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def f(x, u, dt):
     x1, x2 = x
+    u, = u
 
     dx1 = x1 - x2 * u
     dx2 = x1 / u + 2 * x2
