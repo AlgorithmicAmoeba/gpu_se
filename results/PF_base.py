@@ -16,6 +16,7 @@ def f(x, u, dt):
 
 def g(x, u):
     x1, x2 = x
+    u, = u
 
     return x1 * x2, x2 + u
 
