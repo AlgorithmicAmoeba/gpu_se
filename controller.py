@@ -129,8 +129,7 @@ class MPC:
         self.q = numpy.hstack([
             numpy.zeros((P + 1) * Nx),
             numpy.kron(numpy.ones(P), -self.Q @ ysp),
-            numpy.zeros(Ni),
-            numpy.zeros((M + 1)*Ni)
+            numpy.zeros((M + 2)*Ni)
         ])
 
         # Handling of initial condition um1
