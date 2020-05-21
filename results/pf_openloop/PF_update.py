@@ -16,7 +16,7 @@ def generate_results(redo=False):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 22
+    N = 20
 
     if N_done >= N:
         return
@@ -32,13 +32,13 @@ def generate_results(redo=False):
         pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, state_noise_gpu, measurement_noise_gpu)
 
         for j in range(count):
-            t_cpu = time.time()
-            p.update(1.0, z)
+            t_cpu = time.time ()
+            p.update([1.], z)
             times[i, 0] = min(time.time() - t_cpu, times[i, 0])
 
         for j in range(count):
             t_gpu = time.time()
-            pp.update(1.0, z)
+            pp.update([1.], z)
             times[i, 1] = min(time.time() - t_gpu, times[i, 1])
 
     df_new = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(N_done + 1, N + 1))
@@ -60,5 +60,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    # generate_results(True)
+    generate_results(redo=False)
     plot_results()
