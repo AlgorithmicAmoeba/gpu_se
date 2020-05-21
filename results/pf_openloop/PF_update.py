@@ -16,7 +16,7 @@ def generate_results(redo=False):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 20
+    N = 23
 
     if N_done >= N:
         return
@@ -32,7 +32,7 @@ def generate_results(redo=False):
         pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, state_noise_gpu, measurement_noise_gpu)
 
         for j in range(count):
-            t_cpu = time.time ()
+            t_cpu = time.time()
             p.update([1.], z)
             times[i, 0] = min(time.time() - t_cpu, times[i, 0])
 
