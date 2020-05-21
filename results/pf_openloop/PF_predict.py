@@ -16,12 +16,12 @@ def generate_results(redo=False):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 25
+    N = 21
 
     if N_done >= N:
         return
 
-    count = 10
+    count = 5
     times = numpy.full((N - N_done, 2), numpy.inf)
     for i in tqdm.tqdm(range(N - N_done)):
 
@@ -61,5 +61,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results(redo=True)
+    generate_results(redo=False)
     plot_results()
