@@ -1,22 +1,14 @@
 import numpy
 import tqdm
 import matplotlib.pyplot as plt
-import model.LinearModel
+import sim_base
 
 # Simulation set-up
 end_time = 300
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 
-# Bioreactor
-bioreactor = model.Bioreactor(
-    X0=model.Bioreactor.find_SS(
-        numpy.array([0.06, 5/180, 0.2]),
-        #            Ng,         Nx,      Nfa, Ne, Nh
-        numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
-    ),
-    high_N=False
-)
+bioreactor, _, _, _ = sim_base.get_parts()
 
 select_inputs = [0, 2]
 select_outputs = [0, 2]

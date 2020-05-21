@@ -1,43 +1,19 @@
 import numpy
 import tqdm
 import matplotlib.pyplot as plt
-import model.LinearModel
-import gpu_funcs.MultivariateGaussianSum
+import sim_base
 
 # Simulation set-up
 end_time = 300
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 
-# Bioreactor
-bioreactor = model.Bioreactor(
-    X0=model.Bioreactor.find_SS(
-        numpy.array([0.06, 5/180, 0.2]),
-        #            Ng,         Nx,      Nfa, Ne, Nh
-        numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
-    ),
-    high_N=False
-)
+bioreactor, lin_model, K, _ = sim_base.get_parts()
+state_pdf, measurement_pdf = sim_base.get_noise()
 
 select_inputs = [0, 2]
 select_outputs = [0, 2]
 
-state_pdf = gpu_funcs.MultivariateGaussianSum(
-    means=numpy.zeros(shape=(1, 5)),
-    covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
-    weights=numpy.array([1.])
-)
-
-measurement_pdf = gpu_funcs.MultivariateGaussianSum(
-    means=numpy.array([[1e-4, 0],
-                       [0, -1e-4]]),
-    covariances=numpy.array([[[6e-5, 0],
-                              [0, 8e-5]],
-
-                             [[5e-5, 1e-5],
-                              [1e-5, 7e-5]]]),
-    weights=numpy.array([0.85, 0.15])
-)
 
 # Initial values
 us = [numpy.array([0.04, 5/180, 0.1])]
