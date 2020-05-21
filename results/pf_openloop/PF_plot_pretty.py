@@ -9,6 +9,7 @@ orange = '#FF1800'
 white = '#FFFFFF'
 yellow = '#FF9900'
 
+
 def plot_speedup():
     plt.figure(figsize=(6, 6))
     plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
