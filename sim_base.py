@@ -3,6 +3,7 @@ import controller
 import model.LinearModel
 import gpu_funcs.MultivariateGaussianSum
 import filter.particle
+import scipy.integrate
 
 
 def get_parts(dt_control=1, N_particles=2*15):
@@ -96,3 +97,9 @@ def get_noise():
         weights=numpy.array([0.85, 0.15])
     )
     return state_pdf, measurement_pdf
+
+
+def performance(ys, r, ts):
+    ae = numpy.abs(ys - r)
+    itae = sum([scipy.integrate.simps(ae_ax, ts) for ae_ax in numpy.rollaxis(ae, 1)])
+    return itae
