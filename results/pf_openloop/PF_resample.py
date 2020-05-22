@@ -1,12 +1,12 @@
-from filter.particle import ParticleFilter, ParallelParticleFilter
+import numpy
 import time
 import pandas
 import matplotlib.pyplot as plt
 import tqdm
-from results.PF_base import *
+import sim_base
 
 
-def generate_results(redo=False):
+def generate_results(redo=False, cpu=True):
     try:
         if redo:
             raise FileNotFoundError
@@ -25,16 +25,22 @@ def generate_results(redo=False):
     times = numpy.full((N - N_done, 2), numpy.inf)
     for i in tqdm.tqdm(range(N - N_done)):
 
-        p = ParticleFilter(f, g, 2**(N_done + i+1), x0_cpu, state_noise_cpu, measurement_noise_cpu)
-        pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, state_noise_gpu, measurement_noise_gpu)
+        if cpu:
+            _, _, _, p = sim_base.get_parts(
+                N_particles=2 ** (N_done + i + 1),
+                gpu=False
+            )
+            for j in range(count):
+                p.weights = numpy.random.random(size=p.N_particles)
+                p.weights /= numpy.sum(p.weights)
+                t_cpu = time.time()
+                p.resample()
+                times[i, 0] = min(time.time() - t_cpu, times[i, 0])
 
-        for j in range(count):
-            p.weights = numpy.random.random(size=p.N_particles)
-            p.weights /= numpy.sum(p.weights)
-            t_cpu = time.time()
-            p.resample()
-            times[i, 0] = min(time.time() - t_cpu, times[i, 0])
-
+        _, _, _, pp = sim_base.get_parts(
+            N_particles=2 ** (N_done + i + 1),
+            gpu=True
+        )
         for j in range(count):
             pp.weights = numpy.random.random(size=pp.N_particles)
             pp.weights /= numpy.sum(pp.weights)

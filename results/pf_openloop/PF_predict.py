@@ -1,9 +1,9 @@
-from filter.particle import ParticleFilter, ParallelParticleFilter
+import numpy
 import time
 import pandas
 import matplotlib.pyplot as plt
 import tqdm
-from results.PF_base import *
+import sim_base
 
 
 def generate_results(redo=False, cpu=True):
@@ -16,7 +16,7 @@ def generate_results(redo=False, cpu=True):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 25
+    N = 20
 
     if N_done >= N:
         return
@@ -25,23 +25,27 @@ def generate_results(redo=False, cpu=True):
     times = numpy.full((N - N_done, 2), numpy.inf)
     for i in tqdm.tqdm(range(N - N_done)):
 
-        pp = ParallelParticleFilter(f, g, 2**(N_done + i+1), x0_gpu, state_noise_gpu, measurement_noise_gpu)
-
         if cpu:
-            p = ParticleFilter(f, g, 2 ** (N_done + i + 1), x0_cpu, state_noise_cpu, measurement_noise_cpu)
+            _, _, _, p = sim_base.get_parts(
+                N_particles=2 ** (N_done + i + 1),
+                gpu=False
+            )
             for j in range(count):
+                u, _ = sim_base.get_random_io()
                 t_cpu = time.time()
-                p.predict([1], 1)
-                p.predict([-1], 1)
+                p.predict(u, 0.1)
                 times[i, 0] = min(time.time() - t_cpu, times[i, 0])
-            times[i, 0] /= 2
+
+        _, _, _, pp = sim_base.get_parts(
+            N_particles=2 ** (N_done + i + 1),
+            gpu=True
+        )
 
         for j in range(count):
+            u, _ = sim_base.get_random_io()
             t_gpu = time.time()
-            pp.predict([1], 1)
-            pp.predict([-1], 1)
+            pp.predict(u, 0.1)
             times[i, 1] = min(time.time() - t_gpu, times[i, 1])
-        times[i, 1] /= 2
 
     df_new = pandas.DataFrame(times, columns=['CPU', 'GPU'], index=range(N_done+1, N+1))
     df = df.append(df_new)
@@ -62,5 +66,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results(redo=False, cpu=False)
+    generate_results(redo=False, cpu=True)
     plot_results()

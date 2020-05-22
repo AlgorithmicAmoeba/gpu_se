@@ -1,4 +1,5 @@
 import numpy
+import cupy
 import controller
 import model.LinearModel
 import gpu_funcs.MultivariateGaussianSum
@@ -6,7 +7,7 @@ import filter.particle
 import scipy.integrate
 
 
-def get_parts(dt_control=1, N_particles=2*15):
+def get_parts(dt_control=1, N_particles=2*15, gpu=True):
     # Bioreactor
     bioreactor = model.Bioreactor(
         X0=model.Bioreactor.find_SS(
@@ -51,19 +52,27 @@ def get_parts(dt_control=1, N_particles=2*15):
     )
 
     # PF
-    pf = filter.ParallelParticleFilter(
+    if gpu:
+        my_filter = filter.ParallelParticleFilter
+        my_library = cupy
+    else:
+        my_filter = filter.ParticleFilter
+        my_library = numpy
+    pf = my_filter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
         N_particles=N_particles,
         x0=gpu_funcs.MultivariateGaussianSum(
             means=bioreactor.X[numpy.newaxis, :],
             covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
-            weights=numpy.array([1.])
+            weights=numpy.array([1.]),
+            library=my_library
         ),
         state_pdf=gpu_funcs.MultivariateGaussianSum(
             means=numpy.zeros(shape=(1, 5)),
             covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
-            weights=numpy.array([1.])
+            weights=numpy.array([1.]),
+            library=my_library
         ),
         measurement_pdf=gpu_funcs.MultivariateGaussianSum(
             means=numpy.array([[1e-4, 0],
@@ -73,7 +82,8 @@ def get_parts(dt_control=1, N_particles=2*15):
 
                                      [[5e-5, 1e-5],
                                       [1e-5, 7e-5]]]),
-            weights=numpy.array([0.85, 0.15])
+            weights=numpy.array([0.85, 0.15]),
+            library=my_library
         )
     )
 
@@ -103,3 +113,16 @@ def performance(ys, r, ts):
     ae = numpy.abs(ys - r)
     itae = sum([scipy.integrate.simps(ae_ax, ts) for ae_ax in numpy.rollaxis(ae, 1)])
     return itae
+
+
+def get_random_io():
+    u = [
+        numpy.random.uniform(low=0, high=0.1),
+        5 / 180,
+        numpy.random.uniform(low=0, high=0.2)
+    ]
+    y = [
+        numpy.random.uniform(low=0.25, high=0.3),
+        numpy.random.uniform(low=0.8, high=0.9)
+    ]
+    return u, y
