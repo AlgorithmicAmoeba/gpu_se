@@ -93,6 +93,7 @@ class MPC:
         self.Q = Q
         self.R = R
         self.model = lin_model
+        self.ysp = ysp
 
         Nx, Ni = self.model.B.shape
         No, _ = self.model.C.shape
