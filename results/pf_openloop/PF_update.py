@@ -16,7 +16,7 @@ def generate_results(redo=False, cpu=True):
         df = pandas.DataFrame(columns=['CPU', 'GPU'])
 
     N_done = df.shape[0]
-    N = 24
+    N = 20
 
     if N_done >= N:
         return
@@ -65,5 +65,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results(redo=True, cpu=False)
+    generate_results(redo=True, cpu=True)
     plot_results()
