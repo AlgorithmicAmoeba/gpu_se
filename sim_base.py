@@ -116,13 +116,13 @@ def performance(ys, r, ts):
 
 
 def get_random_io():
-    u = [
+    u = numpy.array([
         numpy.random.uniform(low=0, high=0.1),
         5 / 180,
         numpy.random.uniform(low=0, high=0.2)
-    ]
-    y = [
+    ])
+    y = numpy.array([
         numpy.random.uniform(low=0.25, high=0.3),
         numpy.random.uniform(low=0.8, high=0.9)
-    ]
+    ])
     return u, y
