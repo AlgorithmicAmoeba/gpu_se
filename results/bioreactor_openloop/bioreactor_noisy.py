@@ -8,11 +8,8 @@ end_time = 300
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 
-bioreactor, lin_model, K, _ = sim_base.get_parts()
+bioreactor, lin_model, _, _ = sim_base.get_parts()
 state_pdf, measurement_pdf = sim_base.get_noise()
-
-select_inputs = [0, 2]
-select_outputs = [0, 2]
 
 
 # Initial values
