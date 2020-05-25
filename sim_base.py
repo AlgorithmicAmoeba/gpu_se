@@ -58,43 +58,28 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
     else:
         my_filter = filter.ParticleFilter
         my_library = numpy
+
+    state_pdf, measurement_pdf = get_noise(my_library)
+    x0, _ = get_noise(my_library)
+    x0.means_device = bioreactor.X[numpy.newaxis, :]
     pf = my_filter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
         N_particles=N_particles,
-        x0=gpu_funcs.MultivariateGaussianSum(
-            means=bioreactor.X[numpy.newaxis, :],
-            covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
-            weights=numpy.array([1.]),
-            library=my_library
-        ),
-        state_pdf=gpu_funcs.MultivariateGaussianSum(
-            means=numpy.zeros(shape=(1, 5)),
-            covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
-            weights=numpy.array([1.]),
-            library=my_library
-        ),
-        measurement_pdf=gpu_funcs.MultivariateGaussianSum(
-            means=numpy.array([[1e-4, 0],
-                               [0, -1e-4]]),
-            covariances=numpy.array([[[6e-5, 0],
-                                      [0, 8e-5]],
-
-                                     [[5e-5, 1e-5],
-                                      [1e-5, 7e-5]]]),
-            weights=numpy.array([0.85, 0.15]),
-            library=my_library
-        )
+        x0=x0,
+        state_pdf=state_pdf,
+        measurement_pdf=measurement_pdf
     )
 
     return bioreactor, lin_model, K, pf
 
 
-def get_noise():
+def get_noise(lib=cupy):
     state_pdf = gpu_funcs.MultivariateGaussianSum(
         means=numpy.zeros(shape=(1, 5)),
-        covariances=numpy.diag([1e-10, 1e-8, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
-        weights=numpy.array([1.])
+        covariances=numpy.diag([1e-10, 1e-10, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
+        weights=numpy.array([1.]),
+        library=lib
     )
     measurement_pdf = gpu_funcs.MultivariateGaussianSum(
         means=numpy.array([[1e-4, 0],
@@ -104,7 +89,8 @@ def get_noise():
 
                                  [[5e-5, 1e-5],
                                   [1e-5, 7e-5]]]),
-        weights=numpy.array([0.85, 0.15])
+        weights=numpy.array([0.85, 0.15]),
+        library=lib
     )
     return state_pdf, measurement_pdf
 
