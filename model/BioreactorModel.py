@@ -160,17 +160,22 @@ class Bioreactor(model.NonlinearModel):
         rX = 0. * Cx
         rH = (0.28 / 180 - Cg)
 
-        rFA_max = 0.15 / 116
+        # (molFA / min) = (gFA/gX/min) (molFA/gFA) (molX/Lv) (gX/molX) (Lv)
+        rFA_max = 0.25 / 116 * Cx * 24.6 * V
         rFA = rFA_max * (Cg / (1e-5 + Cg))
 
-        r_theta1_max = 0.24 / 180 - 0.15 / 180
+        # (molG / min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv)
+        r_theta1_max = (0.4 - 0.25) / 180 * Cx * 24.6 * V
         r_theta1_req = r_theta1_max - (r_theta1_max / 2 / (0.28 / 180) * rH + 0.01 * Ch)
         r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-5 + Cg))
 
+        # (molE / min) = (gE/gX/min) (molE/gE) (molX/Lv) (gX/molX) (Lv)
+        r_E_max = 0.025 / 46 * Cx * 24.6 * V
         rE_req = r_theta1_req - r_theta1_max
-        rE = min(3.804e-4, max(0, rE_req))
+        rE = min(r_E_max, max(0, rE_req))
 
-        r_theta2_max = 0.06 / 180 - 0.0175 / 180
+        # (molG / min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv)
+        r_theta2_max = (0.1 - 0.025) / 180 * Cx * 24.6 * V
         r_theta2_req = r_theta1_req - r_theta1_max - rE
         r_theta2 = min(r_theta2_max, max(0, r_theta2_req))
 
