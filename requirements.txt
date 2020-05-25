@@ -12,3 +12,4 @@ xlsxwriter>=1.2.8
 osqp>=0.6.1
 pytest>=5.4.1
 torch>=1.4.0
+sympy>=1.5.1
