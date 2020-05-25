@@ -28,7 +28,7 @@ for t in tqdm.tqdm(ts[1:]):
     bioreactor.X += state_pdf.draw().get()
     outputs = bioreactor.outputs(us[-1])
     ys.append(outputs.copy())
-    outputs[select_outputs] += measurement_pdf.draw().get()
+    outputs[lin_model.outputs] += measurement_pdf.draw().get()
     ys_meas.append(outputs)
     xs.append(bioreactor.X.copy())
 
@@ -54,11 +54,11 @@ plt.plot(ts, ys_meas[:, 3])
 plt.title(r'$C_{E}$')
 
 plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, select_inputs[0]])
+plt.plot(ts, us[:, lin_model.inputs[1]])
 plt.title(r'$F_{m, in}$')
 
 plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, select_inputs[1]])
+plt.plot(ts, us[:, lin_model.inputs[0]])
 plt.title(r'$F_{G, in}$')
 
 plt.suptitle('Openloop bioreactor with noise')

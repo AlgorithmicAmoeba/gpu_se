@@ -67,11 +67,11 @@ plt.plot(ts, ys_meas[:, 3])
 plt.title(r'$C_{E}$')
 
 plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, lin_model.inputs[0]])
+plt.plot(ts, us[:, lin_model.inputs[1]])
 plt.title(r'$F_{m, in}$')
 
 plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, lin_model.inputs[1]])
+plt.plot(ts, us[:, lin_model.inputs[0]])
 plt.title(r'$F_{G, in}$')
 
 plt.subplot(2, 3, 6)

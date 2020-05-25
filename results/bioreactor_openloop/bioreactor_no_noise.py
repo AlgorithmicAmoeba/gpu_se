@@ -45,11 +45,11 @@ plt.plot(ts, ys[:, 3])
 plt.title(r'$C_{E}$')
 
 plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, select_inputs[0]])
+plt.plot(ts, us[:, select_inputs[1]])
 plt.title(r'$F_{m, in}$')
 
 plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, select_inputs[1]])
+plt.plot(ts, us[:, select_inputs[0]])
 plt.title(r'$F_{G, in}$')
 
 plt.suptitle('Openloop bioreactor without noise')

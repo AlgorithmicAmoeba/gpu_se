@@ -92,11 +92,11 @@ plt.plot(ts, ys_meas[:, 3])
 plt.title('Ce')
 
 plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, lin_model.inputs[0]])
+plt.plot(ts, us[:, lin_model.inputs[1]])
 plt.title('Fm_in')
 
 plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, lin_model.inputs[1]])
+plt.plot(ts, us[:, lin_model.inputs[0]])
 plt.title('Fg_in')
 
 plt.subplot(2, 3, 6)
