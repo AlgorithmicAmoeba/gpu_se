@@ -53,31 +53,42 @@ biass = numpy.array(biass)
 plt.subplot(2, 3, 1)
 plt.plot(ts, ys_meas[:, 2])
 plt.plot(ts, ys[:, 2])
+plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')
 plt.legend(['measured', 'true'])
 plt.title(r'$C_{FA}$')
+plt.xlim([0, ts[-1]])
 
 plt.subplot(2, 3, 2)
 plt.plot(ts, ys_meas[:, 0])
 plt.plot(ts, ys[:, 0])
+plt.axhline(lin_model.yd2n(K.ysp)[0], color='red')
 plt.legend(['measured', 'true'])
 plt.title(r'$C_{G}$')
+plt.xlim([0, ts[-1]])
 
 plt.subplot(2, 3, 3)
 plt.plot(ts, ys_meas[:, 3])
 plt.title(r'$C_{E}$')
+plt.xlim([0, ts[-1]])
 
 plt.subplot(2, 3, 4)
 plt.plot(ts, us[:, lin_model.inputs[1]])
 plt.title(r'$F_{m, in}$')
+plt.xlim([0, ts[-1]])
 
 plt.subplot(2, 3, 5)
 plt.plot(ts, us[:, lin_model.inputs[0]])
 plt.title(r'$F_{G, in}$')
+plt.xlim([0, ts[-1]])
 
 plt.subplot(2, 3, 6)
 plt.plot(
     numpy.arange(dt_control, end_time, dt_control),
-    biass
+    biass[:, 1]
+)
+plt.plot(
+    numpy.arange(dt_control, end_time, dt_control),
+    biass[:, 0]
 )
 plt.legend([r'$C_G$', r'$C_{FA}$'])
 plt.title('bias')
