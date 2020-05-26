@@ -74,7 +74,7 @@ def get_simulation_performance(N_particles, dt_control=1):
     return sim_base.performance(ys_meas[:, lin_model.outputs], lin_model.yd2n(K.ysp), ts)
 
 
-def generate_results(redo=False):
+def generate_results(redo=False, low=1, high=20, repeat=1):
     try:
         if redo:
             raise FileNotFoundError
@@ -83,21 +83,16 @@ def generate_results(redo=False):
     except FileNotFoundError:
         df = pandas.DataFrame(columns=['log2_Ns', 'performance'])
 
-    log2_Ns_done = df['log2_Ns']
-    log2_Ns = numpy.arange(1, 5)
-    log2_Ns_new = numpy.array([
-        log2_N for log2_N in log2_Ns
-        if not log2_Ns_done.isin([log2_N]).any()
-    ])
-    #
-    performances = numpy.array([
-        get_simulation_performance(2**log2_N) for log2_N in tqdm.tqdm(log2_Ns_new)
-    ])
+    for rep in range(repeat):
+        log2_Ns = numpy.arange(low, high)
+        performances = numpy.array([
+            get_simulation_performance(2**log2_N) for log2_N in tqdm.tqdm(log2_Ns)
+        ])
 
-    res = numpy.vstack([log2_Ns_new, performances])
-    df_new = pandas.DataFrame(res.T, columns=['log2_Ns', 'performance'])
-    df = df.append(df_new).sort_values(by='log2_Ns')
-    df.to_csv('performance.csv')
+        res = numpy.vstack([log2_Ns, performances])
+        df_new = pandas.DataFrame(res.T, columns=['log2_Ns', 'performance'])
+        df = df.append(df_new).sort_values(by='log2_Ns')
+        df.to_csv('performance.csv')
 
 
 def plot_results():
@@ -112,5 +107,5 @@ def plot_results():
 
 
 if __name__ == '__main__':
-    generate_results(redo=False)
+    generate_results(redo=False, repeat=5)
     plot_results()
