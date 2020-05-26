@@ -43,6 +43,9 @@ us = numpy.array(us)
 xs = numpy.array(xs)
 biass = numpy.array(biass)
 
+print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.yd2n(K.ysp), ts))
+
+
 plt.subplot(2, 3, 1)
 plt.plot(ts, ys[:, 2])
 plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')
