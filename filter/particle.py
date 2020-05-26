@@ -12,7 +12,7 @@ class ParticleFilter:
     def __init__(self, f, g, N_particles, x0, state_pdf, measurement_pdf):
         self.f = f
         self.g = g
-        self.N_particles = N_particles
+        self.N_particles = int(N_particles)
 
         self.particles = x0.draw(N_particles)
         self.weights = numpy.full(N_particles, 1 / N_particles)

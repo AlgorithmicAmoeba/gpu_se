@@ -38,7 +38,7 @@ class MultivariateGaussianSum:
         return result
 
     def draw(self, shape=(1,)):
-        if isinstance(shape, int):
+        if not isinstance(shape, tuple):
             shape = (shape,)
 
         size = int(numpy.prod(shape))
