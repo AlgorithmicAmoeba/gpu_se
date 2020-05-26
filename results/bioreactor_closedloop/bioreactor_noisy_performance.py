@@ -78,11 +78,14 @@ def generate_results(redo=False, number=50, low=0.2, high=30.):
 def plot_results():
     df = pandas.read_csv('bioreactor_noisy_performance.csv')
     plt.plot(df['dt_controls'], df['performance'], '.')
+    plt.title("Closedloop performance vs control period")
+    plt.ylabel(r'$P_{\mathrm{ITAE}}$')
+    plt.xlabel('Control period (min)')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('noisy_performance.pdf')
     plt.show()
 
 
 if __name__ == '__main__':
-    generate_results(redo=False, number=50, low=15., high=30.)
+    # generate_results(redo=False, number=100)
     plot_results()
