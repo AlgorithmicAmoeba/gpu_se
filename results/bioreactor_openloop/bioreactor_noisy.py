@@ -110,7 +110,7 @@ def plot_pretty():
     plt.title(r'$F_{G, in}$')
     plt.gca().set_facecolor(black)
 
-    plt.suptitle('Openloop bioreactor with noise')
+    # plt.suptitle('Openloop bioreactor with noise')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('noisy_pretty.png', transparent=True)
     plt.show()

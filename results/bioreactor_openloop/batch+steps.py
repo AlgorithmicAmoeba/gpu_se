@@ -136,21 +136,25 @@ def plot_pretty():
     plt.plot(ts, ys_meas[:, 2], color=orange)
     plt.title(r'$C_{FA}$')
     add_time_lines()
+    plt.gca().set_facecolor(black)
 
     plt.subplot(2, 3, 2)
     plt.plot(ts, ys_meas[:, 0], color=orange)
     plt.title(r'$C_{G}$')
     add_time_lines()
+    plt.gca().set_facecolor(black)
 
     plt.subplot(2, 3, 3)
     plt.plot(ts, ys_meas[:, 3], color=orange)
     plt.title(r'$C_{E}$')
     add_time_lines()
+    plt.gca().set_facecolor(black)
 
     plt.subplot(2, 3, 4)
     plt.plot(ts, us[:, select_inputs[1]], color=yellow)
     plt.title(r'$F_{m, in}$')
     add_time_lines()
+    plt.gca().set_facecolor(black)
 
     plt.subplot(2, 3, 5)
     plt.plot(ts, us[:, select_inputs[0]], color=yellow)
@@ -158,14 +162,20 @@ def plot_pretty():
     plt.xlim([0, ts[-1]])
     for c in [0.4, 0.5]:
         glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5 / 180)
-        plt.axhline(glucose_calc, color='green', alpha=0.4)
+        plt.axhline(glucose_calc, color=white, alpha=0.4)
+    plt.gca().set_facecolor(black)
 
     plt.subplot(2, 3, 6)
     plt.plot(ts, ys[:, 1], color=orange)
     plt.title(r'$C_{X}$')
     add_time_lines()
+    plt.gca().set_facecolor(black)
 
-    plt.suptitle('Openloop growth and production run')
+    # plt.suptitle('Openloop growth and production run')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('batch+steps_noisy_pretty.png', transparent=True)
     plt.show()
+
+
+plot()
+plot_pretty()

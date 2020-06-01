@@ -90,10 +90,10 @@ def plot_pretty_results():
     plt.style.use('seaborn-deep')
 
     black = '#2B2B2D'
-    # red = '#E90039'
-    orange = '#FF1800'
+    red = '#E90039'
+    # orange = '#FF1800'
     white = '#FFFFFF'
-    # yellow = '#FF9900'
+    yellow = '#FF9900'
 
     plt.figure(figsize=(12.8, 9.6))
     plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
@@ -103,8 +103,8 @@ def plot_pretty_results():
     plt.gca().set_facecolor(black)
 
     df = pandas.read_csv('bioreactor_noisy_performance.csv')
-    plt.plot(df['dt_controls'], df['performance'], '.', color=orange)
-    plt.title("Closedloop performance vs control period")
+    plt.plot(df['dt_controls'], df['performance'], '.', color=yellow)
+    # plt.title("Closedloop performance vs control period")
     plt.ylabel(r'$P_{\mathrm{ITAE}}$')
     plt.xlabel('Control period (min)')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])

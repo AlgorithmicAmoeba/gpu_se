@@ -169,7 +169,7 @@ def plot_pretty():
     plt.title('bias')
     plt.gca().set_facecolor(black)
 
-    plt.suptitle('Closedloop bioreactor with noise')
+    # plt.suptitle('Closedloop bioreactor with noise')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('noisy_cl_pretty.png', transparent=True)
     plt.show()
