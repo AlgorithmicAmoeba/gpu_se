@@ -151,7 +151,7 @@ def plot_pretty():
         biass[:, 0],
         color=yellow
     )
-    plt.legend([r'$C_{FA}$', r'$C_G$'])
+    plt.legend([r'$C_{FA}$', r'$C_G$'], facecolor=black)
     plt.title('bias')
     plt.xlim([0, ts[-1]])
     plt.gca().set_facecolor(black)

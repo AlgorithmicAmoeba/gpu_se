@@ -84,14 +84,14 @@ def plot_pretty():
     plt.subplot(2, 3, 1)
     plt.plot(ts, ys_meas[:, 2], color=red)
     plt.plot(ts, ys[:, 2], color=yellow)
-    plt.legend(['measured', 'true'])
+    plt.legend(['measured', 'true'], facecolor=black)
     plt.title(r'$C_{FA}$')
     plt.gca().set_facecolor(black)
 
     plt.subplot(2, 3, 2)
     plt.plot(ts, ys_meas[:, 0], color=red)
     plt.plot(ts, ys[:, 0], color=yellow)
-    plt.legend(['measured', 'true'])
+    plt.legend(['measured', 'true'], facecolor=black)
     plt.title(r'$C_{G}$')
     plt.gca().set_facecolor(black)
 
