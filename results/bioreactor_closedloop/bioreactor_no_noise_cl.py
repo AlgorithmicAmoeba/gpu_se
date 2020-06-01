@@ -46,47 +46,121 @@ biass = numpy.array(biass)
 print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.yd2n(K.ysp), ts))
 
 
-plt.subplot(2, 3, 1)
-plt.plot(ts, ys[:, 2])
-plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')
-plt.title(r'$C_{FA}$')
-plt.xlim([0, ts[-1]])
+def plot():
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys[:, 2])
+    plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')
+    plt.title(r'$C_{FA}$')
+    plt.xlim([0, ts[-1]])
 
-plt.subplot(2, 3, 2)
-plt.plot(ts, ys[:, 0])
-plt.axhline(lin_model.yd2n(K.ysp)[0], color='red')
-plt.title(r'$C_{G}$')
-plt.xlim([0, ts[-1]])
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys[:, 0])
+    plt.axhline(lin_model.yd2n(K.ysp)[0], color='red')
+    plt.title(r'$C_{G}$')
+    plt.xlim([0, ts[-1]])
 
-plt.subplot(2, 3, 3)
-plt.plot(ts, ys[:, 3])
-plt.title(r'$C_{E}$')
-plt.xlim([0, ts[-1]])
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys[:, 3])
+    plt.title(r'$C_{E}$')
+    plt.xlim([0, ts[-1]])
 
-plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, lin_model.inputs[1]])
-plt.title(r'$F_{m, in}$')
-plt.xlim([0, ts[-1]])
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, lin_model.inputs[1]])
+    plt.title(r'$F_{m, in}$')
+    plt.xlim([0, ts[-1]])
 
-plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, lin_model.inputs[0]])
-plt.title(r'$F_{G, in}$')
-plt.xlim([0, ts[-1]])
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, lin_model.inputs[0]])
+    plt.title(r'$F_{G, in}$')
+    plt.xlim([0, ts[-1]])
 
-plt.subplot(2, 3, 6)
-plt.plot(
-    numpy.arange(dt_control, end_time, dt_control),
-    biass[:, 1]
-)
-plt.plot(
-    numpy.arange(dt_control, end_time, dt_control),
-    biass[:, 0]
-)
-plt.legend([r'$C_{FA}$', r'$C_G$'])
-plt.title('bias')
-plt.xlim([0, ts[-1]])
+    plt.subplot(2, 3, 6)
+    plt.plot(
+        numpy.arange(dt_control, end_time, dt_control),
+        biass[:, 1]
+    )
+    plt.plot(
+        numpy.arange(dt_control, end_time, dt_control),
+        biass[:, 0]
+    )
+    plt.legend([r'$C_{FA}$', r'$C_G$'])
+    plt.title('bias')
+    plt.xlim([0, ts[-1]])
 
-plt.suptitle('Closedloop bioreactor without noise')
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig('no_noise_cl.pdf')
-plt.show()
+    plt.suptitle('Closedloop bioreactor without noise')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('no_noise_cl.pdf')
+    plt.show()
+
+
+def plot_pretty():
+    plt.style.use('seaborn-deep')
+
+    black = '#2B2B2D'
+    red = '#E90039'
+    orange = '#FF1800'
+    white = '#FFFFFF'
+    yellow = '#FF9900'
+
+    plt.figure(figsize=(12.8, 9.6))
+    plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
+                         'axes.edgecolor': white, 'xtick.color': white, 'ytick.color': white})
+
+    plt.gcf().set_facecolor(black)
+
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys[:, 2], color=orange)
+    plt.axhline(lin_model.yd2n(K.ysp)[1], color=white)
+    plt.title(r'$C_{FA}$')
+    plt.xlim([0, ts[-1]])
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys[:, 0], color=orange)
+    plt.axhline(lin_model.yd2n(K.ysp)[0], color=white)
+    plt.title(r'$C_{G}$')
+    plt.xlim([0, ts[-1]])
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys[:, 3], color=orange)
+    plt.title(r'$C_{E}$')
+    plt.xlim([0, ts[-1]])
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, lin_model.inputs[1]], color=red)
+    plt.title(r'$F_{m, in}$')
+    plt.xlim([0, ts[-1]])
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, lin_model.inputs[0]], color=red)
+    plt.title(r'$F_{G, in}$')
+    plt.xlim([0, ts[-1]])
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 6)
+    plt.plot(
+        numpy.arange(dt_control, end_time, dt_control),
+        biass[:, 1],
+        color=red
+    )
+    plt.plot(
+        numpy.arange(dt_control, end_time, dt_control),
+        biass[:, 0],
+        color=yellow
+    )
+    plt.legend([r'$C_{FA}$', r'$C_G$'])
+    plt.title('bias')
+    plt.xlim([0, ts[-1]])
+    plt.gca().set_facecolor(black)
+
+    plt.suptitle('Closedloop bioreactor without noise')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('no_noise_cl_pretty.png')
+    plt.show()
+
+
+plot()
+plot_pretty()
