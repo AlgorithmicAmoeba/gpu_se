@@ -67,46 +67,105 @@ us = numpy.array(us)
 xs = numpy.array(xs)
 
 
-def add_time_lines():
-    for time in [25, 200, 500, 700]:
-        plt.axvline(time, color='black', alpha=0.4)
+def plot():
+    def add_time_lines():
+        for time in [25, 200, 500, 700]:
+            plt.axvline(time, color='black', alpha=0.4)
+        plt.xlim([0, ts[-1]])
+
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys_meas[:, 2])
+    plt.title(r'$C_{FA}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys_meas[:, 0])
+    plt.title(r'$C_{G}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys_meas[:, 3])
+    plt.title(r'$C_{E}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, select_inputs[1]])
+    plt.title(r'$F_{m, in}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, select_inputs[0]])
+    plt.title(r'$F_{G, in}$')
     plt.xlim([0, ts[-1]])
+    for c in [0.4, 0.5]:
+        glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5/180)
+        plt.axhline(glucose_calc, color='green', alpha=0.4)
+
+    plt.subplot(2, 3, 6)
+    plt.plot(ts, ys[:, 1])
+    plt.title(r'$C_{X}$')
+    add_time_lines()
+
+    plt.suptitle('Openloop growth and production run')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('batch+steps_noisy.pdf')
+    plt.show()
 
 
-plt.subplot(2, 3, 1)
-plt.plot(ts, ys_meas[:, 2])
-plt.title(r'$C_{FA}$')
-add_time_lines()
+def plot_pretty():
+    black = '#2B2B2D'
+    red = '#E90039'
+    orange = '#FF1800'
+    white = '#FFFFFF'
+    yellow = '#FF9900'
 
-plt.subplot(2, 3, 2)
-plt.plot(ts, ys_meas[:, 0])
-plt.title(r'$C_{G}$')
-add_time_lines()
+    def add_time_lines():
+        for time in [25, 200, 500, 700]:
+            plt.axvline(time, color=red, alpha=0.4)
+        plt.xlim([0, ts[-1]])
 
-plt.subplot(2, 3, 3)
-plt.plot(ts, ys_meas[:, 3])
-plt.title(r'$C_{E}$')
-add_time_lines()
+    plt.style.use('seaborn-deep')
 
-plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, select_inputs[1]])
-plt.title(r'$F_{m, in}$')
-add_time_lines()
+    plt.figure(figsize=(12.8, 9.6))
+    plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
+                         'axes.edgecolor': white, 'xtick.color': white, 'ytick.color': white})
 
-plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, select_inputs[0]])
-plt.title(r'$F_{G, in}$')
-plt.xlim([0, ts[-1]])
-for c in [0.4, 0.5]:
-    glucose = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5/180)
-    plt.axhline(glucose, color='green', alpha=0.4)
+    plt.gcf().set_facecolor(black)
 
-plt.subplot(2, 3, 6)
-plt.plot(ts, ys[:, 1])
-plt.title(r'$C_{X}$')
-add_time_lines()
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys_meas[:, 2], color=orange)
+    plt.title(r'$C_{FA}$')
+    add_time_lines()
 
-plt.suptitle('Openloop growth and production run')
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig('batch+steps_noisy.pdf')
-plt.show()
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys_meas[:, 0], color=orange)
+    plt.title(r'$C_{G}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys_meas[:, 3], color=orange)
+    plt.title(r'$C_{E}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, select_inputs[1]], color=yellow)
+    plt.title(r'$F_{m, in}$')
+    add_time_lines()
+
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, select_inputs[0]], color=yellow)
+    plt.title(r'$F_{G, in}$')
+    plt.xlim([0, ts[-1]])
+    for c in [0.4, 0.5]:
+        glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5 / 180)
+        plt.axhline(glucose_calc, color='green', alpha=0.4)
+
+    plt.subplot(2, 3, 6)
+    plt.plot(ts, ys[:, 1], color=orange)
+    plt.title(r'$C_{X}$')
+    add_time_lines()
+
+    plt.suptitle('Openloop growth and production run')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('batch+steps_noisy_pretty.png', transparent=True)
+    plt.show()
