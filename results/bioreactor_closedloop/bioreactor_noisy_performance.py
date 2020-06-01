@@ -86,6 +86,33 @@ def plot_results():
     plt.show()
 
 
+def plot_pretty_results():
+    plt.style.use('seaborn-deep')
+
+    black = '#2B2B2D'
+    # red = '#E90039'
+    orange = '#FF1800'
+    white = '#FFFFFF'
+    # yellow = '#FF9900'
+
+    plt.figure(figsize=(12.8, 9.6))
+    plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
+                         'axes.edgecolor': white, 'xtick.color': white, 'ytick.color': white})
+
+    plt.gcf().set_facecolor(black)
+    plt.gca().set_facecolor(black)
+
+    df = pandas.read_csv('bioreactor_noisy_performance.csv')
+    plt.plot(df['dt_controls'], df['performance'], '.', color=orange)
+    plt.title("Closedloop performance vs control period")
+    plt.ylabel(r'$P_{\mathrm{ITAE}}$')
+    plt.xlabel('Control period (min)')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('noisy_performance_pretty.png')
+    plt.show()
+
+
 if __name__ == '__main__':
     # generate_results(redo=False, number=100)
     plot_results()
+    plot_pretty_results()
