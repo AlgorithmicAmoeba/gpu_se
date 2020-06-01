@@ -34,31 +34,87 @@ ys_meas = numpy.array(ys_meas)
 us = numpy.array(us)
 xs = numpy.array(xs)
 
-plt.subplot(2, 3, 1)
-plt.plot(ts, ys_meas[:, 2])
-plt.plot(ts, ys[:, 2])
-plt.legend(['measured', 'true'])
-plt.title(r'$C_{FA}$')
 
-plt.subplot(2, 3, 2)
-plt.plot(ts, ys_meas[:, 0])
-plt.plot(ts, ys[:, 0])
-plt.legend(['measured', 'true'])
-plt.title(r'$C_{G}$')
+def plot():
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys_meas[:, 2])
+    plt.plot(ts, ys[:, 2])
+    plt.legend(['measured', 'true'])
+    plt.title(r'$C_{FA}$')
 
-plt.subplot(2, 3, 3)
-plt.plot(ts, ys_meas[:, 3])
-plt.title(r'$C_{E}$')
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys_meas[:, 0])
+    plt.plot(ts, ys[:, 0])
+    plt.legend(['measured', 'true'])
+    plt.title(r'$C_{G}$')
 
-plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, lin_model.inputs[1]])
-plt.title(r'$F_{m, in}$')
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys_meas[:, 3])
+    plt.title(r'$C_{E}$')
 
-plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, lin_model.inputs[0]])
-plt.title(r'$F_{G, in}$')
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, lin_model.inputs[1]])
+    plt.title(r'$F_{m, in}$')
 
-plt.suptitle('Openloop bioreactor with noise')
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig('noisy.pdf')
-plt.show()
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, lin_model.inputs[0]])
+    plt.title(r'$F_{G, in}$')
+
+    plt.suptitle('Openloop bioreactor with noise')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('noisy.pdf')
+    plt.show()
+
+
+def plot_pretty():
+    plt.style.use('seaborn-deep')
+
+    black = '#2B2B2D'
+    red = '#E90039'
+    orange = '#FF1800'
+    white = '#FFFFFF'
+    yellow = '#FF9900'
+
+    plt.figure(figsize=(12.8, 9.6))
+    plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
+                         'axes.edgecolor': white, 'xtick.color': white, 'ytick.color': white})
+
+    plt.gcf().set_facecolor(black)
+
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys_meas[:, 2], color=red)
+    plt.plot(ts, ys[:, 2], color=yellow)
+    plt.legend(['measured', 'true'])
+    plt.title(r'$C_{FA}$')
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys_meas[:, 0], color=red)
+    plt.plot(ts, ys[:, 0], color=yellow)
+    plt.legend(['measured', 'true'])
+    plt.title(r'$C_{G}$')
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys_meas[:, 3], color=red)
+    plt.title(r'$C_{E}$')
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, lin_model.inputs[1]], color=yellow)
+    plt.title(r'$F_{m, in}$')
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, lin_model.inputs[0]], color=yellow)
+    plt.title(r'$F_{G, in}$')
+    plt.gca().set_facecolor(black)
+
+    plt.suptitle('Openloop bioreactor with noise')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('noisy_pretty.png')
+    plt.show()
+
+
+plot()
+plot_pretty()
