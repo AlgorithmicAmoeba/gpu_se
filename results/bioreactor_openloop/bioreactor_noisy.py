@@ -71,7 +71,7 @@ def plot_pretty():
 
     black = '#2B2B2D'
     red = '#E90039'
-    orange = '#FF1800'
+    # orange = '#FF1800'
     white = '#FFFFFF'
     yellow = '#FF9900'
 
