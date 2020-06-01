@@ -77,7 +77,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
 def get_noise(lib=cupy):
     state_pdf = gpu_funcs.MultivariateGaussianSum(
         means=numpy.zeros(shape=(1, 5)),
-        covariances=numpy.diag([1e-10, 1e-10, 1e-9, 1e-9, 1e-9])[numpy.newaxis, :, :],
+        covariances=numpy.diag([1e-10, 1e-13, 1e-9, 1e-9, 1e-13])[numpy.newaxis, :, :],
         weights=numpy.array([1.]),
         library=lib
     )
