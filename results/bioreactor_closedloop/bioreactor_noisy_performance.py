@@ -108,7 +108,7 @@ def plot_pretty_results():
     plt.ylabel(r'$P_{\mathrm{ITAE}}$')
     plt.xlabel('Control period (min)')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('noisy_performance_pretty.png')
+    plt.savefig('noisy_performance_pretty.png', transparent=True)
     plt.show()
 
 
