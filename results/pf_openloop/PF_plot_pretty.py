@@ -27,10 +27,9 @@ def plot_speedup():
 
     resample_df = pandas.read_csv('PF_resample.csv', index_col=0)
     resample_df['speedup'] = resample_df['CPU'] / resample_df['GPU']
-    # plt.semilogy(resample_df.index, resample_df['speedup'], 'g^')
+    plt.semilogy(resample_df.index, resample_df['speedup'], '^', color=orange)
 
-    # plt.legend(['Predict', 'Update', 'Resample'])
-    plt.legend(['Predict', 'Update'], facecolor=black)
+    plt.legend(['Predict', 'Update', 'Resample'], facecolor=black)
     # plt.title('Speed-up of particle filter')
     plt.ylabel('Speed-up')
     plt.xlabel('$ \log_2(N) $ particles')
@@ -52,24 +51,22 @@ def plot_times():
 
     plt.subplot(1, 2, 1)
     plt.gca().set_facecolor(black)
-    # plt.semilogy(resample_df.index, resample_df['CPU'], 'g^')
+    plt.semilogy(resample_df.index, resample_df['CPU'], '^', color=orange)
     plt.semilogy(predict_df.index, predict_df['CPU'], '.', color=yellow)
     plt.semilogy(update_df.index, update_df['CPU'], 'x', color=red)
 
-    # plt.legend(['Resample', 'Predict', 'Update'])
-    plt.legend(['Predict', 'Update'], facecolor=black)
+    plt.legend(['Resample', 'Predict', 'Update'], facecolor=black)
     plt.ylabel('Time (s)')
     plt.xlabel('$ \log_2(N) $ particles')
     # plt.title('CPU')
 
     plt.subplot(1, 2, 2, sharey=plt.gca())
     plt.gca().set_facecolor(black)
-    # plt.semilogy(resample_df.index, resample_df['GPU'], 'g^')
+    plt.semilogy(resample_df.index, resample_df['GPU'], '^', color=orange)
     plt.semilogy(predict_df.index, predict_df['GPU'], '.', color=yellow)
     plt.semilogy(update_df.index, update_df['GPU'], 'x', color=red)
 
-    # plt.legend(['Resample', 'Predict', 'Update'])
-    plt.legend(['Predict', 'Update'], facecolor=black)
+    plt.legend(['Resample', 'Predict', 'Update'], facecolor=black)
     plt.ylabel('Time (s)')
     plt.xlabel('$ \log_2(N) $ particles')
     # plt.title('GPU')
