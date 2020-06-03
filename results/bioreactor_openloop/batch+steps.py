@@ -165,11 +165,11 @@ def plot_pretty():
         plt.axhline(glucose_calc, color=white, alpha=0.4)
     plt.gca().set_facecolor(black)
 
-    plt.subplot(2, 3, 6)
-    plt.plot(ts, ys[:, 1], color=orange)
-    plt.title(r'$C_{X}$')
-    add_time_lines()
-    plt.gca().set_facecolor(black)
+    # plt.subplot(2, 3, 6)
+    # plt.plot(ts, ys[:, 1], color=orange)
+    # plt.title(r'$C_{X}$')
+    # add_time_lines()
+    # plt.gca().set_facecolor(black)
 
     # plt.suptitle('Openloop growth and production run')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
