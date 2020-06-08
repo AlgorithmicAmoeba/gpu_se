@@ -76,35 +76,47 @@ def plot():
     plt.subplot(2, 3, 1)
     plt.plot(ts, ys_meas[:, 2])
     plt.title(r'$C_{FA}$')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     add_time_lines()
 
     plt.subplot(2, 3, 2)
     plt.plot(ts, ys_meas[:, 0])
     plt.title(r'$C_{G}$')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     add_time_lines()
 
     plt.subplot(2, 3, 3)
     plt.plot(ts, ys_meas[:, 3])
     plt.title(r'$C_{E}$')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     add_time_lines()
 
     plt.subplot(2, 3, 4)
     plt.plot(ts, us[:, select_inputs[1]])
     plt.title(r'$F_{m, in}$')
+    plt.ylabel(r'$\frac{L}{min}$')
+    plt.xlabel(r't ($min$)')
     add_time_lines()
 
     plt.subplot(2, 3, 5)
     plt.plot(ts, us[:, select_inputs[0]])
     plt.title(r'$F_{G, in}$')
     plt.xlim([0, ts[-1]])
+    plt.ylabel(r'$\frac{L}{min}$')
+    plt.xlabel(r't ($min$)')
     for c in [0.4, 0.5]:
         glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5/180)
         plt.axhline(glucose_calc, color='green', alpha=0.4)
 
-    plt.subplot(2, 3, 6)
-    plt.plot(ts, ys[:, 1])
-    plt.title(r'$C_{X}$')
-    add_time_lines()
+    # plt.subplot(2, 3, 6)
+    # plt.plot(ts, ys[:, 1])
+    # plt.title(r'$C_{X}$')
+    # plt.ylabel(r'$\frac{mol}{L}$')
+    # plt.xlabel(r't ($min$)')
+    # add_time_lines()
 
     plt.suptitle('Openloop growth and production run')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
@@ -178,4 +190,4 @@ def plot_pretty():
 
 
 plot()
-plot_pretty()
+# plot_pretty()

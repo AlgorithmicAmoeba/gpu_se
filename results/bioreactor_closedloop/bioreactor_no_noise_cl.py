@@ -51,27 +51,37 @@ def plot():
     plt.plot(ts, ys[:, 2])
     plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')
     plt.title(r'$C_{FA}$')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     plt.xlim([0, ts[-1]])
 
     plt.subplot(2, 3, 2)
     plt.plot(ts, ys[:, 0])
     plt.axhline(lin_model.yd2n(K.ysp)[0], color='red')
     plt.title(r'$C_{G}$')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     plt.xlim([0, ts[-1]])
 
     plt.subplot(2, 3, 3)
     plt.plot(ts, ys[:, 3])
     plt.title(r'$C_{E}$')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     plt.xlim([0, ts[-1]])
 
     plt.subplot(2, 3, 4)
     plt.plot(ts, us[:, lin_model.inputs[1]])
     plt.title(r'$F_{m, in}$')
+    plt.ylabel(r'$\frac{L}{min}$')
+    plt.xlabel(r't ($min$)')
     plt.xlim([0, ts[-1]])
 
     plt.subplot(2, 3, 5)
     plt.plot(ts, us[:, lin_model.inputs[0]])
     plt.title(r'$F_{G, in}$')
+    plt.ylabel(r'$\frac{L}{min}$')
+    plt.xlabel(r't ($min$)')
     plt.xlim([0, ts[-1]])
 
     plt.subplot(2, 3, 6)
@@ -85,6 +95,8 @@ def plot():
     )
     plt.legend([r'$C_{FA}$', r'$C_G$'])
     plt.title('bias')
+    plt.ylabel(r'$\frac{mol}{L}$')
+    plt.xlabel(r't ($min$)')
     plt.xlim([0, ts[-1]])
 
     plt.suptitle('Closedloop bioreactor without noise')
@@ -163,4 +175,4 @@ def plot_pretty():
 
 
 plot()
-plot_pretty()
+# plot_pretty()

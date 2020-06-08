@@ -95,10 +95,11 @@ def get_noise(lib=cupy):
     return state_pdf, measurement_pdf
 
 
-def performance(ys, r, ts):
-    ae = numpy.abs(ys - r)
-    itae = sum([scipy.integrate.simps(ae_ax, ts) for ae_ax in numpy.rollaxis(ae, 1)])
-    return itae
+def performance(ys, r, ts, ysp):
+    y_adj = (ys - ysp)/ysp
+    se = (ys - r)**2
+    ise = sum([scipy.integrate.simps(se_ax, ts) for se_ax in numpy.rollaxis(se, 1)])
+    return ise
 
 
 def get_random_io():
