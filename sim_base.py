@@ -44,7 +44,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
         Q=numpy.diag([1e2, 1e3]),
         R=numpy.diag([1, 1]),
         lin_model=lin_model,
-        ysp=lin_model.yn2d(numpy.array([0.28, 0.85]), subselect=False),
+        ysp=lin_model.yn2d(numpy.array([0.28, 1.15]), subselect=False),
         u_bounds=[
             numpy.array([0, numpy.inf]) - lin_model.u_bar[0],
             numpy.array([0, numpy.inf]) - lin_model.u_bar[1]
