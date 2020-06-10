@@ -44,7 +44,7 @@ class MultivariateGaussianSum:
         size = int(numpy.prod(shape))
         bins = self.lib.bincount(self.lib.random.choice(self.lib.arange(self.Nd), size, p=self.weights_device),
                                  minlength=self.Nd)
-        out = self.lib.empty((size, self.Nx))
+        out = self.lib.empty((size, self.Nx), dtype=self.lib.float32)
 
         index = 0
         for n, mean, cov in zip(bins, self.means_device, self.covariances_device):

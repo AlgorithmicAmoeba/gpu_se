@@ -15,7 +15,7 @@ class ParticleFilter:
         self.N_particles = int(N_particles)
 
         self.particles = x0.draw(N_particles)
-        self.weights = numpy.full(N_particles, 1 / N_particles)
+        self.weights = numpy.full(N_particles, 1 / N_particles, dtype=numpy.float32)
         self.state_pdf = state_pdf
         self.measurement_pdf = measurement_pdf
 
@@ -72,10 +72,10 @@ class ParallelParticleFilter(ParticleFilter):
     def __f_vec(self):
         f_jit = cuda.jit(device=True)(self.f)
 
-        @numba.guvectorize(['void(f8[:], i4[:], i4, f8[:])',
-                            'void(f8[:], i8[:], i8, f8[:])',
-                            'void(f8[:], f4[:], f4, f8[:])',
-                            'void(f8[:], f8[:], f8, f8[:])'],
+        @numba.guvectorize(['void(f4[:], i4[:], i4, f4[:])',
+                            'void(f4[:], i8[:], i8, f4[:])',
+                            'void(f4[:], f4[:], f4, f4[:])',
+                            'void(f4[:], f8[:], f8, f4[:])'],
                            '(n), (m), () -> (n)', target='cuda')
         def f_vec(x, u, dt, _x_out):
             ans = f_jit(x, u, dt)
@@ -87,10 +87,10 @@ class ParallelParticleFilter(ParticleFilter):
     def __g_vec(self):
         g_jit = cuda.jit(device=True)(self.g)
 
-        @numba.guvectorize(['void(f8[:], i4[:], f8[:], f8[:])',
-                            'void(f8[:], i8[:], f8[:], f8[:])',
-                            'void(f8[:], f4[:], f8[:], f8[:])',
-                            'void(f8[:], f8[:], f8[:], f8[:])'],
+        @numba.guvectorize(['void(f4[:], i4[:], f4[:], f4[:])',
+                            'void(f4[:], i8[:], f4[:], f4[:])',
+                            'void(f4[:], f4[:], f4[:], f4[:])',
+                            'void(f4[:], f8[:], f4[:], f4[:])'],
                            '(n), (m), (p) -> (p)', target='cuda')
         def g_vec(x, u, _y_dummy, _y_out):
             ans = g_jit(x, u)
@@ -102,10 +102,7 @@ class ParallelParticleFilter(ParticleFilter):
     def __pdf_vec(self):
         pdf_jit = cuda.jit(device=True)(self.measurement_pdf.pdf)
 
-        @numba.guvectorize(['void(f8[:], f8[:])',
-                            'void(f8[:], f8[:])',
-                            'void(f8[:], f8[:])',
-                            'void(f8[:], f8[:])'],
+        @numba.guvectorize(['void(f4[:], f4[:])'],
                            '(n) -> (n)', target='cuda')
         def pdf_vec(e, _pdf_out=None):
             _pdf_out = pdf_jit(e)
@@ -142,7 +139,7 @@ class ParallelParticleFilter(ParticleFilter):
         self.particles_device += self.state_pdf.draw(self.N_particles)
 
     def update(self, u, z):
-        z = cupy.asarray(z)
+        z = cupy.asarray(z, dtype=numpy.float32)
         ys = cupy.asarray(self.g_vectorize(self.particles_device, u, self._y_dummy))
         es = z - ys
         ws = cupy.asarray(self.measurement_pdf.pdf(es))
