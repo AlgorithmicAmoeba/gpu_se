@@ -113,6 +113,6 @@ def plot_pretty_results():
 
 
 if __name__ == '__main__':
-    # generate_results(redo=False, number=100)
+    generate_results(redo=True, number=200)
     plot_results()
-    plot_pretty_results()
+    # plot_pretty_results()

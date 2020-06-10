@@ -72,7 +72,7 @@ def get_simulation_performance(N_particles, dt_control=1):
     ys_pf = numpy.array(ys_pf)
     ys = numpy.array(ys)
 
-    return sim_base.performance(ys_pf, ys[:, lin_model.outputs], ts)
+    return sim_base.performance(ys_pf, lin_model.yd2n(K.ysp), ts)
 
 
 def generate_results(redo=False, low=1, high=20, repeat=1):
