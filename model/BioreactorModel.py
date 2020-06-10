@@ -134,6 +134,7 @@ class Bioreactor(model.NonlinearModel):
         outs = self.X
         return outs
 
+    # noinspection PyTupleItemAssignment
     @staticmethod
     def find_SS(U_op, X0):
         bioreactor_SS = model.Bioreactor(X0=[], high_N=False)
@@ -145,7 +146,10 @@ class Bioreactor(model.NonlinearModel):
             bioreactor_SS.X = temp
             return ans
 
-        return scipy.optimize.fsolve(fun, X0)
+        res = scipy.optimize.fsolve(fun, X0)
+        # noinspection PyUnresolvedReferences
+        res[1] = X0[1]
+        return res
 
     @staticmethod
     def homeostatic_DEs(x, u, dt=1):
