@@ -11,7 +11,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
     # Bioreactor
     bioreactor = model.Bioreactor(
         X0=model.Bioreactor.find_SS(
-            numpy.array([0.06, 5/180, 0.2]),
+            numpy.array([0.06, 0.2]),
             #            Ng,         Nx,      Nfa, Ne, Nh
             numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
         ),
@@ -22,18 +22,18 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
     lin_model = model.LinearModel.create_LinearModel(
         bioreactor,
         x_bar=model.Bioreactor.find_SS(
-            numpy.array([0.04, 5/180, 0.1]),
+            numpy.array([0.04, 0.1]),
             #           Ng,         Nx,      Nfa, Ne, Nh
             numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
         ),
         #          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
-        u_bar=numpy.array([0.04, 5/180, 0.1]),
+        u_bar=numpy.array([0.04, 0.1]),
         T=dt_control
     )
     #  Select states, outputs and inputs for MPC
     lin_model.select_subset(
         states=[0, 2],  # Cg, Cfa
-        inputs=[0, 2],  # Fg_in, Fm_in
+        inputs=[0, 1],  # Fg_in, Fm_in
         outputs=[0, 2],  # Cg, Cfa
     )
 
@@ -104,7 +104,6 @@ def performance(ys, r, ts):
 def get_random_io():
     u = numpy.array([
         numpy.random.uniform(low=0, high=0.1),
-        5 / 180,
         numpy.random.uniform(low=0, high=0.2)
     ])
     y = numpy.array([
