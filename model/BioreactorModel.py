@@ -142,6 +142,7 @@ class Bioreactor(model.NonlinearModel):
         def fun(x_ss):
             temp = bioreactor_SS.X
             bioreactor_SS.X = x_ss
+            bioreactor_SS.X[1] = X0[1]
             ans = bioreactor_SS.DEs(U_op)
             bioreactor_SS.X = temp
             return ans
