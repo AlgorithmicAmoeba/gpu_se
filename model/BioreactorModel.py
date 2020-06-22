@@ -63,7 +63,8 @@ class Bioreactor(model.NonlinearModel):
             The differential changes to the state variables
         """
         Cg, Cx, Cfa, Ce, _ = [max(0, N) for N in self.X]
-        Fg_in, Cg_in, Fm_in = inputs
+        Fg_in, Fm_in = inputs
+        Cg_in = 5/180
         F_out = Fg_in + Fm_in
 
         V = 1  # L
@@ -157,7 +158,8 @@ class Bioreactor(model.NonlinearModel):
         Cg, Cx, Cfa, Ce, Ch = x
         Cg, Cx, Cfa, Ce = max(Cg, 0), max(Cx, 0), max(Cfa, 0), max(Ce, 0)
 
-        Fg_in, Cg_in, Fm_in = u
+        Fg_in, Fm_in = u
+        Cg_in = 5/180
         F_out = Fg_in + Fm_in
 
         V = 1  # L
