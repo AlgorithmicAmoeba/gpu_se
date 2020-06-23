@@ -35,27 +35,45 @@ def step_test(percent, dt):
 
 
 def plot():
-    percents = numpy.array([0.7, 0.8, 1, 1.2, 1.3])
+    percents = numpy.array([0.5, 0.7, 0.8, 1, 1.2, 1.3, 1.5])
     dts = [0.1]
 
-    u = numpy.array([0.06, 0.2])
+    # u = numpy.array([0.06, 0.2])
     plt.figure(figsize=(6.4*2, 4.8))
+
+    max_slope = 0
+    argmax = 0
+
     for p1, p2, dt in itertools.product(percents, percents, dts):
         percent = numpy.array([p1, p2])
         ts, ys = step_test(percent, dt)
         # u_i = u * percent
+
+        # Find the maximum slope
+        Cg = ys[:, 0]
+        Cga = numpy.abs(Cg - Cg[0])
+        Cga_max = numpy.max(Cga)
+        ts_max = ts[numpy.where(Cga == Cga_max)]
+        slope = Cga_max / ts_max
+        argmax = argmax
+        if slope > max_slope:
+            max_slope = slope
+            Cg_max = Cg[numpy.where(ts == ts_max)]
+            argmax = ts_max, Cg_max
 
         plt.subplot(1, 2, 1)
         plt.plot(ts, ys[:, 2])
         plt.title(r'$C_{FA}$')
         plt.ylabel(r'$\frac{mol}{L}$')
         plt.xlabel(r't ($min$)')
+        plt.xlim(xmin=0, xmax=100)
 
         plt.subplot(1, 2, 2)
         plt.plot(ts, ys[:, 0])
         plt.title(r'$C_{G}$')
         plt.ylabel(r'$\frac{mol}{L}$')
         plt.xlabel(r't ($min$)')
+        plt.xlim(xmin=0, xmax=300)
 
         # plt.subplot(2, 2, 3)
         # plt.axhline(u_i[1])
@@ -71,8 +89,10 @@ def plot():
 
         plt.suptitle('Step tests')
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        plt.savefig('batch_step_test.pdf')
+        plt.savefig('step_tests.pdf')
     plt.show()
+
+    print(max_slope, argmax)
 
 
 plot()
