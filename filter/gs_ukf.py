@@ -102,6 +102,7 @@ class GaussianSumUnscentedKalmanFilter:
             sample_index_result[i] = k
 
         self.means = self.means[sample_index_result]
+        self.covariances = self.covariances[sample_index_result]
         self.weights = numpy.full(self.N_gaussians, 1 / self.N_gaussians)
 
 
@@ -122,3 +123,4 @@ def test_gf():
     u, z = sim_base.get_random_io()
     gf.predict(u, 0.1)
     gf.update(u, z)
+    gf.resample()
