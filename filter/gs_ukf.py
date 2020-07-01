@@ -38,10 +38,16 @@ class GaussianSumUnscentedKalmanFilter:
         return sigmas
 
     def predict(self, u, dt):
-        # Perform a UKF prediction step for each Gaussian
-        for i, gaussian in enumerate(self.means):
-            # UKF algorithm
-            pass
+        sigmas = self._get_sigma_points()
+
+        # Move the sigma points through the state transition function
+        for gaussian in range(self.N_gaussians):
+            for sigma in range(self.N_sigmas):
+                sigmas[gaussian, sigma] = self.f(sigmas[gaussian, sigma], u, dt) + self.state_pdf.draw()
+
+        self.means = numpy.average(sigmas, axis=1, weights=self.w_sigma)
+        sigmas -= self.means[:, None, :]
+        self.covariances = sigmas.swapaxes(1, 2) @ (sigmas * self.w_sigma[:, None])
 
     def update(self, u, z):
         for i, particle in enumerate(self.means):
