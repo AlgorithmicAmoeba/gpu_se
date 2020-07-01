@@ -61,7 +61,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
 
     state_pdf, measurement_pdf = get_noise(my_library)
     x0, _ = get_noise(my_library)
-    x0.means_device = bioreactor.X[numpy.newaxis, :]
+    x0.means = bioreactor.X[numpy.newaxis, :]
     pf = my_filter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,

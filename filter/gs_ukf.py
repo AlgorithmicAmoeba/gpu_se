@@ -12,7 +12,7 @@ class GaussianSumUnscentedKalmanFilter:
         self.means = x0.draw(N_gaussians)
 
         average_cov = numpy.average(state_pdf.covariances, axis=0)
-        self.covs = numpy.repeat(average_cov[None, :, :], N_gaussians, axis=0)
+        self.covariances = numpy.repeat(average_cov[None, :, :], N_gaussians, axis=0)
 
         self.weights = numpy.full(N_gaussians, 1 / N_gaussians, dtype=numpy.float32)
 
@@ -20,17 +20,18 @@ class GaussianSumUnscentedKalmanFilter:
         self.measurement_pdf = measurement_pdf
 
         self.Nx = self.means.shape[1]
-        self.Nsigma = 2*self.Nx + 1
+        self.Ny = measurement_pdf.draw().shape[0]
+        self.N_sigmas = 2 * self.Nx + 1
 
         # weights calculated such that:
         # 1) w_mu + 2*n*w_sigma = 1
         # 2) w_mu / w_sigma = 0.4 / 0.25 ~ Normal_pdf(0) / Normal_pdf(sigma)
-        self.w_sigma = numpy.full(self.Nsigma, 1/(2*self.Nx + 8/5))
+        self.w_sigma = numpy.full(self.N_sigmas, 1 / (2 * self.Nx + 8 / 5))
         self.w_sigma[0] = 1 / (1 + 5/4*self.Nx)
 
     def _get_sigma_points(self):
-        stds = numpy.linalg.cholesky(self.covs).swapaxes(1, 2)
-        sigmas = numpy.repeat(self.means[:, None, :], self.Nsigma, axis=1)
+        stds = numpy.linalg.cholesky(self.covariances).swapaxes(1, 2)
+        sigmas = numpy.repeat(self.means[:, None, :], self.N_sigmas, axis=1)
         sigmas[:, 1:self.Nx+1, :] += stds
         sigmas[:, self.Nx+1:, :] -= stds
 
