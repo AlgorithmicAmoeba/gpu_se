@@ -1,4 +1,5 @@
 import numpy
+import sim_base
 
 
 class GaussianSumUnscentedKalmanFilter:
@@ -160,3 +161,22 @@ def main():
     print('B', ncov)
     print('sub', abs(mcov - ncov))
     print('sum', numpy.sum(numpy.abs(ncov - mcov)))
+
+
+def test_gf():
+    state_pdf, measurement_pdf = sim_base.get_noise(lib=numpy)
+    bioreactor, _, _, _ = sim_base.get_parts(gpu=False)
+    x0, _ = sim_base.get_noise(lib=numpy)
+    x0.means = bioreactor.X[numpy.newaxis, :]
+    gf = GaussianSumUnscentedKalmanFilter(
+        f=bioreactor.homeostatic_DEs,
+        g=bioreactor.static_outputs,
+        N_gaussians=7,
+        x0=x0,
+        state_pdf=state_pdf,
+        measurement_pdf=measurement_pdf
+    )
+
+    u, z = sim_base.get_random_io()
+    gf.predict(u, 0.1)
+    gf.update(u, z)
