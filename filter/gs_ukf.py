@@ -50,10 +50,41 @@ class GaussianSumUnscentedKalmanFilter:
         self.covariances = sigmas.swapaxes(1, 2) @ (sigmas * self.w_sigma[:, None])
 
     def update(self, u, z):
-        for i, particle in enumerate(self.means):
-            y = self.g(particle, u)
-            e = z - y
-            self.weights[i] *= self.measurement_pdf.pdf(e)
+        # Local Update
+        sigmas = self._get_sigma_points()
+        etas = numpy.zeros((self.N_gaussians, self.N_sigmas, self.Ny))
+
+        # Move the sigma points through the state observation function
+        for gaussian in range(self.N_gaussians):
+            for sigma in range(self.N_sigmas):
+                etas[gaussian, sigma] = self.g(sigmas[gaussian, sigma], u)
+
+        # Compute the Kalman gain
+        eta_means = numpy.average(etas, axis=1, weights=self.w_sigma)
+        sigmas -= self.means[:, None, :]
+        etas -= eta_means[:, None, :]
+
+        P_xys = sigmas.swapaxes(1, 2) @ (etas * self.w_sigma[:, None])
+        P_yys = etas.swapaxes(1, 2) @ (etas * self.w_sigma[:, None])
+        P_yy_invs = numpy.linalg.inv(P_yys)
+        Ks = P_xys @ P_yy_invs
+
+        # Use the gain to update the means and covariances
+        es = z - eta_means
+        self.means += (Ks @ es[:, :, None]).squeeze()
+        # Dimensions from paper do not work, use corrected version
+        self.covariances -= Ks @ P_yys @ Ks.swapaxes(1, 2)
+
+        # Global Update
+        y_means = numpy.zeros((self.N_gaussians, self.Ny))
+
+        # Move the means through the state observation function
+        for gaussian in range(self.N_gaussians):
+            y_means[gaussian] = self.g(self.means[gaussian], u)
+
+        glob_es = z - y_means
+        consts = (glob_es[:, None, :] @ P_yy_invs @ glob_es[:, :, None]).squeeze()
+        self.weights *= numpy.exp(consts)
 
     def resample(self):
         cumsum = numpy.cumsum(self.weights)
