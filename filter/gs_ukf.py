@@ -105,64 +105,6 @@ class GaussianSumUnscentedKalmanFilter:
         self.weights = numpy.full(self.N_gaussians, 1 / self.N_gaussians)
 
 
-def my_cov(x, y, w=None):
-    avgx = numpy.average(x, weights=w, axis=1)
-    avgy = numpy.average(y, weights=w, axis=1)
-
-    X = x - avgx[:, None, :]
-    Y = y - avgy[:, None, :]
-    if w is None:
-        return X.T @ Y
-    return X.swapaxes(1, 2) @ (Y*w[:, None])
-
-
-def paper_cov(x, y, w):
-    summed = 0
-    avgx = numpy.average(x, weights=w, axis=0)
-    avgy = numpy.average(y, weights=w, axis=0)
-
-    for i in range(x.shape[0]):
-        X = numpy.atleast_2d(x[i] - avgx)
-        Y = numpy.atleast_2d(y[i] - avgy)
-        summed += w[i] * X.T @ Y
-
-    return summed
-
-
-def paper_cov_adapted(x, y, w):
-    avgx = numpy.average(x, weights=w, axis=1)
-    avgy = numpy.average(y, weights=w, axis=1)
-
-    X = x - avgx[None, :]
-    Y = y - avgy[None, :]
-
-    # for i in range(x.shape[0]):
-    #     Xi = numpy.atleast_2d(X[i])
-    #     Yi = numpy.atleast_2d(Y[i])
-    #     summed += w[i] * Xi.T @ Yi
-    summed = X.T @ (Y * w[:, None])
-
-    return summed
-
-
-def main():
-    Ng, Ns, Nx = 5, 10, 2
-
-    x, y = numpy.random.randint(1, 100, (Ng, Ns, Nx)), numpy.random.randint(1, 100, (Ng, Ns, Nx))
-    w = numpy.random.random(Ns)
-    w /= numpy.sum(w)
-
-    mcov = my_cov(x, y, w)
-
-    # ncov = numpy.cov(x, y, aweights=w, bias=True)
-    ncov = numpy.array([paper_cov(x[i], y[i], w) for i in range(Ng)])
-
-    print('A', mcov)
-    print('B', ncov)
-    print('sub', abs(mcov - ncov))
-    print('sum', numpy.sum(numpy.abs(ncov - mcov)))
-
-
 def test_gf():
     state_pdf, measurement_pdf = sim_base.get_noise(lib=numpy)
     bioreactor, _, _, _ = sim_base.get_parts(gpu=False)
