@@ -4,7 +4,8 @@ import gpu_funcs.MultivariateGaussianSum
 
 
 class DeterministicGaussianSum(gpu_funcs.MultivariateGaussianSum):
-    """Creates a MultivariateGaussianSum object that always returns the same values"""
+    """Creates a MultivariateGaussianSum object that always returns the same values.
+    Useful for testing."""
     def __init__(self,  means, covariances, weights, library=cupy):
         super().__init__(means, covariances, weights, library=cupy)
 
