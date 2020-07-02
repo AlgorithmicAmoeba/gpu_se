@@ -74,14 +74,18 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
     return bioreactor, lin_model, K, pf
 
 
-def get_noise(lib=cupy):
-    state_pdf = gpu_funcs.MultivariateGaussianSum(
+def get_noise(lib=cupy, deterministic=False):
+    if deterministic:
+        distribution = gpu_funcs.DeterministicGaussianSum
+    else:
+        distribution = gpu_funcs.MultivariateGaussianSum
+    state_pdf = distribution(
         means=numpy.zeros(shape=(1, 5)),
         covariances=numpy.diag([1e-10, 1e-13, 1e-9, 1e-9, 1e-13])[numpy.newaxis, :, :],
         weights=numpy.array([1.]),
         library=lib
     )
-    measurement_pdf = gpu_funcs.MultivariateGaussianSum(
+    measurement_pdf = distribution(
         means=numpy.array([[1e-4, 0],
                            [0, -1e-4]]),
         covariances=numpy.array([[[6e-5, 0],
