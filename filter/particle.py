@@ -139,7 +139,7 @@ class ParallelParticleFilter(ParticleFilter):
         self.particles_device += self.state_pdf.draw(self.N_particles)
 
     def update(self, u, z):
-        z = cupy.asarray(z, dtype=numpy.float32)
+        z = cupy.asarray(z, dtype=cupy.float32)
         ys = cupy.asarray(self.g_vectorize(self.particles_device, u, self._y_dummy))
         es = z - ys
         ws = cupy.asarray(self.measurement_pdf.pdf(es))
