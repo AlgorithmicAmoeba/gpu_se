@@ -9,9 +9,9 @@ class MultivariateGaussianSum:
 
     def __init__(self, means, covariances, weights, library=cupy):
         self.lib = library
-        self.means = self.lib.asarray(means)
-        self.weights = self.lib.asarray(weights)
-        self.covariances = self.lib.asarray(covariances)
+        self.means = self.lib.asarray(means, dtype=self.lib.float32)
+        self.weights = self.lib.asarray(weights, dtype=self.lib.float32)
+        self.covariances = self.lib.asarray(covariances, dtype=self.lib.float32)
 
         self.inverse_covariances = self.lib.asarray(numpy.linalg.inv(covariances))
         self.Nd, self.Nx = means.shape
