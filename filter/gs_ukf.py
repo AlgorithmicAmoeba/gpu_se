@@ -270,4 +270,3 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
         self.means = cupy.asarray(self.means)[sample_index]
         self.covariances = cupy.asarray(self.covariances)[sample_index]
         self.weights = cupy.full(self.N_gaussians, 1 / self.N_gaussians)
-
