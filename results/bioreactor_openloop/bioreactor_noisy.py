@@ -13,7 +13,7 @@ state_pdf, measurement_pdf = sim_base.get_noise()
 
 
 # Initial values
-us = [numpy.array([0.04, 5/180, 0.1])]
+us = [numpy.array([0.04, 0.1])]
 xs = [bioreactor.X.copy()]
 ys = [bioreactor.outputs(us[-1])]
 ys_meas = [bioreactor.outputs(us[-1])]

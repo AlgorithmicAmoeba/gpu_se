@@ -15,14 +15,14 @@ bioreactor = model.Bioreactor(
     high_N=True
 )
 
-select_inputs = [0, 2]  # Fg_in, Fm_in
+select_inputs = [0, 1]  # Fg_in, Fm_in
 select_outputs = [0, 2]  # Cg, Cfa
 
 state_pdf, measurement_pdf = sim_base.get_noise()
 
 
 # Initial values
-us = [numpy.array([0., 5/180, 0.])]
+us = [numpy.array([0., 0.])]
 xs = [bioreactor.X.copy()]
 ys = [bioreactor.outputs(us[-1])]
 ys_meas = [bioreactor.outputs(us[-1])]
@@ -30,16 +30,16 @@ ys_meas = [bioreactor.outputs(us[-1])]
 not_cleared = True
 for t in tqdm.tqdm(ts[1:]):
     if t < 25:
-        us.append(numpy.array([0., 5/180, 0.]))
+        us.append(numpy.array([0., 0.]))
     elif t < 200:
         if not_cleared:
             bioreactor.X[[0, 2, 3, 4]] = 0
             not_cleared = False
             bioreactor.high_N = False
 
-        us.append(numpy.array([0.06, 5/180, 0.2]))
+        us.append(numpy.array([0.06, 0.2]))
     elif t < 500:
-        us.append(numpy.array([0.04, 5/180, 0.1]))
+        us.append(numpy.array([0.04, 0.1]))
     else:
         us.append(us[-1])
 

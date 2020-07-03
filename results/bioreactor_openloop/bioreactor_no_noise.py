@@ -10,11 +10,11 @@ dt = ts[1]
 
 bioreactor, _, _, _ = sim_base.get_parts()
 
-select_inputs = [0, 2]
+select_inputs = [0, 1]
 select_outputs = [0, 2]
 
 # Initial values
-us = [numpy.array([0.04, 5/180, 0.1])]
+us = [numpy.array([0.04, 0.1])]
 xs = [bioreactor.X.copy()]
 ys = [bioreactor.outputs(us[-1])]
 
