@@ -35,7 +35,10 @@ class GaussianSumUnscentedKalmanFilter:
         self.w_sigma[0] = 1 / (1 + 5/4*self.Nx)
 
     def _get_sigma_points(self):
-        stds = numpy.linalg.cholesky(self.covariances).swapaxes(1, 2)
+        try:
+            stds = numpy.linalg.cholesky(self.covariances).swapaxes(1, 2)
+        except numpy.linalg.LinAlgError:
+            stds = numpy.linalg.cholesky(self.covariances + 1e-10*numpy.eye(self.Nx)).swapaxes(1, 2)
         sigmas = numpy.repeat(self.means[:, None, :], self.N_sigmas, axis=1)
         sigmas[:, 1:self.Nx+1, :] += stds
         sigmas[:, self.Nx+1:, :] -= stds
