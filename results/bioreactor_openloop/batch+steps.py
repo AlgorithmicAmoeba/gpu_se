@@ -15,14 +15,14 @@ bioreactor = model.Bioreactor(
     high_N=True
 )
 
-select_inputs = [0, 2]  # Fg_in, Fm_in
+select_inputs = [0, 1]  # Fg_in, Fm_in
 select_outputs = [0, 2]  # Cg, Cfa
 
 state_pdf, measurement_pdf = sim_base.get_noise()
 
 
 # Initial values
-us = [numpy.array([0., 5/180, 0.])]
+us = [numpy.array([0., 0.])]
 xs = [bioreactor.X.copy()]
 ys = [bioreactor.outputs(us[-1])]
 ys_meas = [bioreactor.outputs(us[-1])]
@@ -31,7 +31,7 @@ not_cleared = True
 Cx = numpy.NaN
 for t in tqdm.tqdm(ts[1:]):
     if t < 25:
-        us.append(numpy.array([0., 5/180, 0.]))
+        us.append(numpy.array([0., 0.]))
     elif t < 200:
         if not_cleared:
             bioreactor.X[[0, 2, 3, 4]] = 0
@@ -41,15 +41,15 @@ for t in tqdm.tqdm(ts[1:]):
 
         # (L/min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv) (L/molG)
         glucose = 0.3 / 180 * Cx * 24.6 * 1 / (5/180)
-        us.append(numpy.array([glucose, 5/180, 0.]))
+        us.append(numpy.array([glucose, 0.]))
     elif t < 500:
         # (L/min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv) (L/molG)
         glucose = 0.45 / 180 * Cx * 24.6 * 1 / (5/180)
-        us.append(numpy.array([glucose, 5/180, 0.]))
+        us.append(numpy.array([glucose, 0.]))
     elif t < 700:
         # (L/min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv) (L/molG)
         glucose = 0.6 / 180 * Cx * 24.6 * 1 / (5/180)
-        us.append(numpy.array([glucose, 5/180, 0.]))
+        us.append(numpy.array([glucose, 0.]))
     else:
         us.append(us[-1])
 
