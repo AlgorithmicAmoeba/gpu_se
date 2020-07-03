@@ -13,7 +13,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
         X0=model.Bioreactor.find_SS(
             numpy.array([0.06, 0.2]),
             #            Ng,         Nx,      Nfa, Ne, Nh
-            numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
+            numpy.array([260/180, 640/24.6, 1000/116, 0, 0])
         ),
         high_N=False
     )
@@ -24,7 +24,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
         x_bar=model.Bioreactor.find_SS(
             numpy.array([0.04, 0.1]),
             #           Ng,         Nx,      Nfa, Ne, Nh
-            numpy.array([0.26/180, 0.64/24.6, 1/116, 0, 0])
+            numpy.array([260/180, 640/24.6, 1000/116, 0, 0])
         ),
         #          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
         u_bar=numpy.array([0.04, 0.1]),
@@ -41,10 +41,10 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
     K = controller.MPC(
         P=int(300//dt_control),
         M=int(200//dt_control),
-        Q=numpy.diag([1e2, 1e3]),
+        Q=numpy.diag([1, 1]),
         R=numpy.diag([1, 1]),
         lin_model=lin_model,
-        ysp=lin_model.yn2d(numpy.array([0.28, 1.15]), subselect=False),
+        ysp=lin_model.yn2d(numpy.array([280, 1150]), subselect=False),
         u_bounds=[
             numpy.array([0, numpy.inf]) - lin_model.u_bar[0],
             numpy.array([0, numpy.inf]) - lin_model.u_bar[1]
@@ -81,18 +81,18 @@ def get_noise(lib=cupy, deterministic=False):
         distribution = gpu_funcs.MultivariateGaussianSum
     state_pdf = distribution(
         means=numpy.zeros(shape=(1, 5)),
-        covariances=numpy.diag([1e-10, 1e-13, 1e-9, 1e-9, 1e-13])[numpy.newaxis, :, :],
+        covariances=numpy.diag([1e-4, 1e-7, 1e-3, 1e-3, 1e-7])[numpy.newaxis, :, :],
         weights=numpy.array([1.]),
         library=lib
     )
     measurement_pdf = distribution(
-        means=numpy.array([[1e-4, 0],
-                           [0, -1e-4]]),
-        covariances=numpy.array([[[6e-5, 0],
-                                  [0, 8e-5]],
+        means=numpy.array([[1e-1, 0],
+                           [0, -1e-1]]),
+        covariances=numpy.array([[[6e-2, 0],
+                                  [0, 8e-2]],
 
-                                 [[5e-5, 1e-5],
-                                  [1e-5, 7e-5]]]),
+                                 [[5e-2, 1e-2],
+                                  [1e-2, 7e-2]]]),
         weights=numpy.array([0.85, 0.15]),
         library=lib
     )

@@ -11,7 +11,7 @@ dt = ts[1]
 
 bioreactor = model.Bioreactor(
     #                Ng,         Nx,      Nfa, Ne, Nh
-    X0=numpy.array([3 / 180, 1e-3 / 24.6, 0 / 116, 0., 0.]),
+    X0=numpy.array([3000 / 180, 1 / 24.6, 0 / 116, 0., 0.]),
     high_N=True
 )
 
@@ -40,21 +40,21 @@ for t in tqdm.tqdm(ts[1:]):
             Cx = bioreactor.X[1]
 
         # (L/min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv) (L/molG)
-        glucose = 0.3 / 180 * Cx * 24.6 * 1 / (5/180)
+        glucose = 0.3 / 180 * Cx * 24.6 * 1 / (5/180) / 1000
         us.append(numpy.array([glucose, 0.]))
     elif t < 500:
         # (L/min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv) (L/molG)
-        glucose = 0.45 / 180 * Cx * 24.6 * 1 / (5/180)
+        glucose = 0.45 / 180 * Cx * 24.6 * 1 / (5/180) / 1000
         us.append(numpy.array([glucose, 0.]))
     elif t < 700:
         # (L/min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv) (L/molG)
-        glucose = 0.6 / 180 * Cx * 24.6 * 1 / (5/180)
+        glucose = 0.6 / 180 * Cx * 24.6 * 1 / (5/180) / 1000
         us.append(numpy.array([glucose, 0.]))
     else:
         us.append(us[-1])
 
     bioreactor.step(dt, us[-1])
-    # bioreactor.X += state_pdf.draw().get()
+    bioreactor.X += state_pdf.draw().get()
     outputs = bioreactor.outputs(us[-1])
     ys.append(outputs.copy())
     # outputs[select_outputs] += measurement_pdf.draw().get()
@@ -108,7 +108,7 @@ def plot():
     plt.ylabel(r'$\frac{L}{min}$')
     plt.xlabel(r't ($min$)')
     for c in [0.4, 0.5]:
-        glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5/180)
+        glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5/180) / 1000
         plt.axhline(glucose_calc, color='green', alpha=0.4)
 
     # plt.subplot(2, 3, 6)

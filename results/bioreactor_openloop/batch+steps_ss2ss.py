@@ -11,7 +11,7 @@ dt = ts[1]
 
 bioreactor = model.Bioreactor(
     #                Ng,         Nx,      Nfa, Ne, Nh
-    X0=numpy.array([3 / 180, 1e-3 / 24.6, 0 / 116, 0., 0.]),
+    X0=numpy.array([3000 / 180, 1 / 24.6, 0 / 116, 0., 0.]),
     high_N=True
 )
 

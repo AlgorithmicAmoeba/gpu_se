@@ -64,15 +64,15 @@ class Bioreactor(model.NonlinearModel):
         """
         Cg, Cx, Cfa, Ce, _ = [max(0, N) for N in self.X]
         Fg_in, Fm_in = inputs
-        Cg_in = 5/180
+        Cg_in = 5000/180
         F_out = Fg_in + Fm_in
 
         V = 1  # L
 
         if self.high_N:
             ks = 1/230, 1/12, 1/21
-            rFAf, rEf, rX = [k * (Cg / (1e-3 + Cg)) for k in ks]
-            theta_calc = 1.1 * (Cg / (1e-3 + Cg))
+            rFAf, rEf, rX = [k * (Cg / (1 + Cg)) for k in ks]
+            theta_calc = 1.1 * (Cg / (1 + Cg))
 
             RHS = [rFAf, rEf, rX, theta_calc, 0]
 
@@ -159,22 +159,22 @@ class Bioreactor(model.NonlinearModel):
         Cg, Cx, Cfa, Ce = max(Cg, 0), max(Cx, 0), max(Cfa, 0), max(Ce, 0)
 
         Fg_in, Fm_in = u
-        Cg_in = 5/180
+        Cg_in = 5000/180
         F_out = Fg_in + Fm_in
 
         V = 1  # L
 
         rX = 0. * Cx
-        rH = (0.28 / 180 - Cg)
+        rH = (280 / 180 - Cg)
 
         # (molFA / min) = (gFA/gX/min) (molFA/gFA) (molX/Lv) (gX/molX) (Lv)
         rFA_max = 0.25 / 116 * Cx * 24.6 * V
-        rFA = rFA_max * (Cg / (1e-5 + Cg))
+        rFA = rFA_max * (Cg / (1e-2 + Cg))
 
         # (molG / min) = (gG/gX/min) (molG/gG) (molX/Lv) (gX/molX) (Lv)
         r_theta1_max = (0.4 - 0.25) / 180 * Cx * 24.6 * V
-        r_theta1_req = r_theta1_max - (r_theta1_max / 2 / (0.28 / 180) * rH + 0.01 * Ch)
-        r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-5 + Cg))
+        r_theta1_req = r_theta1_max - (r_theta1_max / 2000 / (0.28 / 180) * rH + 0.01 * Ch)
+        r_theta1 = min(r_theta1_max, max(0, r_theta1_req)) * (Cg / (1e-2 + Cg))
 
         # (molE / min) = (gE/gX/min) (molE/gE) (molX/Lv) (gX/molX) (Lv)
         r_E_max = 0.025 / 46 * Cx * 24.6 * V
