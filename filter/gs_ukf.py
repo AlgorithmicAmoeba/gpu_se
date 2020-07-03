@@ -48,7 +48,8 @@ class GaussianSumUnscentedKalmanFilter:
         # Move the sigma points through the state transition function
         for gaussian in range(self.N_gaussians):
             for sigma in range(self.N_sigmas):
-                sigmas[gaussian, sigma] = self.f(sigmas[gaussian, sigma], u, dt) + self.state_pdf.draw()
+                sigmas[gaussian, sigma] = self.f(sigmas[gaussian, sigma], u, dt)
+        sigmas += self.state_pdf.draw((self.N_gaussians, self.N_sigmas))
 
         self.means = numpy.average(sigmas, axis=1, weights=self.w_sigma)
         sigmas -= self.means[:, None, :]
