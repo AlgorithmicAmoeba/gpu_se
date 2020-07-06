@@ -123,8 +123,15 @@ def plot_run_seqs():
                 normailised_value = (N_log - N_logs[0]) / N_logs[-1]
                 plt.semilogy(run_seq, '.', color=cmap(normailised_value))
 
-            plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap))
+    plt.colorbar(
+        matplotlib.cm.ScalarMappable(
+            norm=norm,
+            cmap=cmap
+        ),
+        ax=plt.gcf().get_axes()
+    )
 
+    plt.savefig('run_seqs.pdf')
     plt.show()
 
 
@@ -178,6 +185,6 @@ def plot_times():
 
 
 if __name__ == '__main__':
-    # plot_run_seqs()
+    plot_run_seqs()
     plot_speed_up()
     plot_times()
