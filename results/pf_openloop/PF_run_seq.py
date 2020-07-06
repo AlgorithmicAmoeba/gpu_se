@@ -95,8 +95,14 @@ def resample_run_seqs(N_part, N_runs, gpu):
     return N_particles, run_seqs
 
 
-# noinspection PyUnresolvedReferences
-def plot_run_seqs():
+def get_run_seqs():
+    """Returns the run sequences for all the runs
+
+    Returns
+    -------
+    run_seqss : List
+        [CPU; GPU] x [predict; update; resample] x [N_particles; run_seq]
+    """
     run_seqss = [
         [
             prediction_run_seqs(20, 20, False),
@@ -109,6 +115,43 @@ def plot_run_seqs():
             resample_run_seqs(24, 100, True)
         ]
     ]
+    return run_seqss
+
+
+def plot_example_benchmark():
+    run_seqss = get_run_seqs()
+    N_particles, run_seqs = run_seqss[0][1]
+    run_seq = run_seqs[-1]
+
+    print(numpy.log(N_particles[-1]))
+
+    plt.figure(figsize=(15, 5))
+    plt.subplot(1, 3, 1)
+    plt.semilogy(run_seq, 'kx')
+    plt.title('Run sequence')
+    plt.xlabel('Iterations')
+    plt.ylabel('Time (s)')
+
+    plt.subplot(1, 3, 2)
+    plt.plot(run_seq[:-1], run_seq[1:], 'kx')
+    plt.title('Lag chart')
+    plt.xlabel(r'$X_{i-1}$')
+    plt.ylabel(r'$X_{i}$')
+
+    plt.subplot(1, 3, 3)
+    plt.acorr(run_seq - numpy.average(run_seq))
+    plt.title('Autocorrelation graph')
+    plt.xlabel('Lag')
+    plt.ylabel('Autocorrelation')
+
+    plt.tight_layout()
+    plt.savefig('benchmark.pdf')
+    plt.show()
+
+
+# noinspection PyUnresolvedReferences
+def plot_run_seqs():
+    run_seqss = get_run_seqs()
 
     cmap = matplotlib.cm.get_cmap('Spectral')
     norm = matplotlib.colors.Normalize(vmin=1, vmax=24)
@@ -136,18 +179,8 @@ def plot_run_seqs():
 
 
 def plot_speed_up():
-    run_seqss = [
-        [
-            prediction_run_seqs(20, 20, False),
-            update_run_seqs(20, 100, False),
-            resample_run_seqs(20, 100, False)
-        ],
-        [
-            prediction_run_seqs(24, 100, True),
-            update_run_seqs(24, 100, True),
-            resample_run_seqs(24, 100, True)
-        ]
-    ]
+    run_seqss = get_run_seqs()
+
     for method in range(3):
         cpu_time = numpy.min(run_seqss[0][method][1], axis=1)
         gpu_time = numpy.min(run_seqss[1][method][1], axis=1)
@@ -161,18 +194,8 @@ def plot_speed_up():
 
 
 def plot_times():
-    run_seqss = [
-        [
-            prediction_run_seqs(20, 20, False),
-            update_run_seqs(20, 100, False),
-            resample_run_seqs(20, 100, False)
-        ],
-        [
-            prediction_run_seqs(24, 100, True),
-            update_run_seqs(24, 100, True),
-            resample_run_seqs(24, 100, True)
-        ]
-    ]
+    run_seqss = get_run_seqs()
+
     for device in range(2):
         plt.subplot(1, 2, device+1)
         for method in range(3):
@@ -185,6 +208,7 @@ def plot_times():
 
 
 if __name__ == '__main__':
-    plot_run_seqs()
-    plot_speed_up()
-    plot_times()
+    plot_example_benchmark()
+    # plot_run_seqs()
+    # plot_speed_up()
+    # plot_times()
