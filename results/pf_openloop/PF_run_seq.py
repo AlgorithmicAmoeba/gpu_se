@@ -9,6 +9,7 @@ import joblib
 
 def prediction_run_seqs(N_part, N_runs, gpu):
     memory = joblib.Memory('cache/predict')
+    # memory.clear()
 
     # noinspection PyShadowingNames
     @memory.cache
@@ -38,6 +39,7 @@ def prediction_run_seqs(N_part, N_runs, gpu):
 
 def update_run_seqs(N_part, N_runs, gpu):
     memory = joblib.Memory('cache/update')
+    # memory.clear()
 
     # noinspection PyShadowingNames
     @memory.cache
@@ -67,6 +69,7 @@ def update_run_seqs(N_part, N_runs, gpu):
 
 def resample_run_seqs(N_part, N_runs, gpu):
     memory = joblib.Memory('cache/resample')
+    # memory.clear()
 
     # noinspection PyShadowingNames
     @memory.cache
@@ -123,7 +126,7 @@ def plot_example_benchmark():
     N_particles, run_seqs = run_seqss[0][1]
     run_seq = run_seqs[-1]
 
-    print(numpy.log(N_particles[-1]))
+    print(numpy.log2(N_particles[-1]))
 
     plt.figure(figsize=(15, 5))
     plt.subplot(1, 3, 1)
@@ -144,8 +147,42 @@ def plot_example_benchmark():
     plt.xlabel('Lag')
     plt.ylabel('Autocorrelation')
 
-    plt.tight_layout()
+    plt.suptitle(r'Benchmarking for CPU update with $N_p = 2^{19.5}$')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('benchmark.pdf')
+    plt.show()
+
+
+def plot_max_auto():
+    run_seqss = get_run_seqs()
+
+    for row in range(2):
+        for col in range(3):
+            plt.subplot(2, 3, row + 2*col + 1)
+            N_parts, run_seqs = run_seqss[row][col]
+            N_logs = numpy.log2(N_parts)
+
+            for N_log, run_seq in zip(N_logs, run_seqs):
+                x = run_seq - numpy.average(run_seq)
+                Nx = len(x)
+                maxlags = 1
+                abs_cors = numpy.abs(numpy.correlate(x, x, mode="full"))
+                abs_cors /= numpy.dot(x, x)
+                abs_cors = abs_cors[Nx - 1 - maxlags:Nx + maxlags]
+                abs_cors.sort()
+                # if abs_cors[-2] > 0.9:
+                #     plt.figure()
+                #     pandas.plotting.autocorrelation_plot(run_seq)
+                #     plt.show()
+                #     plt.acorr(run_seq, maxlags=90)
+                #     plt.show()
+                #     plt.plot(run_seq[:-1], run_seq[1:], 'kx')
+                #     plt.show()
+                #     plt.semilogy(run_seq, 'kx')
+                #     plt.show()
+                #     return
+                plt.plot(N_log, abs_cors[-2], 'kx')
+            plt.ylim(0, 1)
     plt.show()
 
 
@@ -208,7 +245,8 @@ def plot_times():
 
 
 if __name__ == '__main__':
-    plot_example_benchmark()
+    plot_max_auto()
+    # plot_example_benchmark()
     # plot_run_seqs()
     # plot_speed_up()
     # plot_times()
