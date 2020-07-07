@@ -20,10 +20,6 @@ class MultivariateGaussianSum:
             self.lib.linalg.det(self.covariances))
 
     def pdf(self, x):
-        if len(x.shape) == 1:
-            Np = 1
-        else:
-            Np = x.shape[0]
         es = x[:, None, :] - self.means[None, :, :]
 
         # The code below does: exp[i] = es[i].T @ self.inverse_covariances_device[i] @ es[i]
