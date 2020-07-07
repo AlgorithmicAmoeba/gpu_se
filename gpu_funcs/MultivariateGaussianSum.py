@@ -24,16 +24,14 @@ class MultivariateGaussianSum:
             Np = 1
         else:
             Np = x.shape[0]
-        x = x.reshape((Np, 1, self.Nx))
-        means_device = self.means.reshape((1, self.Nd, self.Nx))
-        es = x - means_device
+        es = x[:, None, :] - self.means[None, :, :]
 
         # The code below does: exp[i] = es[i].T @ self.inverse_covariances_device[i] @ es[i]
-        exp = self.lib.einsum('...bc, ...c, ...b -> ...', self.inverse_covariances, es, es)
-        r = self.lib.exp(-exp)
+        exp = es[:, :, None, :] @ self.inverse_covariances[None, :, :, :] @ es[:, :, :, None]
+        r = self.lib.exp(-0.5*exp).squeeze()
 
         # The code below does: result = sum(r[i] * self.weights_device[i] * self.constants_device[i])
-        result = self.lib.einsum('...i, i, i -> ...', r, self.weights, self.constants)
+        result = numpy.sum(self.constants * self.weights * r, axis=1)
 
         return result
 
