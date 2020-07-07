@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import tqdm
 import sim_base
 import joblib
+# import pandas
 
 
 def prediction_run_seqs(N_part, N_runs, gpu):
