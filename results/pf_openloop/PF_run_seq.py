@@ -5,7 +5,28 @@ import matplotlib.pyplot as plt
 import tqdm
 import sim_base
 import joblib
-# import pandas
+import cupy
+import statsmodels.tsa.stattools as stats_tools
+
+
+class RunSequences:
+    def __init__(self, function, path='cache/'):
+        self.memory = joblib.Memory(path + function.__name__)
+        self.function = self.memory.cache(function)
+
+    def __call__(self, N_particles, N_runs, *args, **kwargs):
+        run_seqs = numpy.array(
+            [self.function(N_particle, N_runs, *args, **kwargs) for N_particle in N_particles]
+        )
+
+        return run_seqs
+
+    def clear(self, *args):
+        self.function.call_and_shelve(args).clear()
+
+    @staticmethod
+    def decorate(function):
+        return RunSequences(function)
 
 
 def prediction_run_seqs(N_part, N_runs, gpu):
@@ -24,6 +45,7 @@ def prediction_run_seqs(N_part, N_runs, gpu):
 
         for _ in tqdm.tqdm(range(N_runs)):
             u, _ = sim_base.get_random_io()
+            time.sleep(0.1)
             t = time.time()
             p.predict(u, 1.)
             times.append(time.time() - t)
@@ -99,6 +121,126 @@ def resample_run_seqs(N_part, N_runs, gpu):
     return N_particles, run_seqs
 
 
+def f_vectorize_run_seqs(N_part, N_runs, gpu):
+    memory = joblib.Memory('cache/f_vectorize')
+
+    # noinspection PyShadowingNames
+    @memory.cache
+    def f_vectorize_run(N_particle, N_runs, mem_gpu):
+        times = []
+
+        _, _, _, p = sim_base.get_parts(
+            N_particles=N_particle,
+            gpu=True
+        )
+
+        for _ in tqdm.tqdm(range(N_runs)):
+            u, _ = sim_base.get_random_io()
+            if mem_gpu:
+                u = cupy.asarray(u)
+            t = time.time()
+            p.f_vectorize(p.particles_device, u, 1.)
+            times.append(time.time() - t)
+
+        return numpy.array(times)
+
+    N_particles = 2**numpy.arange(1, N_part, 0.5)
+    run_seqs = numpy.array(
+        [f_vectorize_run(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    )
+
+    return N_particles, run_seqs
+
+
+def g_vectorize_run_seqs(N_part, N_runs, gpu):
+    memory = joblib.Memory('cache/g_vectorize')
+
+    # noinspection PyShadowingNames
+    @memory.cache
+    def g_vectorize_run(N_particle, N_runs, mem_gpu):
+        times = []
+
+        _, _, _, p = sim_base.get_parts(
+            N_particles=N_particle,
+            gpu=True
+        )
+
+        for _ in tqdm.tqdm(range(N_runs)):
+            u, _ = sim_base.get_random_io()
+            if mem_gpu:
+                u = cupy.asarray(u)
+            t = time.time()
+            # noinspection PyProtectedMember
+            p.g_vectorize(p.particles_device, u, p._y_dummy)
+            times.append(time.time() - t)
+
+        return numpy.array(times)
+
+    N_particles = 2**numpy.arange(1, N_part, 0.5)
+    run_seqs = numpy.array(
+        [g_vectorize_run(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    )
+
+    return N_particles, run_seqs
+
+
+def state_pdf_draw_run_seqs(N_part, N_runs, gpu):
+    memory = joblib.Memory('cache/state_pdf_draw')
+
+    # noinspection PyShadowingNames
+    @memory.cache
+    def state_pdf_draw(N_particle, N_runs):
+        times = []
+
+        _, _, _, p = sim_base.get_parts(
+            N_particles=N_particle,
+            gpu=True
+        )
+
+        for _ in tqdm.tqdm(range(N_runs)):
+            t = time.time()
+            p.state_pdf.draw(p.N_particles)
+            times.append(time.time() - t)
+
+        return numpy.array(times)
+
+    N_particles = 2**numpy.arange(1, N_part, 0.5)
+    run_seqs = numpy.array(
+        [state_pdf_draw(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    )
+
+    return N_particles, run_seqs
+
+
+def measurement_pdf_pdf_run_seqs(N_part, N_runs, gpu):
+    memory = joblib.Memory('cache/measurement_pdf_pdf')
+
+    # noinspection PyShadowingNames
+    @memory.cache
+    def measurement_pdf_pdf(N_particle, N_runs):
+        times = []
+
+        _, _, _, p = sim_base.get_parts(
+            N_particles=N_particle,
+            gpu=True
+        )
+
+        for _ in tqdm.tqdm(range(N_runs)):
+            es = p.measurement_pdf.draw(p.N_particles)
+            t = time.time()
+            p.measurement_pdf.pdf(es)
+            times.append(time.time() - t)
+
+        return numpy.array(times)
+
+    N_particles = 2**numpy.arange(1, N_part, 0.5)
+    run_seqs = numpy.array(
+        [measurement_pdf_pdf(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    )
+
+    return N_particles, run_seqs
+
+
 def get_run_seqs():
     """Returns the run sequences for all the runs
 
@@ -159,31 +301,16 @@ def plot_max_auto():
 
     for row in range(2):
         for col in range(3):
-            plt.subplot(2, 3, row + 2*col + 1)
+            plt.subplot(2, 3, 3*row + col + 1)
             N_parts, run_seqs = run_seqss[row][col]
             N_logs = numpy.log2(N_parts)
 
             for N_log, run_seq in zip(N_logs, run_seqs):
-                x = run_seq - numpy.average(run_seq)
-                Nx = len(x)
-                maxlags = 1
-                abs_cors = numpy.abs(numpy.correlate(x, x, mode="full"))
-                abs_cors /= numpy.dot(x, x)
-                abs_cors = abs_cors[Nx - 1 - maxlags:Nx + maxlags]
-                abs_cors.sort()
-                # if abs_cors[-2] > 0.9:
-                #     plt.figure()
-                #     pandas.plotting.autocorrelation_plot(run_seq)
-                #     plt.show()
-                #     plt.acorr(run_seq, maxlags=90)
-                #     plt.show()
-                #     plt.plot(run_seq[:-1], run_seq[1:], 'kx')
-                #     plt.show()
-                #     plt.semilogy(run_seq, 'kx')
-                #     plt.show()
-                #     return
-                plt.plot(N_log, abs_cors[-2], 'kx')
+                abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
+                plt.plot(N_log, numpy.median(abs_cors), 'kx')
             plt.ylim(0, 1)
+            plt.xlim(0, 20)
+            plt.axhline(0.3, color='r')
     plt.show()
 
 
@@ -245,7 +372,44 @@ def plot_times():
     plt.show()
 
 
+def predict(N_particle, N_runs, gpu):
+    times = []
+
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=gpu
+    )
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        u, _ = sim_base.get_random_io()
+        # time.sleep(0.1)
+        t = time.time()
+        p.predict(u, 1.)
+        times.append((time.time() - t))
+
+    return numpy.array(times)
+
+
 if __name__ == '__main__':
+    # run_seq = predict(2**20, 100, True)
+    # plt.plot(run_seq, 'kx')
+    # plt.show()
+    # pandas.plotting.autocorrelation_plot(run_seq)
+    # plt.show()
+    #
+    # x = run_seq - numpy.average(run_seq)
+    # Nx = len(x)
+    # maxlags = 50
+    # cors = numpy.correlate(x, x, mode="full")
+    # cors /= numpy.dot(x, x)
+    # cors = cors[Nx:Nx + maxlags]
+    # lags = numpy.arange(1, maxlags + 1)
+    # plt.vlines(lags, [0], cors)
+    # plt.show()
+    # smod.plot_pacf(run_seq)
+    # plt.show()
+    # plt.stem(stool.pacf(run_seq, nlags=10)[1:], linefmt='k-', markerfmt='ko', use_line_collection=True)
+    # plt.show()
     plot_max_auto()
     # plot_example_benchmark()
     # plot_run_seqs()
