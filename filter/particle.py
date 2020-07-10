@@ -119,7 +119,7 @@ class ParallelParticleFilter(ParticleFilter):
 
     @staticmethod
     @cuda.jit
-    def __parallel_resample(c, sample_index, r, N):
+    def _parallel_resample(c, sample_index, r, N):
         tx = cuda.threadIdx.x
         bx = cuda.blockIdx.x
         bw = cuda.blockDim.x
@@ -162,7 +162,7 @@ class ParallelParticleFilter(ParticleFilter):
         sample_index = cupy.zeros(self.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
-        ParallelParticleFilter.__parallel_resample[self.bpg, self.tpb](
+        ParallelParticleFilter._parallel_resample[self.bpg, self.tpb](
             cumsum, sample_index,
             random_number,
             self.N_particles
