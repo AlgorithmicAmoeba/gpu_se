@@ -64,8 +64,16 @@ class ParallelParticleFilter(ParticleFilter):
         del self.particles
         del self.weights
 
-        self.threads_per_block = self.tpb = 1024
-        self.blocks_per_grid = self.bpg = (self.N_particles - 1) // self.threads_per_block + 1
+        if self.N_particles >= 1024:
+            threads_per_block = 1024
+            blocks_per_grid = (self.N_particles - 1) // threads_per_block + 1
+        else:
+            div_32 = (self.N_particles - 1) // 32 + 1
+            threads_per_block = 32 * div_32
+            blocks_per_grid = 1
+
+        self.tpb = threads_per_block
+        self.bpg = blocks_per_grid
 
         self._y_dummy = cupy.zeros_like(self.measurement_pdf.draw())
 
@@ -154,16 +162,11 @@ class ParallelParticleFilter(ParticleFilter):
         sample_index = cupy.zeros(self.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
-        if self.N_particles >= 1024:
-            threads_per_block = 1024
-            blocks_per_grid = (self.N_particles - 1) // threads_per_block + 1
-        else:
-            div_32 = (self.N_particles - 1) // 32 + 1
-            threads_per_block = 32 * div_32
-            blocks_per_grid = 1
-
-        ParallelParticleFilter.__parallel_resample[blocks_per_grid, threads_per_block](cumsum, sample_index,
-                                                                                       random_number, self.N_particles)
+        ParallelParticleFilter.__parallel_resample[self.bpg, self.tpb](
+            cumsum, sample_index,
+            random_number,
+            self.N_particles
+        )
 
         self.particles_device = cupy.asarray(self.particles_device)[sample_index]
         self.weights_device = cupy.full(self.N_particles, 1 / self.N_particles)
