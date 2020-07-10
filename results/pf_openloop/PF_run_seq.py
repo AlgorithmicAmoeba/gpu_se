@@ -84,124 +84,80 @@ def resample_run_seqs(N_particle, N_runs, gpu):
     return numpy.array(times)
 
 
-def f_vectorize_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/f_vectorize')
+@RunSequences.decorate
+def f_vectorize_run_seqs(N_particle, N_runs, mem_gpu):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def f_vectorize_run(N_particle, N_runs, mem_gpu):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=True
-        )
-
-        for _ in tqdm.tqdm(range(N_runs)):
-            u, _ = sim_base.get_random_io()
-            if mem_gpu:
-                u = cupy.asarray(u)
-            t = time.time()
-            p.f_vectorize(p.particles_device, u, 1.)
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [f_vectorize_run(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
     )
 
-    return N_particles, run_seqs
+    for _ in tqdm.tqdm(range(N_runs)):
+        u, _ = sim_base.get_random_io()
+        if mem_gpu:
+            u = cupy.asarray(u)
+        t = time.time()
+        p.f_vectorize(p.particles_device, u, 1.)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
-def g_vectorize_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/g_vectorize')
+@RunSequences.decorate
+def g_vectorize_run_seqs(N_particle, N_runs, mem_gpu):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def g_vectorize_run(N_particle, N_runs, mem_gpu):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=True
-        )
-
-        for _ in tqdm.tqdm(range(N_runs)):
-            u, _ = sim_base.get_random_io()
-            if mem_gpu:
-                u = cupy.asarray(u)
-            t = time.time()
-            # noinspection PyProtectedMember
-            p.g_vectorize(p.particles_device, u, p._y_dummy)
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [g_vectorize_run(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
     )
 
-    return N_particles, run_seqs
+    for _ in tqdm.tqdm(range(N_runs)):
+        u, _ = sim_base.get_random_io()
+        if mem_gpu:
+            u = cupy.asarray(u)
+        t = time.time()
+        # noinspection PyProtectedMember
+        p.g_vectorize(p.particles_device, u, p._y_dummy)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
-def state_pdf_draw_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/state_pdf_draw')
+@RunSequences.decorate
+def state_pdf_draw_run_seqs(N_particle, N_runs):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def state_pdf_draw(N_particle, N_runs):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=True
-        )
-
-        for _ in tqdm.tqdm(range(N_runs)):
-            t = time.time()
-            p.state_pdf.draw(p.N_particles)
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [state_pdf_draw(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
     )
 
-    return N_particles, run_seqs
+    for _ in tqdm.tqdm(range(N_runs)):
+        t = time.time()
+        p.state_pdf.draw(p.N_particles)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
-def measurement_pdf_pdf_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/measurement_pdf_pdf')
+@RunSequences.decorate
+def measurement_pdf_pdf_run_seqs(N_particle, N_runs):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def measurement_pdf_pdf(N_particle, N_runs):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=True
-        )
-
-        for _ in tqdm.tqdm(range(N_runs)):
-            es = p.measurement_pdf.draw(p.N_particles)
-            t = time.time()
-            p.measurement_pdf.pdf(es)
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [measurement_pdf_pdf(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
     )
 
-    return N_particles, run_seqs
+    for _ in tqdm.tqdm(range(N_runs)):
+        es = p.measurement_pdf.draw(p.N_particles)
+        t = time.time()
+        p.measurement_pdf.pdf(es)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
 def get_run_seqs():
@@ -212,17 +168,18 @@ def get_run_seqs():
     run_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; run_seq]
     """
-    N_particles = 2**numpy.arange(1, 24, 0.5)
+    N_particles_cpu = 2**numpy.arange(1, 20, 0.5)
+    N_particles_gpu = 2**numpy.arange(1, 24, 0.5)
     run_seqss = [
         [
-            # prediction_run_seqs(20, 20, False),
-            # update_run_seqs(20, 100, False),
-            # resample_run_seqs(20, 100, False)
+            # prediction_run_seqs(N_particles_cpu, 20, False),
+            # update_run_seqs(N_particles_cpu, 100, False),
+            # resample_run_seqs(N_particles_cpu, 100, False)
         ],
         [
-            predict_run_seqs(N_particles, 100, True),
-            update_run_seqs(N_particles, 100, True),
-            resample_run_seqs(N_particles, 100, True)
+            predict_run_seqs(N_particles_gpu, 100, True),
+            update_run_seqs(N_particles_gpu, 100, True),
+            resample_run_seqs(N_particles_gpu, 100, True)
         ]
     ]
     return run_seqss
