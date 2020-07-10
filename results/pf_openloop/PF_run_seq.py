@@ -172,9 +172,9 @@ def get_run_seqs():
     N_particles_gpu = 2**numpy.arange(1, 24, 0.5)
     run_seqss = [
         [
-            # prediction_run_seqs(N_particles_cpu, 20, False),
-            # update_run_seqs(N_particles_cpu, 100, False),
-            # resample_run_seqs(N_particles_cpu, 100, False)
+            predict_run_seqs(N_particles_cpu, 20, False),
+            update_run_seqs(N_particles_cpu, 100, False),
+            resample_run_seqs(N_particles_cpu, 100, False)
         ],
         [
             predict_run_seqs(N_particles_gpu, 100, True),
@@ -220,7 +220,7 @@ def plot_example_benchmark():
 def plot_max_auto():
     run_seqss = get_run_seqs()
 
-    for row in range(1, 2):
+    for row in range(2):
         for col in range(3):
             plt.subplot(2, 3, 3*row + col + 1)
             N_parts, run_seqs = run_seqss[row][col]
@@ -236,8 +236,8 @@ def plot_max_auto():
 
             if row == 1:
                 plt.title(['Predict', 'Update', 'Resample'][col])
-                # if col == 0:
-                #     plt.ylabel('CPU', rotation=0)
+                if col == 0:
+                    plt.ylabel('CPU', rotation=0)
 
             if col == 0 and row == 1:
                 plt.ylabel('GPU', rotation=0)
