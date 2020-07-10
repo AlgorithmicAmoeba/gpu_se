@@ -7,6 +7,8 @@ import sim_base
 import joblib
 import cupy
 import statsmodels.tsa.stattools as stats_tools
+import torch
+import torch.utils.dlpack as torch_dlpack
 
 
 class RunSequences:
@@ -25,12 +27,12 @@ class RunSequences:
         self.function.call_and_shelve(*args).clear()
 
     @staticmethod
-    def decorate(function):
+    def vectorize(function):
         return RunSequences(function)
 
 
-@RunSequences.decorate
-def predict_run_seqs(N_particle, N_runs, gpu):
+@RunSequences.vectorize
+def predict_run_seq(N_particle, N_runs, gpu):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -47,8 +49,8 @@ def predict_run_seqs(N_particle, N_runs, gpu):
     return numpy.array(times)
 
 
-@RunSequences.decorate
-def update_run_seqs(N_particle, N_runs, gpu):
+@RunSequences.vectorize
+def update_run_seq(N_particle, N_runs, gpu):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -65,8 +67,8 @@ def update_run_seqs(N_particle, N_runs, gpu):
     return numpy.array(times)
 
 
-@RunSequences.decorate
-def resample_run_seqs(N_particle, N_runs, gpu):
+@RunSequences.vectorize
+def resample_run_seq(N_particle, N_runs, gpu):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -84,8 +86,8 @@ def resample_run_seqs(N_particle, N_runs, gpu):
     return numpy.array(times)
 
 
-@RunSequences.decorate
-def f_vectorize_run_seqs(N_particle, N_runs, mem_gpu):
+@RunSequences.vectorize
+def f_vectorize_run_seq(N_particle, N_runs, mem_gpu):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -104,8 +106,8 @@ def f_vectorize_run_seqs(N_particle, N_runs, mem_gpu):
     return numpy.array(times)
 
 
-@RunSequences.decorate
-def g_vectorize_run_seqs(N_particle, N_runs, mem_gpu):
+@RunSequences.vectorize
+def g_vectorize_run_seq(N_particle, N_runs, mem_gpu):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -125,8 +127,8 @@ def g_vectorize_run_seqs(N_particle, N_runs, mem_gpu):
     return numpy.array(times)
 
 
-@RunSequences.decorate
-def state_pdf_draw_run_seqs(N_particle, N_runs):
+@RunSequences.vectorize
+def state_pdf_draw_run_seq(N_particle, N_runs):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -142,8 +144,8 @@ def state_pdf_draw_run_seqs(N_particle, N_runs):
     return numpy.array(times)
 
 
-@RunSequences.decorate
-def measurement_pdf_pdf_run_seqs(N_particle, N_runs):
+@RunSequences.vectorize
+def measurement_pdf_run_seq(N_particle, N_runs):
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -155,6 +157,27 @@ def measurement_pdf_pdf_run_seqs(N_particle, N_runs):
         es = p.measurement_pdf.draw(p.N_particles)
         t = time.time()
         p.measurement_pdf.pdf(es)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
+
+
+@RunSequences.vectorize
+def cumsum_run_seq(N_particle, N_runs):
+    times = []
+
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
+    )
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        p.weights_device = cupy.random.uniform(size=p.N_particles)
+        t = time.time()
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
+        t_cumsum = torch.cumsum(t_weights, 0)
+        cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
+        cumsum /= cumsum[-1]
         times.append(time.time() - t)
 
     return numpy.array(times)
@@ -172,14 +195,14 @@ def get_run_seqs():
     N_particles_gpu = 2**numpy.arange(1, 24, 0.5)
     run_seqss = [
         [
-            predict_run_seqs(N_particles_cpu, 20, False),
-            update_run_seqs(N_particles_cpu, 100, False),
-            resample_run_seqs(N_particles_cpu, 100, False)
+            predict_run_seq(N_particles_cpu, 20, False),
+            update_run_seq(N_particles_cpu, 100, False),
+            resample_run_seq(N_particles_cpu, 100, False)
         ],
         [
-            predict_run_seqs(N_particles_gpu, 100, True),
-            update_run_seqs(N_particles_gpu, 100, True),
-            resample_run_seqs(N_particles_gpu, 100, True)
+            predict_run_seq(N_particles_gpu, 100, True),
+            update_run_seq(N_particles_gpu, 100, True),
+            resample_run_seq(N_particles_gpu, 100, True)
         ]
     ]
     return run_seqss
