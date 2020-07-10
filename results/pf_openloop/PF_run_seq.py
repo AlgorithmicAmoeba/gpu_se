@@ -16,109 +16,72 @@ class RunSequences:
 
     def __call__(self, N_particles, N_runs, *args, **kwargs):
         run_seqs = numpy.array(
-            [self.function(N_particle, N_runs, *args, **kwargs) for N_particle in N_particles]
+            [self.function(int(N_particle), N_runs, *args, **kwargs) for N_particle in N_particles]
         )
 
-        return run_seqs
+        return N_particles, run_seqs
 
     def clear(self, *args):
-        self.function.call_and_shelve(args).clear()
+        self.function.call_and_shelve(*args).clear()
 
     @staticmethod
     def decorate(function):
         return RunSequences(function)
 
 
-def prediction_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/predict')
-    # memory.clear()
+@RunSequences.decorate
+def predict_run_seqs(N_particle, N_runs, gpu):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def predict(N_particle, N_runs, gpu):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=gpu
-        )
-
-        for _ in tqdm.tqdm(range(N_runs)):
-            u, _ = sim_base.get_random_io()
-            time.sleep(0.1)
-            t = time.time()
-            p.predict(u, 1.)
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [predict(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=gpu
     )
 
-    return N_particles, run_seqs
+    for _ in range(N_runs):
+        u, _ = sim_base.get_random_io()
+        t = time.time()
+        p.predict(u, 1.)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
-def update_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/update')
-    # memory.clear()
+@RunSequences.decorate
+def update_run_seqs(N_particle, N_runs, gpu):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def update(N_particle, N_runs, gpu):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=gpu
-        )
-
-        for j in range(N_runs):
-            u, y = sim_base.get_random_io()
-            t = time.time()
-            p.update(u, y)
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [update(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=gpu
     )
 
-    return N_particles, run_seqs
+    for j in range(N_runs):
+        u, y = sim_base.get_random_io()
+        t = time.time()
+        p.update(u, y)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
-def resample_run_seqs(N_part, N_runs, gpu):
-    memory = joblib.Memory('cache/resample')
-    # memory.clear()
+@RunSequences.decorate
+def resample_run_seqs(N_particle, N_runs, gpu):
+    times = []
 
-    # noinspection PyShadowingNames
-    @memory.cache
-    def resample(N_particle, N_runs, gpu):
-        times = []
-
-        _, _, _, p = sim_base.get_parts(
-            N_particles=N_particle,
-            gpu=gpu
-        )
-
-        for j in range(N_runs):
-            p.weights = numpy.random.random(size=p.N_particles)
-            p.weights /= numpy.sum(p.weights)
-            t = time.time()
-            p.resample()
-            times.append(time.time() - t)
-
-        return numpy.array(times)
-
-    N_particles = 2**numpy.arange(1, N_part, 0.5)
-    run_seqs = numpy.array(
-        [resample(int(N_particle), N_runs, gpu) for N_particle in tqdm.tqdm(N_particles)]
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=gpu
     )
 
-    return N_particles, run_seqs
+    for j in range(N_runs):
+        p.weights = numpy.random.random(size=p.N_particles)
+        p.weights /= numpy.sum(p.weights)
+        t = time.time()
+        p.resample()
+        times.append(time.time() - t)
+
+    return numpy.array(times)
 
 
 def f_vectorize_run_seqs(N_part, N_runs, gpu):
@@ -249,16 +212,17 @@ def get_run_seqs():
     run_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; run_seq]
     """
+    N_particles = 2**numpy.arange(1, 24, 0.5)
     run_seqss = [
         [
-            prediction_run_seqs(20, 20, False),
-            update_run_seqs(20, 100, False),
-            resample_run_seqs(20, 100, False)
+            # prediction_run_seqs(20, 20, False),
+            # update_run_seqs(20, 100, False),
+            # resample_run_seqs(20, 100, False)
         ],
         [
-            prediction_run_seqs(24, 100, True),
-            update_run_seqs(24, 100, True),
-            resample_run_seqs(24, 100, True)
+            predict_run_seqs(N_particles, 100, True),
+            update_run_seqs(N_particles, 100, True),
+            resample_run_seqs(N_particles, 100, True)
         ]
     ]
     return run_seqss
@@ -299,7 +263,7 @@ def plot_example_benchmark():
 def plot_max_auto():
     run_seqss = get_run_seqs()
 
-    for row in range(2):
+    for row in range(1, 2):
         for col in range(3):
             plt.subplot(2, 3, 3*row + col + 1)
             N_parts, run_seqs = run_seqss[row][col]
@@ -307,10 +271,19 @@ def plot_max_auto():
 
             for N_log, run_seq in zip(N_logs, run_seqs):
                 abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
-                plt.plot(N_log, numpy.median(abs_cors), 'kx')
+                plt.plot(N_log, numpy.max(abs_cors), 'kx')
             plt.ylim(0, 1)
             plt.xlim(0, 20)
-            plt.axhline(0.3, color='r')
+            plt.axhline(0.2, color='r')
+            plt.xlabel(r'$\log_2(N_p)$')
+
+            if row == 1:
+                plt.title(['Predict', 'Update', 'Resample'][col])
+                # if col == 0:
+                #     plt.ylabel('CPU', rotation=0)
+
+            if col == 0 and row == 1:
+                plt.ylabel('GPU', rotation=0)
     plt.show()
 
 
@@ -372,46 +345,5 @@ def plot_times():
     plt.show()
 
 
-def predict(N_particle, N_runs, gpu):
-    times = []
-
-    _, _, _, p = sim_base.get_parts(
-        N_particles=N_particle,
-        gpu=gpu
-    )
-
-    for _ in tqdm.tqdm(range(N_runs)):
-        u, _ = sim_base.get_random_io()
-        # time.sleep(0.1)
-        t = time.time()
-        p.predict(u, 1.)
-        times.append((time.time() - t))
-
-    return numpy.array(times)
-
-
 if __name__ == '__main__':
-    # run_seq = predict(2**20, 100, True)
-    # plt.plot(run_seq, 'kx')
-    # plt.show()
-    # pandas.plotting.autocorrelation_plot(run_seq)
-    # plt.show()
-    #
-    # x = run_seq - numpy.average(run_seq)
-    # Nx = len(x)
-    # maxlags = 50
-    # cors = numpy.correlate(x, x, mode="full")
-    # cors /= numpy.dot(x, x)
-    # cors = cors[Nx:Nx + maxlags]
-    # lags = numpy.arange(1, maxlags + 1)
-    # plt.vlines(lags, [0], cors)
-    # plt.show()
-    # smod.plot_pacf(run_seq)
-    # plt.show()
-    # plt.stem(stool.pacf(run_seq, nlags=10)[1:], linefmt='k-', markerfmt='ko', use_line_collection=True)
-    # plt.show()
     plot_max_auto()
-    # plot_example_benchmark()
-    # plot_run_seqs()
-    # plot_speed_up()
-    # plot_times()
