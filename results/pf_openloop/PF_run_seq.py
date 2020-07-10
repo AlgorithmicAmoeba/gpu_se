@@ -156,6 +156,7 @@ def measurement_pdf_run_seq(N_particle, N_runs):
 
     for _ in tqdm.tqdm(range(N_runs)):
         es = p.measurement_pdf.draw(p.N_particles)
+
         t = time.time()
         p.measurement_pdf.pdf(es)
         times.append(time.time() - t)
@@ -205,7 +206,7 @@ def parallel_resample_run_seq(N_particle, N_runs):
         sample_index = cupy.zeros(p.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
-        filter.particle.ParallelParticleFilter.__parallel_resample[p.bpg, p.tpb](
+        filter.particle.ParallelParticleFilter._parallel_resample[p.bpg, p.tpb](
             cumsum, sample_index,
             random_number,
             p.N_particles
@@ -234,7 +235,7 @@ def index_copying_run_seq(N_particle, N_runs):
         sample_index = cupy.zeros(p.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
-        filter.particle.ParallelParticleFilter.__parallel_resample[p.bpg, p.tpb](
+        filter.particle.ParallelParticleFilter._parallel_resample[p.bpg, p.tpb](
             cumsum, sample_index,
             random_number,
             p.N_particles
@@ -248,7 +249,7 @@ def index_copying_run_seq(N_particle, N_runs):
     return numpy.array(times)
 
 
-def get_run_seqs():
+def cpu_gpu_run_seqs():
     """Returns the run sequences for all the runs
 
     Returns
@@ -273,8 +274,27 @@ def get_run_seqs():
     return run_seqss
 
 
+def pf_sub_routine_run_seqs():
+    N_particles = 2**numpy.arange(1, 24, 0.5)
+    f_vec_gpu_mem = lambda x, y: f_vectorize_run_seq(x, y, True)
+    f_vec_cpu_mem = lambda x, y: f_vectorize_run_seq(x, y, False)
+    g_vec_gpu_mem = lambda x, y: g_vectorize_run_seq(x, y, True)
+    g_vec_cpu_mem = lambda x, y: g_vectorize_run_seq(x, y, False)
+
+    funcs = [
+        f_vec_gpu_mem, f_vec_cpu_mem,
+        g_vec_gpu_mem, g_vec_cpu_mem,
+        state_pdf_draw_run_seq, measurement_pdf_run_seq,
+        cumsum_run_seq, parallel_resample_run_seq, index_copying_run_seq
+             ]
+
+    run_seqs = [func(N_particles, 50) for func in funcs]
+
+    return run_seqs
+
+
 def plot_example_benchmark():
-    run_seqss = get_run_seqs()
+    run_seqss = cpu_gpu_run_seqs()
     N_particles, run_seqs = run_seqss[0][1]
     run_seq = run_seqs[-1]
 
@@ -306,7 +326,7 @@ def plot_example_benchmark():
 
 
 def plot_max_auto():
-    run_seqss = get_run_seqs()
+    run_seqss = cpu_gpu_run_seqs()
 
     for row in range(2):
         for col in range(3):
@@ -334,7 +354,7 @@ def plot_max_auto():
 
 # noinspection PyUnresolvedReferences
 def plot_run_seqs():
-    run_seqss = get_run_seqs()
+    run_seqss = cpu_gpu_run_seqs()
 
     cmap = matplotlib.cm.get_cmap('Spectral')
     norm = matplotlib.colors.Normalize(vmin=1, vmax=24)
@@ -362,7 +382,7 @@ def plot_run_seqs():
 
 
 def plot_speed_up():
-    run_seqss = get_run_seqs()
+    run_seqss = cpu_gpu_run_seqs()
 
     for method in range(3):
         cpu_time = numpy.min(run_seqss[0][method][1], axis=1)
@@ -377,7 +397,7 @@ def plot_speed_up():
 
 
 def plot_times():
-    run_seqss = get_run_seqs()
+    run_seqss = cpu_gpu_run_seqs()
 
     for device in range(2):
         plt.subplot(1, 2, device+1)
@@ -391,4 +411,5 @@ def plot_times():
 
 
 if __name__ == '__main__':
-    plot_max_auto()
+    pf_sub_routine_run_seqs()
+    # plot_max_auto()
