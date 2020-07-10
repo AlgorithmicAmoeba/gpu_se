@@ -9,6 +9,7 @@ import cupy
 import statsmodels.tsa.stattools as stats_tools
 import torch
 import torch.utils.dlpack as torch_dlpack
+import filter.particle
 
 
 class RunSequences:
@@ -173,11 +174,75 @@ def cumsum_run_seq(N_particle, N_runs):
 
     for _ in tqdm.tqdm(range(N_runs)):
         p.weights_device = cupy.random.uniform(size=p.N_particles)
+
         t = time.time()
         t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
         t_cumsum = torch.cumsum(t_weights, 0)
         cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
         cumsum /= cumsum[-1]
+        times.append(time.time() - t)
+
+    return numpy.array(times)
+
+
+@RunSequences.vectorize
+def parallel_resample_run_seq(N_particle, N_runs):
+    times = []
+
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
+    )
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        p.weights_device = cupy.random.uniform(size=p.N_particles)
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
+        t_cumsum = torch.cumsum(t_weights, 0)
+        cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
+        cumsum /= cumsum[-1]
+
+        t = time.time()
+        sample_index = cupy.zeros(p.N_particles, dtype=cupy.int64)
+        random_number = cupy.float64(cupy.random.rand())
+
+        filter.particle.ParallelParticleFilter.__parallel_resample[p.bpg, p.tpb](
+            cumsum, sample_index,
+            random_number,
+            p.N_particles
+        )
+        times.append(time.time() - t)
+
+    return numpy.array(times)
+
+
+@RunSequences.vectorize
+def index_copying_run_seq(N_particle, N_runs):
+    times = []
+
+    _, _, _, p = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True
+    )
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        p.weights_device = cupy.random.uniform(size=p.N_particles)
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
+        t_cumsum = torch.cumsum(t_weights, 0)
+        cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
+        cumsum /= cumsum[-1]
+
+        sample_index = cupy.zeros(p.N_particles, dtype=cupy.int64)
+        random_number = cupy.float64(cupy.random.rand())
+
+        filter.particle.ParallelParticleFilter.__parallel_resample[p.bpg, p.tpb](
+            cumsum, sample_index,
+            random_number,
+            p.N_particles
+        )
+
+        t = time.time()
+        p.particles_device = cupy.asarray(p.particles_device)[sample_index]
+        p.weights_device = cupy.full(p.N_particles, 1 / p.N_particles)
         times.append(time.time() - t)
 
     return numpy.array(times)
