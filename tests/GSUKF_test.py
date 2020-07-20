@@ -13,7 +13,7 @@ def test_gsufk():
     gf = filter.GaussianSumUnscentedKalmanFilter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
-        N_gaussians=7,
+        N_particles=7,
         x0=x0,
         state_pdf=state_pdf,
         measurement_pdf=measurement_pdf
@@ -33,7 +33,7 @@ def test_pgfukf():
     gf = filter.ParallelGaussianSumUnscentedKalmanFilter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
-        N_gaussians=7,
+        N_particles=7,
         x0=x0,
         state_pdf=state_pdf,
         measurement_pdf=measurement_pdf
@@ -54,7 +54,7 @@ def test_same():
     pgf = filter.ParallelGaussianSumUnscentedKalmanFilter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
-        N_gaussians=7,
+        N_particles=7,
         x0=x0,
         state_pdf=state_pdf,
         measurement_pdf=measurement_pdf
@@ -67,7 +67,7 @@ def test_same():
     gf = filter.GaussianSumUnscentedKalmanFilter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
-        N_gaussians=7,
+        N_particles=7,
         x0=x0,
         state_pdf=state_pdf,
         measurement_pdf=measurement_pdf
