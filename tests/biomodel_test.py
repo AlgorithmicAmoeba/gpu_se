@@ -14,7 +14,7 @@ inputs = Inputs()
 #     Ng, Nx, Nfa, Ne, Na, Nb, Nh, V, T
 X0 = numpy.array([3.1/180, 1e-3/24.6, 0, 0, 1e-5, 0, 0, 1.077, 25])
 
-model = Bioreactor(X0, pH_calculations=True)
+model = Bioreactor(X0)
 model_reagents = ['Ng', 'Nx', 'Nfa', 'Ne', 'Na', 'Nb', 'Nh']
 model_states = ['V', 'T', 'pH']
 model_names = model_reagents + model_states
