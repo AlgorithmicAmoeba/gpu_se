@@ -144,6 +144,13 @@ class LinearModel:
         return linear_model
 
     def select_subset(self, states, inputs, outputs):
+        """Selects a subset of the states, inputs and outputs of the linear model
+        
+        Parameters
+        ----------
+        states, inputs, outputs : array
+            An array containing indices of the selected states, inputs, or outputs
+        """
         self.states = states
         self.inputs = inputs
         self.outputs = outputs
@@ -159,26 +166,107 @@ class LinearModel:
         self.Ni = len(inputs)
         self.No = len(outputs)
 
-    def xd2n(self, x):
-        return x + self.x_bar
+    def xd2n(self, x_hat):
+        """Takes states in deviation form and returns the un-deviated form
+        
+        Parameters
+        ----------
+        x_hat : array
+            States in deviation form
+
+        Returns
+        -------
+            x : array
+                States in un-deviated form
+        """
+        return x_hat + self.x_bar
 
     def xn2d(self, x, subselect=True):
+        """Takes states in deviation form and returns the un-deviated form
+
+        Parameters
+        ----------
+        x : array
+            States in deviation form
+
+        subselect : bool, optional
+            If true, then the subselected states are transformed
+
+        Returns
+        -------
+        x_hat : array
+            States in un-deviated form
+        """
         if subselect:
             return x[self.states] - self.x_bar
         return x - self.x_bar
 
-    def yd2n(self, y):
-        return y + self.y_bar
+    def yd2n(self, y_hat):
+        """Takes states in deviation form and returns the un-deviated form
+
+        Parameters
+        ----------
+        y_hat : array
+            States in deviation form
+
+        Returns
+        -------
+        y : array
+            States in un-deviated form
+        """
+        return y_hat + self.y_bar
 
     def yn2d(self, y, subselect=True):
+        """Takes states in deviation form and returns the un-deviated form
+
+        Parameters
+        ----------
+        y : array
+            States in deviation form
+
+        subselect : bool, optional
+            If true, then the subselected states are transformed
+
+        Returns
+        -------
+        y_hat : array
+            States in un-deviated form
+        """
         if subselect:
             return y[self.outputs] - self.y_bar
         return y - self.y_bar
 
-    def ud2n(self, u):
-        return u + self.u_bar
+    def ud2n(self, u_hat):
+        """Takes states in deviation form and returns the un-deviated form
+
+        Parameters
+        ----------
+        u_hat : array
+            States in deviation form
+
+        Returns
+        -------
+        y : array
+            States in un-deviated form
+        """
+        return u_hat + self.u_bar
 
     def un2d(self, u, subselect=True):
+        """Takes states in deviation form and returns the un-deviated form
+
+        Parameters
+        ----------
+        u : array
+            States in deviation form
+
+        subselect : bool, optional
+            If true, then the subselected states are transformed
+
+        Returns
+        -------
+        u_hat : array
+            States in un-deviated form
+        """
         if subselect:
             return u[self.inputs] - self.u_bar
         return u - self.u_bar
