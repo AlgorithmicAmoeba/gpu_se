@@ -24,7 +24,7 @@ ys = [bioreactor.outputs(us[-1])]
 ys_meas = [bioreactor.outputs(us[-1])]
 ys_pf = [
     model.Bioreactor.static_outputs(
-            (pf.weights_device @ pf.particles_device).get(),
+            (pf.weights @ pf.particles).get(),
             us[-1]
         )
 ]
@@ -40,7 +40,7 @@ for t in tqdm.tqdm(ts[1:]):
 
         pf.update(us[-1], ys_meas[-1][lin_model.outputs])
         pf.resample()
-        x_pf = (pf.weights_device @ pf.particles_device).get()
+        x_pf = (pf.weights @ pf.particles).get()
         u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
         U_temp[lin_model.inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
@@ -60,7 +60,7 @@ for t in tqdm.tqdm(ts[1:]):
     ys_pf.append(
         numpy.array(
             model.Bioreactor.static_outputs(
-                (pf.weights_device @ pf.particles_device).get(),
+                (pf.weights @ pf.particles).get(),
                 us[-1]
             )
         )

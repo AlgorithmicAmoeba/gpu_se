@@ -14,4 +14,4 @@ sympy.print_latex(sympy.Matrix(numpy.diag(measurement_pdf.covariances_device[0])
 
 sympy.print_latex(sympy.Matrix(numpy.diag(measurement_pdf.covariances_device[1])).T)
 
-sympy.print_latex(sympy.Matrix(measurement_pdf.weights_device).T)
+sympy.print_latex(sympy.Matrix(measurement_pdf.weights).T)

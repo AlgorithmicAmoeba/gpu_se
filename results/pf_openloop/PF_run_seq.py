@@ -101,7 +101,7 @@ def f_vectorize_run_seq(N_particle, N_runs, mem_gpu):
         if mem_gpu:
             u = cupy.asarray(u)
         t = time.time()
-        p.f_vectorize(p.particles_device, u, 1.)
+        p.f_vectorize(p.particles, u, 1.)
         times.append(time.time() - t)
 
     return numpy.array(times)
@@ -122,7 +122,7 @@ def g_vectorize_run_seq(N_particle, N_runs, mem_gpu):
             u = cupy.asarray(u)
         t = time.time()
         # noinspection PyProtectedMember
-        p.g_vectorize(p.particles_device, u, p._y_dummy)
+        p.g_vectorize(p.particles, u, p._y_dummy)
         times.append(time.time() - t)
 
     return numpy.array(times)
@@ -174,10 +174,10 @@ def cumsum_run_seq(N_particle, N_runs):
     )
 
     for _ in tqdm.tqdm(range(N_runs)):
-        p.weights_device = cupy.random.uniform(size=p.N_particles)
+        p.weights = cupy.random.uniform(size=p.N_particles)
 
         t = time.time()
-        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights).toDlpack())
         t_cumsum = torch.cumsum(t_weights, 0)
         cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
         cumsum /= cumsum[-1]
@@ -186,6 +186,7 @@ def cumsum_run_seq(N_particle, N_runs):
     return numpy.array(times)
 
 
+# noinspection PyProtectedMember
 @RunSequences.vectorize
 def parallel_resample_run_seq(N_particle, N_runs):
     times = []
@@ -196,8 +197,8 @@ def parallel_resample_run_seq(N_particle, N_runs):
     )
 
     for _ in tqdm.tqdm(range(N_runs)):
-        p.weights_device = cupy.random.uniform(size=p.N_particles)
-        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
+        p.weights = cupy.random.uniform(size=p.N_particles)
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights).toDlpack())
         t_cumsum = torch.cumsum(t_weights, 0)
         cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
         cumsum /= cumsum[-1]
@@ -206,7 +207,7 @@ def parallel_resample_run_seq(N_particle, N_runs):
         sample_index = cupy.zeros(p.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
-        filter.particle.ParallelParticleFilter._parallel_resample[p.bpg, p.tpb](
+        filter.particle.ParallelParticleFilter._parallel_resample[p._bpg, p._tpb](
             cumsum, sample_index,
             random_number,
             p.N_particles
@@ -216,6 +217,7 @@ def parallel_resample_run_seq(N_particle, N_runs):
     return numpy.array(times)
 
 
+# noinspection PyProtectedMember
 @RunSequences.vectorize
 def index_copying_run_seq(N_particle, N_runs):
     times = []
@@ -226,8 +228,8 @@ def index_copying_run_seq(N_particle, N_runs):
     )
 
     for _ in tqdm.tqdm(range(N_runs)):
-        p.weights_device = cupy.random.uniform(size=p.N_particles)
-        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights_device).toDlpack())
+        p.weights = cupy.random.uniform(size=p.N_particles)
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(p.weights).toDlpack())
         t_cumsum = torch.cumsum(t_weights, 0)
         cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
         cumsum /= cumsum[-1]
@@ -235,15 +237,15 @@ def index_copying_run_seq(N_particle, N_runs):
         sample_index = cupy.zeros(p.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
-        filter.particle.ParallelParticleFilter._parallel_resample[p.bpg, p.tpb](
+        filter.particle.ParallelParticleFilter._parallel_resample[p._bpg, p._tpb](
             cumsum, sample_index,
             random_number,
             p.N_particles
         )
 
         t = time.time()
-        p.particles_device = cupy.asarray(p.particles_device)[sample_index]
-        p.weights_device = cupy.full(p.N_particles, 1 / p.N_particles)
+        p.particles = cupy.asarray(p.particles)[sample_index]
+        p.weights = cupy.full(p.N_particles, 1 / p.N_particles)
         times.append(time.time() - t)
 
     return numpy.array(times)
