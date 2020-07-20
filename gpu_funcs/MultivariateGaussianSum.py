@@ -20,6 +20,7 @@ class MultivariateGaussianSum:
             self.lib.linalg.det(self.covariances))
 
     def pdf(self, x):
+        x = self.lib.atleast_2d(x)
         es = x[:, None, :] - self.means[None, :, :]
 
         # The code below does: exp[i] = es[i].T @ self.inverse_covariances_device[i] @ es[i]
@@ -27,7 +28,7 @@ class MultivariateGaussianSum:
         r = self.lib.exp(-0.5*exp).squeeze()
 
         # The code below does: result = sum(r[i] * self.weights_device[i] * self.constants_device[i])
-        result = numpy.sum(self.constants * self.weights * r, axis=1)
+        result = numpy.sum(self.lib.atleast_2d(self.constants * self.weights * r), axis=1)
 
         return result
 
