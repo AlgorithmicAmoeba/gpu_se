@@ -412,4 +412,4 @@ def plot_times():
 
 if __name__ == '__main__':
     pf_sub_routine_run_seqs()
-    # plot_max_auto()
+    plot_max_auto()
