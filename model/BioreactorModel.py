@@ -5,28 +5,26 @@ import scipy.optimize
 
 
 class Bioreactor(model.NonlinearModel):
-    """A nonlinear model of the system
+    """A nonlinear model of a bioreactor based off of
+    conclusions by Swart and Iplik.
 
     Parameters
     ----------
-    X0 : array_like
+    X0 : numpy.array
         Initial states
 
     t : float, optional
-        Initial time.
+        Current time.
         Defaults to zero
+
+    high_N : bool, optional
+        A flag setting whether the reactor is in the high
+        or low nitrogen regime
 
     Attributes
     -----------
-    X : array_like
+    X : numpy.array
         Array of current state
-
-    t : float
-        Initial time
-
-    rate_matrix_inv : 2d array_like
-        The inverse of the rate matrix.
-        Placed here so that it is only calculated once
     """
     def __init__(self, X0, t=0, high_N=True):
         self.X = numpy.array(X0)
@@ -38,7 +36,7 @@ class Bioreactor(model.NonlinearModel):
                                    [0, 0, 0, 0, 1],
                                    [-6, 4, 7/3, 2, -6*gamma],
                                    [0, 12, -1, 0, 6*beta]])
-        self.rate_matrix_inv = numpy.linalg.inv(rate_matrix)
+        self._rate_matrix_inv = numpy.linalg.inv(rate_matrix)
         self.high_N = high_N
 
     def DEs(self, inputs):
@@ -54,12 +52,12 @@ class Bioreactor(model.NonlinearModel):
 
         Parameters
         ----------
-        inputs : ndarray
+        inputs : numpy.array
             The inputs to the system at the current time
 
         Returns
         -------
-        dX : array_like
+        dX : numpy.array
             The differential changes to the state variables
         """
         Cg, Cx, Cfa, Ce, _ = [max(0, N) for N in self.X]
@@ -76,7 +74,7 @@ class Bioreactor(model.NonlinearModel):
 
             RHS = [rFAf, rEf, rX, theta_calc, 0]
 
-            rFAf, rTCA, rResp, rEf, rX = self.rate_matrix_inv @ RHS
+            rFAf, rTCA, rResp, rEf, rX = self._rate_matrix_inv @ RHS
 
             rG = (-rFAf - rTCA - rEf - rX) * Cx * V
             rX = 6 * rX * Cx * V
@@ -102,7 +100,7 @@ class Bioreactor(model.NonlinearModel):
         dt : float
             Time since previous step
 
-        inputs : ndarray
+        inputs : numpy.array
             The inputs to the system at the current time
         """
         self.t += dt
@@ -115,7 +113,7 @@ class Bioreactor(model.NonlinearModel):
 
         Returns
         -------
-        outputs : array_like
+        outputs : numpy.array
             List of all the outputs from the model
         """
         outs = self.X.copy()
@@ -128,7 +126,7 @@ class Bioreactor(model.NonlinearModel):
 
         Returns
         -------
-        outputs : array_like
+        outputs : numpy.array
             List of all the outputs from the model
         """
         _ = inputs
@@ -138,6 +136,22 @@ class Bioreactor(model.NonlinearModel):
     # noinspection PyTupleItemAssignment
     @staticmethod
     def find_SS(U_op, X0):
+        """Determines a steady state of the system,
+        given an inputs, and a nearby state.
+
+        Parameters
+        ----------
+        U_op : numpy.array
+            Input array
+
+        X0 : numpy.array
+            A nearby state
+
+        Returns
+        -------
+        res : numpy.array
+            Steady state values
+        """
         bioreactor_SS = model.Bioreactor(X0=[], high_N=False)
 
         def fun(x_ss):
@@ -155,6 +169,26 @@ class Bioreactor(model.NonlinearModel):
 
     @staticmethod
     def homeostatic_DEs(x, u, dt=1):
+        """The differential equations for the low nitrogen production
+        phase of the reactor operation.
+        Separated so that it can be passed to numba and parallelized
+
+        Parameters
+        ----------
+        x : array
+            Current state
+
+        u : array
+            Input to the system
+
+        dt : array
+            Time since previous euler update
+
+        Returns
+        -------
+        dCg, dCx, dCfa, dCe, dCh : float
+            Changes in the states
+        """
         Cg, Cx, Cfa, Ce, Ch = x
         Cg, Cx, Cfa, Ce = max(Cg, 0), max(Cx, 0), max(Cfa, 0), max(Ce, 0)
 
@@ -198,6 +232,22 @@ class Bioreactor(model.NonlinearModel):
 
     @staticmethod
     def static_outputs(x, u):
+        """Returns the outputs.
+        Made static so that it can be parallelized by numba
+
+        Parameters
+        ----------
+        x : array
+            Current state
+
+        u : array
+            Input to the system
+
+        Returns
+        -------
+        Mg, Mfa : float
+            Mass of glucose and fumaric acid
+        """
         Cg, _, Cfa, _, _ = x
         _ = u
         return Cg*180, Cfa*116
