@@ -3,7 +3,7 @@ import tqdm
 import pandas
 import matplotlib.pyplot as plt
 from model.BioreactorModel import Bioreactor
-from model.inputter import Inputs
+from tests.inputter import Inputs
 from historian import Historian
 
 ts = numpy.linspace(0, 230, 1000)
@@ -31,7 +31,7 @@ for ti in tqdm.tqdm(ts[1:]):
         model.high_N = False
         model.X[[0, 2, 3]] = 0
 
-concentration_data = pandas.read_csv('../model/run_9_conc.csv')
+concentration_data = pandas.read_csv('run_9_conc.csv')
 ts_data = concentration_data['Time']+30
 Cs = (history.df()[model_reagents]*molar_mass).div(history.df()['V'], axis=0)
 

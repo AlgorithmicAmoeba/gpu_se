@@ -1,6 +1,5 @@
 import numpy
 import model.NonlinearModel
-import model.TankModel
 
 
 class DiagTank(model.NonlinearModel):
