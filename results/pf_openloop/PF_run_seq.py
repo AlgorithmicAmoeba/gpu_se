@@ -284,9 +284,8 @@ def pf_sub_routine_run_seqs():
     g_vec_cpu_mem = lambda x, y: g_vectorize_run_seq(x, y, False)
 
     funcs = [
-        f_vec_gpu_mem, f_vec_cpu_mem,
-        g_vec_gpu_mem, g_vec_cpu_mem,
-        state_pdf_draw_run_seq, measurement_pdf_run_seq,
+        f_vec_gpu_mem, f_vec_cpu_mem, state_pdf_draw_run_seq,
+        g_vec_gpu_mem, g_vec_cpu_mem, measurement_pdf_run_seq,
         cumsum_run_seq, parallel_resample_run_seq, index_copying_run_seq
              ]
 
@@ -344,10 +343,11 @@ def plot_max_auto():
             plt.axhline(0.2, color='r')
             plt.xlabel(r'$\log_2(N_p)$')
 
-            if row == 1:
+            if row == 0:
                 plt.title(['Predict', 'Update', 'Resample'][col])
-                if col == 0:
-                    plt.ylabel('CPU', rotation=0)
+
+            if row == 0 and col == 0:
+                plt.ylabel('CPU', rotation=0)
 
             if col == 0 and row == 1:
                 plt.ylabel('GPU', rotation=0)
@@ -412,8 +412,97 @@ def plot_times():
     plt.show()
 
 
+def plot_sub_routine_max_auto():
+    run_seqss = pf_sub_routine_run_seqs()
+    names = [
+        'f (GPU memory)', 'f (CPU memory)', 'State noise - draw',
+        'g (GPU memory)', 'g (CPU memory)', 'Measurement noise - pdf',
+        'cumsum', 'Nicely algorithm', 'Index copying'
+     ]
+
+    for i, (N_parts, run_seqs) in enumerate(run_seqss):
+        plt.subplot(3, 3, i+1)
+        N_logs = numpy.log2(N_parts)
+
+        for N_log, run_seq in zip(N_logs, run_seqs):
+            abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
+            plt.plot(N_log, numpy.max(abs_cors), 'kx')
+        plt.ylim(0, 1)
+        plt.xlim(0, 20)
+        plt.axhline(0.2, color='r')
+        plt.xlabel(r'$\log_2(N_p)$')
+        plt.title(names[i])
+    plt.show()
+
+
+def plot_sub_routine_times():
+    names = [
+        'f', 'f (memory copy)', 'State noise - draw',
+        'g', 'g ((memory copy)', 'Measurement noise - pdf',
+        'cumsum', 'Nicely algorithm', 'Index copying'
+    ]
+
+    run_seqss = pf_sub_routine_run_seqs()
+
+    run_seqss[1] = (run_seqss[1][0], run_seqss[1][1] - run_seqss[0][1])
+    run_seqss[4] = (run_seqss[4][0], run_seqss[4][1] - run_seqss[3][1])
+
+    for i, (N_parts, run_seqs) in enumerate(run_seqss):
+        plt.subplot(3, 3, i + 1)
+        times = numpy.max(run_seqs, axis=1)
+        logN_part = numpy.log2(N_parts)
+        plt.semilogy(logN_part, times, '.')
+        plt.title(names[i])
+
+    plt.show()
+
+
+def plot_sub_routine_fractions():
+    names = [
+        'f', 'f (memory copy)', 'State noise - draw',
+        'g', 'g (memory copy)', 'Measurement noise - pdf',
+        'cumsum', 'Nicely algorithm', 'Index copying'
+    ]
+    func_seqss = pf_sub_routine_run_seqs()
+
+    func_seqss[1] = (func_seqss[1][0], func_seqss[1][1] - func_seqss[0][1])
+    func_seqss[4] = (func_seqss[4][0], func_seqss[4][1] - func_seqss[3][1])
+
+    plt.figure(figsize=(15, 5))
+    for i, func_indxs in enumerate([[0, 1, 2], [3, 4, 5], [6, 7, 8]]):
+        plt.subplot(1, 3, i+1)
+        N_parts = func_seqss[0][0]
+        logN_part = numpy.log2(N_parts)
+
+        total_times = numpy.zeros_like(N_parts)
+        for func_indx in func_indxs:
+            total_times += numpy.average(abs(func_seqss[func_indx][1]), axis=1)
+
+        bottom = None
+        for func_indx in func_indxs:
+            times = numpy.average(abs(func_seqss[func_indx][1]), axis=1)
+            frac_times = times / total_times
+            plt.bar(logN_part, frac_times, width=0.55, bottom=bottom, label=names[func_indx])
+            if bottom is None:
+                bottom = frac_times
+            else:
+                bottom += frac_times
+        plt.legend()
+        plt.title(['Predict', 'Update', 'Resample'][i])
+        if i == 0:
+            plt.ylabel('Fraction of runtime')
+        plt.xlabel(r'$\log_2(N_p)$')
+
+    plt.tight_layout()
+    plt.savefig('pf_frac_breakdown.pdf')
+    plt.show()
+
+
 if __name__ == '__main__':
-    pf_sub_routine_run_seqs()
-    plot_max_auto()
-    plot_times()
-    plot_speed_up()
+    # plot_sub_routine_max_auto()
+    plot_sub_routine_fractions()
+
+    # pf_sub_routine_run_seqs()
+    # plot_max_auto()
+    # plot_times()
+    # plot_speed_up()
