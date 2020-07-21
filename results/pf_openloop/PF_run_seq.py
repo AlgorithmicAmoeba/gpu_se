@@ -387,8 +387,8 @@ def plot_speed_up():
     run_seqss = cpu_gpu_run_seqs()
 
     for method in range(3):
-        cpu_time = numpy.min(run_seqss[0][method][1], axis=1)
-        gpu_time = numpy.min(run_seqss[1][method][1], axis=1)
+        cpu_time = numpy.max(run_seqss[0][method][1], axis=1)
+        gpu_time = numpy.max(run_seqss[1][method][1], axis=1)
 
         speed_up = cpu_time / gpu_time[:cpu_time.shape[0]]
         logN_part = numpy.log2(run_seqss[0][method][0])
@@ -404,7 +404,7 @@ def plot_times():
     for device in range(2):
         plt.subplot(1, 2, device+1)
         for method in range(3):
-            times = numpy.min(run_seqss[device][method][1], axis=1)
+            times = numpy.max(run_seqss[device][method][1], axis=1)
             logN_part = numpy.log2(run_seqss[device][method][0])
             plt.semilogy(logN_part, times, '.')
 
@@ -415,3 +415,5 @@ def plot_times():
 if __name__ == '__main__':
     pf_sub_routine_run_seqs()
     plot_max_auto()
+    plot_times()
+    plot_speed_up()
