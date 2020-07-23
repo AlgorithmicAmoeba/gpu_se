@@ -39,9 +39,9 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
 
     # Controller
     K = controller.MPC(
-        P=int(300//dt_control),
-        M=int(200//dt_control),
-        Q=numpy.diag([1, 1]),
+        P=200,  # int(300//dt_control),
+        M=160,  # int(200//dt_control),
+        Q=numpy.diag([0.1, 1]),
         R=numpy.diag([1, 1]),
         lin_model=lin_model,
         ysp=lin_model.yn2d(numpy.array([280, 1150]), subselect=False),
