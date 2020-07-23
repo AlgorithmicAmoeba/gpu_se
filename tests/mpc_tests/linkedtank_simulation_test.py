@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import controller
 import model.LinearModel
 import pytest
+import tests.mpc_tests.LinkedTanks as LinkedTanks
 
 # Simulation set-up
 end_time = 80
@@ -14,7 +15,7 @@ assert dt <= dt_control
 
 # Plant
 X0 = numpy.array([50., 60.])
-diag_tank = model.LinkedTanks(X0)
+diag_tank = LinkedTanks.LinkedTanks(X0)
 
 # Linearise plant for MPC model
 lin_model = model.LinearModel.create_LinearModel(

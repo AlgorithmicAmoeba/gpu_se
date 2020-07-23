@@ -1,5 +1,6 @@
 import numpy
 import model.NonlinearModel
+import tests.mpc_tests.TankModel as TankModel
 
 
 class DiagTank(model.NonlinearModel):
@@ -7,8 +8,8 @@ class DiagTank(model.NonlinearModel):
         self.X = numpy.array(X0)
         self.t = t0
 
-        self.linear_tank = model.TankModel(numpy.atleast_1d(X0[0]), linear=True)
-        self.nonlinear_tank = model.TankModel(numpy.atleast_1d(X0[1]), linear=False)
+        self.linear_tank = TankModel.TankModel(numpy.atleast_1d(X0[0]), linear=True)
+        self.nonlinear_tank = TankModel.TankModel(numpy.atleast_1d(X0[1]), linear=False)
 
     def DEs(self, inputs):
         """Contains the differential and algebraic equations for the system model.

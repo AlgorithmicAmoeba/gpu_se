@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import controller
 import model.LinearModel
 import pytest
+import tests.mpc_tests.TankModel as TankModel
 
 # Simulation set-up
 end_time = 80
@@ -14,13 +15,13 @@ assert dt <= dt_control
 
 # Plant
 X0 = numpy.array([50.])
-tank_linear = model.TankModel(X0, linear=True)
-tank_nonlinear = model.TankModel(X0, linear=False)
+tank_linear = TankModel.TankModel(X0, linear=True)
+tank_nonlinear = TankModel.TankModel(X0, linear=False)
 
 # Linearise plant for MPC model
 X_op = numpy.array([50.])
 U_op = numpy.array([10.])
-tank1 = model.TankModel(X_op)
+tank1 = TankModel.TankModel(X_op)
 Y_op = tank1.outputs(U_op)
 
 lin_model_linear = model.LinearModel.create_LinearModel(
