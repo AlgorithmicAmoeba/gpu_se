@@ -13,7 +13,7 @@ assert dt <= dt_control
 bioreactor, lin_model, K, _ = sim_base.get_parts(dt_control=dt_control)
 
 # Initial values
-us = [numpy.array([0.06, 5/180, 0.2])]
+us = [numpy.array([0.06, 0.2])]
 xs = [bioreactor.X.copy()]
 ys = [bioreactor.outputs(us[-1])]
 
