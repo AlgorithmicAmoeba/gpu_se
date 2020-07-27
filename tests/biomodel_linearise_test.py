@@ -1,44 +1,28 @@
 import numpy
-from model.BioreactorModel import Bioreactor
-from model import LinearModel
+import model
+import pytest
 
-#                    Ng,        Nx,         Nfa, Ne, Na, Nb, Nh, V, T
-X_op = numpy.array([0.28/180, 0.639773/24.6, 2/116, 0, 1e-5, 0, 4.857e-3, 1.077, 35])
 
-model = Bioreactor(X_op, pH_calculations=True)
+def test_linearise():
+    bioreactor = model.Bioreactor(
+            X0=model.Bioreactor.find_SS(
+                numpy.array([0.06, 0.2]),
+                #            Ng,         Nx,      Nfa, Ne, Nh
+                numpy.array([260/180, 640/24.6, 1000/116, 0, 0])
+            ),
+            high_N=False
+        )
 
-# Inputs
-Cn_in = 0.625 * 10 / 60  # (g/L) / (g/mol) = mol/L
-CgFg = 0.23
+    lin_model = model.LinearModel.create_LinearModel(
+            bioreactor,
+            x_bar=model.Bioreactor.find_SS(
+                numpy.array([0.04, 0.1]),
+                #           Ng,         Nx,      Nfa, Ne, Nh
+                numpy.array([260/180, 640/24.6, 1000/116, 0, 0])
+            ),
+            #          Fg_in (L/h), Cg (mol/L), Fm_in (L/h)
+            u_bar=numpy.array([0.04, 0.1]),
+            T=1
+        )
 
-Cg_in = 314.19206 / 180  # (g/L) / (g/mol) = mol/L
-Ca_in = 10  # mol/L
-Cb_in = 10  # mol/L
-Fm_in = 0
-
-Fg_in = CgFg / 180 / Cg_in  # (g/h) / (g/mol) / (mol/L) = L/h
-Fn_in = 0.625 / 1000 / Cn_in / 60  # (mg/h) / (mg/g) / (mol/L) / (g/mol) = L/h
-Fa_in = 6e-9
-Fb_in = 6e-9  # L/h
-F_out = Fg_in + Fn_in + Fa_in + Fb_in + Fm_in
-
-T_amb = 25
-Q = 5 / 9
-
-input_op = numpy.array([Fg_in, Cg_in, Fa_in, Ca_in, Fb_in, Cb_in, Fm_in, F_out, T_amb, Q])
-
-dt = 0.1
-
-lin_model = LinearModel.create_LinearModel(model, X_op, input_op, dt)
-
-#        Nfa, Na, Nb, V
-states = [2, 4, 5, 7]
-#     Fa_in, Fb_in, Fm_in
-inputs = [2, 4, 6]
-#      Cfa, pH
-outputs = [2, 9]
-
-A = lin_model.A[states][:, states]
-B = lin_model.B[states][:, inputs]
-C = lin_model.C[outputs][:, states]
-D = lin_model.D[outputs][:, inputs]
+    assert lin_model.A[0, 0] == pytest.approx(0.72648)
