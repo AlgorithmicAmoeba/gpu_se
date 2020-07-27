@@ -8,6 +8,36 @@ import scipy.integrate
 
 
 def get_parts(dt_control=1, N_particles=2*15, gpu=True):
+    """Returns the parts needed for a closedloop simulation.
+    Allows customization of the control period, number of particles
+    and whether the simulation should use the GPU implementation or
+    CPU implementation.
+
+    Parameters
+    ----------
+    dt_control : float, optional
+        Control period
+
+    N_particles : int, optional
+        Number of particles for PF
+
+    gpu : bool, optional
+        Should the GPU implementation be used?
+
+    Returns
+    -------
+    bioreactor : model.Bioreactor
+        The nonlinear system model
+
+    lin_model : model.LinearModel
+        Linear system model
+
+    K : controller.MPC
+        MPC controller
+
+    pf : {filter.ParticleFilter, filter.ParallelParticleFilter}
+        Particle filter
+    """
     # Bioreactor
     bioreactor = model.Bioreactor(
         X0=model.Bioreactor.find_SS(
@@ -75,6 +105,25 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
 
 
 def get_noise(lib=cupy, deterministic=False):
+    """Returns measurement and state noise.
+    Allows customization of whether the simulation should use the GPU
+    implementation or CPU implementation, and whether a
+    deterministic version of the noise should be returned.
+    The deterministic version is useful for testing.
+
+    Parameters
+    ----------
+    lib : {cupy, numpy}, optional
+        The math library for computations
+
+    deterministic : bool, optional
+     Should a deterministic version be used?
+
+    Returns
+    -------
+    state_pdf, measurement_pdf : {gpu_funcs.MultivariateGaussianSum, gpu_funcs.DeterministicGaussianSum}
+        State and measurement noise objects
+    """
     if deterministic:
         distribution = gpu_funcs.DeterministicGaussianSum
     else:
@@ -100,12 +149,37 @@ def get_noise(lib=cupy, deterministic=False):
 
 
 def performance(ys, r, ts):
+    """Returns the IAE performance of a run.
+
+    Parameters
+    ----------
+    ys : numpy.array
+        Values of the outputs
+
+    r  : numpy.array
+        Set points
+
+    ts : numpy.array
+        Times
+
+    Returns
+    -------
+    iae : float
+        Integral of the Absolute Error
+    """
     ae = numpy.abs((ys - r)/r)
     iae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
     return iae
 
 
 def get_random_io():
+    """Get random system input and output for simulations
+
+    Returns
+    -------
+    u, y : numpy.array
+        Random inputs and outputs, respectively
+    """
     u = numpy.array([
         numpy.random.uniform(low=0, high=0.1),
         numpy.random.uniform(low=0, high=0.2)

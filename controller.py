@@ -9,58 +9,32 @@ import osqp
 class MPC:
     r"""A deterministic reformulation of a linear chance constrained MPC
         that uses a discrete linear state space model of the system.
-        The original stochastic problem is given by:
+        The reformulation is given as:
 
         .. math::
-            \displaystyle \underset{u}{\min}
+            \underset{\mathbf{\Delta u}}{\min}
             \quad
-            & \mathbb{E}
-            \left[
-                \sum_{i=0}^{P-1}
-                    \left(
-                    e_i^T Q e_i + u_i^T R u_i
-                    \right)
-            \right] \\
-            x_{k+1} &= A x_k + B u_k \\
-            y_k &= C x_k + D u_k \\
-            e_k &= r - y_k \\
-            P
-            \left[
-                D x_k + e \ge 0
-            \right]
-            &\ge p
-            \quad \forall \; 0 \le k < N
-
-        where :math:`Q` and :math:`R` are tuning parameters,
-        :math:`A` and :math:`B`
-        are state space matrices,
-        :math:`r` is the set point,
-        and :math:`P[c] \ge p`
-        ensures that the probability of :math:`c` is larger than :math:`p`.
-
-        The reformulation is done by Wilken (2015) and the deterministic problem
-        is given by:
-
-        .. math::
-            \displaystyle \underset{u}{\min}
-            \quad
-            & \sum_{i=0}^{P-1}
+            & \frac{1}{2}
+            \sum_{k=1}^{P}
             \left(
-            e_i^T Q e_i + u_i^T R u_i
+            e_k^T Q e_k
+            \right)
+            +
+            \frac{1}{2}
+            \sum_{k=0}^{M-1}
+            \left(
+            \Delta u_k^T R \Delta u_k
             \right)	\\
-            \mu_{k+1} &= A \mu_k + B u_k \\
-            y_k &= C \mu_k + D u_k \\
+            \Delta \mu_1 &= A x_0 + B (u_{-1} + \Delta u_0) - x_0 \\
+            \Delta \mu_{k+1} &= A \Delta \mu_k + B \Delta u_k \\
+            y_0 &= C \mu_0 + D (u_{-1} + \Delta u_0) + b \\
+            y_k &= y_{k-1} + C \Delta x_k + D \Delta u_k + b \\
             e_k &= r - y_k \\
-            \Sigma_{k+1} &= A \Sigma_k A^T + W
-            \quad \forall \; 0 \le k < N \\
-            d_i \mu_k + e_i &\ge k \sqrt{d_i \Sigma_k d_i^T}
-            \quad \forall \; 0 \le k < N \; i
+            y_{\min} \le &y_k \le y_{\max} \\
+            \Delta u_{\min} \le &\Delta u_k \le \Delta u_{\max} \\
+            u_{\min} \le &u_k \le u_{\max} \\
 
-        where :math:`\mu` is the state estimated mean,
-        :math:`k` is a constant that depends on :math:`p`,
-        :math:`\Sigma_k` is the covariance prediction,
-        :math:`\Sigma_0` is the state estimated covariance,
-        and :math:`W` is the covariance for the state noise.
+        where :math:`\mu_0` is the state estimated mean.
 
         Parameters
         ----------
