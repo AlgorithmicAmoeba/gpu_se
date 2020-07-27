@@ -1,3 +1,0 @@
-import tests.controller_test
-import tests.linearise_test
-import tests.cstr_simulation_test
