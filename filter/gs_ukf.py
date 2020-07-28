@@ -97,7 +97,7 @@ class GaussianSumUnscentedKalmanFilter:
         # Move the sigma points through the state transition function
         for gaussian in range(self.N_particles):
             for sigma in range(self._N_sigmas):
-                sigmas[gaussian, sigma] = self.f(sigmas[gaussian, sigma], u, dt)
+                sigmas[gaussian, sigma] += self.f(sigmas[gaussian, sigma], u, dt)
         sigmas += self.state_pdf.draw((self.N_particles, self._N_sigmas))
 
         self.means = numpy.average(sigmas, axis=1, weights=self._w_sigma)
@@ -341,7 +341,7 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
         sigmas = self._get_sigma_points()
 
         # Move the sigma points through the state transition function
-        sigmas = self.f_vectorize(sigmas, u, dt)
+        sigmas += self.f_vectorize(sigmas, u, dt)
         sigmas += self.state_pdf.draw((self.N_particles, self._N_sigmas))
 
         self.means = cupy.average(sigmas, axis=1, weights=self._w_sigma)
