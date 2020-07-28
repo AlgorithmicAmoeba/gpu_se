@@ -7,7 +7,7 @@ import filter.particle
 import scipy.integrate
 
 
-def get_parts(dt_control=1, N_particles=2*15, gpu=True):
+def get_parts(dt_control=1, N_particles=2*15, gpu=True, pf=True):
     """Returns the parts needed for a closedloop simulation.
     Allows customization of the control period, number of particles
     and whether the simulation should use the GPU implementation or
@@ -81,12 +81,18 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True):
         ]
     )
 
-    # PF
+    # Filter
     if gpu:
-        my_filter = filter.ParallelParticleFilter
+        if pf:
+            my_filter = filter.ParallelParticleFilter
+        else:
+            my_filter = filter.ParallelGaussianSumUnscentedKalmanFilter
         my_library = cupy
     else:
-        my_filter = filter.ParticleFilter
+        if pf:
+            my_filter = filter.ParticleFilter
+        else:
+            my_filter = filter.GaussianSumUnscentedKalmanFilter
         my_library = numpy
 
     state_pdf, measurement_pdf = get_noise(my_library)
