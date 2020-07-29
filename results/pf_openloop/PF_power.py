@@ -23,6 +23,7 @@ class PowerMeasurement:
                 for N_particle in N_particles
             ]
         )
+        powers[:, 0] *= self.CPU_max_power
         return N_particles, powers
 
     def particle_call_gen(self):
@@ -44,7 +45,6 @@ class PowerMeasurement:
             queue.get()
             power_seq = queue.get()
 
-            power_seq[1, :] *= self.CPU_max_power
             power = scipy.integrate.trapz(power_seq[1:, :], power_seq[0], axis=1) / N_runs
 
             queue.close()
