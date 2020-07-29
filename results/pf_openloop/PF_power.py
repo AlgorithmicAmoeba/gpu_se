@@ -1,30 +1,66 @@
 import numpy
-import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 import joblib
 import subprocess
 import psutil
+import time
+import multiprocessing
+import scipy.integrate
 
 
-class PowerSequences:
-    def __init__(self, function, path='cache/'):
+class PowerMeasurement:
+    def __init__(self, function, path='cache/', CPU_max_power=30):
         self.memory = joblib.Memory(path + function.__name__)
-        self.function = self.memory.cache(function)
+        self.function = function
+        self.CPU_max_power = CPU_max_power
+        self.particle_call = self.particle_call_gen()
 
-    def __call__(self, N_particles, N_runs, *args, **kwargs):
-        power_seqs = numpy.array(
-            [self.function(int(N_particle), N_runs, *args, **kwargs) for N_particle in N_particles]
+    def __call__(self, N_particles, t_run, *args, **kwargs):
+        powers = numpy.array(
+            [
+                self.particle_call(N_particle, t_run, *args, **kwargs)
+                for N_particle in N_particles
+            ]
         )
+        return N_particles, powers
 
-        return N_particles, power_seqs
+    def particle_call_gen(self):
+
+        @self.memory.cache
+        def particle_call(N_particle, t_run, *args, **kwargs):
+            queue = multiprocessing.Queue()
+            power_process = multiprocessing.Process(
+                target=PowerMeasurement.power_seq,
+                args=(queue,)
+            )
+            power_process.start()
+            N_runs = self.function(N_particle, t_run, *args, **kwargs)
+            queue.put('Done')
+
+            while queue.qsize() < 2:
+                time.sleep(0.3)
+
+            queue.get()
+            power_seq = queue.get()
+
+            power_seq[1, :] *= self.CPU_max_power
+            power = scipy.integrate.trapz(power_seq[1:, :], power_seq[0], axis=1) / N_runs
+
+            queue.close()
+            queue.join_thread()
+            power_process.join()
+
+            return power
+
+        return particle_call
 
     def clear(self, *args):
-        self.function.call_and_shelve(*args).clear()
+        self.particle_call.call_and_shelve(*args).clear()
 
     @staticmethod
     def vectorize(function):
-        return PowerSequences(function)
+        return PowerMeasurement(function)
 
     @staticmethod
     def get_GPU_power():
@@ -39,60 +75,81 @@ class PowerSequences:
     def get_CPU_frac():
         return psutil.cpu_percent()/100
 
+    @staticmethod
+    def power_seq(q):
+        times, cpu_frac, gpu_power = [], [], []
 
-@PowerSequences.vectorize
-def predict_power_seq(N_particle, N_runs, gpu):
-    cpu_frac, gpu_power = [], []
+        while q.empty():
+            times.append(time.time())
+            cpu_frac.append(PowerMeasurement.get_CPU_frac())
+            gpu_power.append(PowerMeasurement.get_GPU_power())
+            time.sleep(0.2)
 
+        q.put(numpy.array([times, cpu_frac, gpu_power]))
+
+
+@PowerMeasurement.vectorize
+def predict_power_seq(N_particle, t_run, gpu):
     _, _, _, p = sim_base.get_parts(
         N_particles=N_particle,
         gpu=gpu
     )
 
-    for _ in range(N_runs):
+    t = time.time()
+    runs = 0
+    while time.time() - t < t_run:
+        runs += 1
         u, _ = sim_base.get_random_io()
         p.predict(u, 1.)
-        cpu_frac.append(PowerSequences.get_CPU_frac())
-        gpu_power.append(PowerSequences.get_GPU_power())
 
-    return numpy.array([cpu_frac, gpu_power])
+    return runs
 
 
-@PowerSequences.vectorize
-def update_power_seq(N_particle, N_runs, gpu):
-    cpu_frac, gpu_power = [], []
-
+@PowerMeasurement.vectorize
+def update_power_seq(N_particle, t_run, gpu):
     _, _, _, p = sim_base.get_parts(
         N_particles=N_particle,
         gpu=gpu
     )
 
-    for j in range(N_runs):
+    t = time.time()
+    runs = 0
+    while time.time() - t < t_run:
+        runs += 1
         u, y = sim_base.get_random_io()
         p.update(u, y)
-        cpu_frac.append(PowerSequences.get_CPU_frac())
-        gpu_power.append(PowerSequences.get_GPU_power())
 
-    return numpy.array([cpu_frac, gpu_power])
+    return runs
 
 
-@PowerSequences.vectorize
-def resample_power_seq(N_particle, N_runs, gpu):
-    cpu_frac, gpu_power = [], []
-
+@PowerMeasurement.vectorize
+def resample_power_seq(N_particle, t_run, gpu):
     _, _, _, p = sim_base.get_parts(
         N_particles=N_particle,
         gpu=gpu
     )
 
-    for j in range(N_runs):
+    t = time.time()
+    runs = 0
+    while time.time() - t < t_run:
+        runs += 1
         p.weights = numpy.random.random(size=p.N_particles)
         p.weights /= numpy.sum(p.weights)
         p.resample()
-        cpu_frac.append(PowerSequences.get_CPU_frac())
-        gpu_power.append(PowerSequences.get_GPU_power())
 
-    return numpy.array([cpu_frac, gpu_power])
+    return runs
+
+
+@PowerMeasurement.vectorize
+def nothing_power_seq(N_particle, t_run):
+    _ = N_particle
+    t = time.time()
+    runs = 0
+    while time.time() - t < t_run:
+        runs += 1
+        time.sleep(246)
+
+    return runs
 
 
 def cpu_gpu_power_seqs():
@@ -103,48 +160,55 @@ def cpu_gpu_power_seqs():
     power_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; power_seq]
     """
-    N_particles_cpu = 2**numpy.arange(1, 20, 0.5)
-    N_particles_gpu = 2**numpy.arange(1, 24, 0.5)
+    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(1, 20, 0.5)])
+    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(1, 24, 0.5)])
     power_seqss = [
         [
-            # predict_power_seq(N_particles_cpu, 20, False),
-            # update_power_seq(N_particles_cpu, 20, False),
-            # resample_power_seq(N_particles_cpu, 20, False)
+            predict_power_seq(N_particles_cpu, 5, False),
+            update_power_seq(N_particles_cpu, 5, False),
+            resample_power_seq(N_particles_cpu, 5, False)
         ],
         [
-            predict_power_seq(N_particles_gpu, 20, True),
-            update_power_seq(N_particles_gpu, 20, True),
-            resample_power_seq(N_particles_gpu, 20, True)
+            predict_power_seq(N_particles_gpu, 5, True),
+            update_power_seq(N_particles_gpu, 5, True),
+            resample_power_seq(N_particles_gpu, 5, True)
         ]
     ]
     return power_seqss
 
 
-power_seqss = cpu_gpu_power_seqs()
-fig, axes = plt.subplots(2, 2)
-for cpu_gpu in range(1, 2):
-    for method in range(3):
-        N_parts, power_seqs = power_seqss[cpu_gpu][method]
-        N_logs = numpy.log2(N_parts)
-        power_seqs_max = numpy.max(power_seqs, axis=2)
+def plot_energy_per_run():
+    powerss = cpu_gpu_power_seqs()
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    plt.rcParams.update({'font.size': 12})
 
-        for frac_power in range(2):
-            ax = axes[cpu_gpu][frac_power]
+    for cpu_gpu in range(2):
 
-            ax.plot(
+        ax = axes[cpu_gpu]
+
+        for method in range(3):
+            N_parts, powers = powerss[cpu_gpu][method]
+            N_logs = numpy.log2(N_parts)
+            total_power = powers[:, 0]
+            if cpu_gpu:
+                total_power += powers[:, 1]
+
+            ax.semilogy(
                 N_logs,
-                power_seqs_max[:, frac_power],
+                total_power,
+                '.',
                 label=['Predict', 'Update', 'Resample'][method]
             )
-            ax.legend()
+        ax.legend()
+        ax.set_xlabel(r'$\log_2(N_p)$', fontsize=12)
+        ax.set_ylabel(r'$\frac{W}{\mathrm{run}}$', fontsize=12)
+        ax.set_title(['CPU', 'GPU'][cpu_gpu])
 
-plt.show()
-# predict_seqs = power_seqss[1][0]
-# predict20_seq = predict_seqs[1][19]
-# predict5_seq = predict_seqs[1][4]
-# plt.plot(predict20_seq[0, :])
-# plt.plot(predict5_seq[0, :])
-# plt.show()
-# plt.plot(predict20_seq[1, :])
-# plt.plot(predict5_seq[1, :])
-# plt.show()
+    fig.suptitle('Energy per run')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('energy_per_run.pdf')
+    plt.show()
+
+
+if __name__ == '__main__':
+    plot_energy_per_run()
