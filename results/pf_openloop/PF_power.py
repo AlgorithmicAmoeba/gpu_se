@@ -10,29 +10,46 @@ import scipy.integrate
 
 
 class PowerMeasurement:
+    """A class to measure power drawn for functions.
+        Specifically designed to allow vectorization of the process
+        of power measurement
+
+        Parameters
+        ----------
+        function : callable
+            The function to be vectorized/managed
+
+        path : string, optional
+            Location where joblib cache should be recalled and saved to
+
+        CPU_max_power : float, optional
+            The power the CPU draws at 100% use
+        """
     def __init__(self, function, path='cache/', CPU_max_power=30):
-        self.memory = joblib.Memory(path + function.__name__)
+        self._memory = joblib.Memory(path + function.__name__)
         self.function = function
         self.CPU_max_power = CPU_max_power
-        self.particle_call = self.particle_call_gen()
+        self._particle_call = self._particle_call_gen()
 
     def __call__(self, N_particles, t_run, *args, **kwargs):
         powers = numpy.array(
             [
-                self.particle_call(N_particle, t_run, *args, **kwargs)
+                self._particle_call(N_particle, t_run, *args, **kwargs)
                 for N_particle in N_particles
             ]
         )
         powers[:, 0] *= self.CPU_max_power
         return N_particles, powers
 
-    def particle_call_gen(self):
+    def _particle_call_gen(self):
+        """Generates the function that spawns the power measurement process
+        and runs the function for the required amount of time"""
 
-        @self.memory.cache
+        @self._memory.cache
         def particle_call(N_particle, t_run, *args, **kwargs):
             queue = multiprocessing.Queue()
             power_process = multiprocessing.Process(
-                target=PowerMeasurement.power_seq,
+                target=PowerMeasurement._power_seq,
                 args=(queue,)
             )
             power_process.start()
@@ -56,14 +73,39 @@ class PowerMeasurement:
         return particle_call
 
     def clear(self, *args):
-        self.particle_call.call_and_shelve(*args).clear()
+        """Clears the stored result of the function with the arguments given
+
+        Parameters
+        ----------
+        args : tuple
+            Arguments of the function
+        """
+        self._particle_call.call_and_shelve(*args).clear()
 
     @staticmethod
     def vectorize(function):
+        """Decorator function that creates a callable PowerMeasurement class
+
+        Parameters
+        ----------
+        function : function to be vectorized/managed
+
+        Returns
+        -------
+        pm : RunSequences
+            The PowerMeasurement object that handles vectorized calls
+        """
         return PowerMeasurement(function)
 
     @staticmethod
     def get_GPU_power():
+        """Uses the nvidia-smi interface to query the current power drawn by the GPU
+
+        Returns
+        -------
+        power : float
+            The current power drawn by the GPU
+        """
         return float(
             subprocess.check_output(
                 ["nvidia-smi", "--query-gpu=power.draw", "--format=csv,noheader,nounits"
@@ -73,10 +115,26 @@ class PowerMeasurement:
 
     @staticmethod
     def get_CPU_frac():
+        """Uses the psutil library to query the current CPU usage
+        fraction
+
+        Returns
+        -------
+        frac : float
+            The current current CPU usage fraction
+        """
         return psutil.cpu_percent()/100
 
     @staticmethod
-    def power_seq(q):
+    def _power_seq(q):
+        """A function meant to be run in parallel with another function.
+        This function takes readings of the CPU usage percentage and GPU power usage.
+        Parameters
+        ----------
+        q : multiprocessing.Queue
+            A thread safe method of message passing between the host process and this one.
+            Allows this process to return a numpy array of measurements
+        """
         times, cpu_frac, gpu_power = [], [], []
 
         while q.empty():
@@ -90,6 +148,26 @@ class PowerMeasurement:
 
 @PowerMeasurement.vectorize
 def predict_power_seq(N_particle, t_run, gpu):
+    """Performs a power sequence on the prediction function with the given number
+    of particle and number of runs on the CPU or GPU
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    t_run : float
+        Minimum run time of the function. Repeats if the time is too short
+
+    gpu : bool
+        If `True` then the GPU implementation is used.
+        Otherwise, the CPU implementation is used
+
+    Returns
+    -------
+    runs : int
+        The number of times the function was run
+    """
     _, _, _, p = sim_base.get_parts(
         N_particles=N_particle,
         gpu=gpu
@@ -107,6 +185,26 @@ def predict_power_seq(N_particle, t_run, gpu):
 
 @PowerMeasurement.vectorize
 def update_power_seq(N_particle, t_run, gpu):
+    """Performs a power sequence on the update function with the given number
+    of particle and number of runs on the CPU or GPU
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    t_run : float
+        Minimum run time of the function. Repeats if the time is too short
+
+    gpu : bool
+        If `True` then the GPU implementation is used.
+        Otherwise, the CPU implementation is used
+
+    Returns
+    -------
+    runs : int
+        The number of times the function was run
+    """
     _, _, _, p = sim_base.get_parts(
         N_particles=N_particle,
         gpu=gpu
@@ -124,6 +222,26 @@ def update_power_seq(N_particle, t_run, gpu):
 
 @PowerMeasurement.vectorize
 def resample_power_seq(N_particle, t_run, gpu):
+    """Performs a power sequence on the resample function with the given number
+    of particle and number of runs on the CPU or GPU
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    t_run : float
+        Minimum run time of the function. Repeats if the time is too short
+
+    gpu : bool
+        If `True` then the GPU implementation is used.
+        Otherwise, the CPU implementation is used
+
+    Returns
+    -------
+    runs : int
+        The number of times the function was run
+    """
     _, _, _, p = sim_base.get_parts(
         N_particles=N_particle,
         gpu=gpu
@@ -142,6 +260,23 @@ def resample_power_seq(N_particle, t_run, gpu):
 
 @PowerMeasurement.vectorize
 def nothing_power_seq(N_particle, t_run):
+    """Performs a power sequence on the no-op function with the given number
+    of particle and number of runs on the CPU or GPU.
+    Used to check default power usage
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    t_run : float
+        Minimum run time of the function. Repeats if the time is too short
+
+    Returns
+    -------
+    runs : int
+        The number of times the function was run
+    """
     _ = N_particle
     t = time.time()
     runs = 0
@@ -152,6 +287,7 @@ def nothing_power_seq(N_particle, t_run):
     return runs
 
 
+# noinspection PyTypeChecker
 def cpu_gpu_power_seqs():
     """Returns the power sequences for all the runs
 
@@ -178,6 +314,9 @@ def cpu_gpu_power_seqs():
 
 
 def plot_energy_per_run():
+    """Plot the energy per run of CPU and GPU implementations of the
+     predict, update and resample functions
+    """
     powerss = cpu_gpu_power_seqs()
     fig, axes = plt.subplots(1, 3, figsize=(10, 5), sharey='all')
     plt.rcParams.update({'font.size': 12})
