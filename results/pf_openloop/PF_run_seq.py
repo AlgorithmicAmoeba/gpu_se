@@ -400,28 +400,43 @@ def plot_speed_up():
     run_seqss = cpu_gpu_run_seqs()
 
     for method in range(3):
-        cpu_time = numpy.max(run_seqss[0][method][1], axis=1)
-        gpu_time = numpy.max(run_seqss[1][method][1], axis=1)
+        cpu_time = numpy.min(run_seqss[0][method][1], axis=1)
+        gpu_time = numpy.min(run_seqss[1][method][1], axis=1)
 
         speed_up = cpu_time / gpu_time[:cpu_time.shape[0]]
         logN_part = numpy.log2(run_seqss[0][method][0])
-        plt.semilogy(logN_part, speed_up, '.')
+        plt.semilogy(logN_part, speed_up, ['b.', 'rx', 'g^'][method])
 
     plt.legend(['Predict', 'Update', 'Resample'])
+    plt.title('Speed-up of particle filter')
+    plt.ylabel('Speed-up')
+    plt.xlabel('$ \log_2(N) $ particles')
+    plt.xlim(xmin=1, xmax=19.5)
+    plt.axhline(1, color='black', alpha=0.4)
+    plt.tight_layout()
+    plt.savefig('PF_speedup.pdf')
     plt.show()
 
 
 def plot_times():
     run_seqss = cpu_gpu_run_seqs()
 
+    fig, axes = plt.subplots(1, 2, sharey='all', figsize=(10, 5))
     for device in range(2):
-        plt.subplot(1, 2, device+1)
+        ax = axes[device]
         for method in range(3):
-            times = numpy.max(run_seqss[device][method][1], axis=1)
+            times = numpy.min(run_seqss[device][method][1], axis=1)
             logN_part = numpy.log2(run_seqss[device][method][0])
-            plt.semilogy(logN_part, times, '.')
+            ax.semilogy(logN_part, times, ['b.', 'rx', 'g^'][method])
 
-        plt.legend(['Predict', 'Update', 'Resample'])
+        ax.legend(['Predict', 'Update', 'Resample'])
+        if device == 0:
+            ax.set_ylabel('Time (s)')
+        ax.set_xlabel('$ \log_2(N) $ particles')
+        ax.set_xlim(xmin=1, xmax=19.5)
+    fig.suptitle('Run times particle filter methods')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    fig.savefig('PF_times.pdf')
     plt.show()
 
 
@@ -512,11 +527,11 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    plot_sub_routine_max_auto()
-    plot_sub_routine_fractions()
-    plot_example_benchmark()
+    # plot_sub_routine_max_auto()
+    # plot_sub_routine_fractions()
+    # plot_example_benchmark()
 
     # pf_sub_routine_run_seqs()
     # plot_max_auto()
-    # plot_times()
-    # plot_speed_up()
+    plot_times()
+    plot_speed_up()
