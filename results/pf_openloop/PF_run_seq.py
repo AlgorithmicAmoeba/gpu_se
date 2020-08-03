@@ -251,6 +251,18 @@ def index_copying_run_seq(N_particle, N_runs):
     return numpy.array(times)
 
 
+@RunSequences.vectorize
+def no_op_run_seq(N_time, N_runs):
+    times = []
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        t = time.time()
+        time.sleep(N_time)
+        times.append(time.time() - t)
+
+    return numpy.array(times)
+
+
 def cpu_gpu_run_seqs():
     """Returns the run sequences for all the runs
 
@@ -295,11 +307,11 @@ def pf_sub_routine_run_seqs():
 
 
 def plot_example_benchmark():
-    run_seqss = cpu_gpu_run_seqs()
-    N_particles, run_seqs = run_seqss[0][1]
+    N_times = [10]  # numpy.logspace(1e-3, 10, 30)
+    N_times, run_seqs = no_op_run_seq(N_times, 100)
     run_seq = run_seqs[-1]
 
-    print(numpy.log2(N_particles[-1]))
+    print(N_times[-1])
 
     plt.figure(figsize=(15, 5))
     plt.subplot(1, 3, 1)
@@ -315,7 +327,8 @@ def plot_example_benchmark():
     plt.ylabel(r'$X_{i}$')
 
     plt.subplot(1, 3, 3)
-    plt.acorr(run_seq - numpy.average(run_seq))
+    abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
+    plt.plot(abs_cors, 'kx')
     plt.title('Autocorrelation graph')
     plt.xlabel('Lag')
     plt.ylabel('Autocorrelation')
@@ -499,8 +512,9 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    # plot_sub_routine_max_auto()
+    plot_sub_routine_max_auto()
     plot_sub_routine_fractions()
+    plot_example_benchmark()
 
     # pf_sub_routine_run_seqs()
     # plot_max_auto()
