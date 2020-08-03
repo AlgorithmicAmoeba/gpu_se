@@ -405,7 +405,7 @@ def plot_speed_up():
 
         speed_up = cpu_time / gpu_time[:cpu_time.shape[0]]
         logN_part = numpy.log2(run_seqss[0][method][0])
-        plt.semilogy(logN_part, speed_up, ['b.', 'rx', 'g^'][method])
+        plt.semilogy(logN_part, speed_up, ['k.', 'kx', 'k^'][method])
 
     plt.legend(['Predict', 'Update', 'Resample'])
     plt.title('Speed-up of particle filter')
@@ -421,19 +421,20 @@ def plot_speed_up():
 def plot_times():
     run_seqss = cpu_gpu_run_seqs()
 
-    fig, axes = plt.subplots(1, 2, sharey='all', figsize=(10, 5))
+    fig, axes = plt.subplots(1, 3, sharey='all', figsize=(15, 5))
     for device in range(2):
-        ax = axes[device]
         for method in range(3):
+            ax = axes[method]
             times = numpy.min(run_seqss[device][method][1], axis=1)
             logN_part = numpy.log2(run_seqss[device][method][0])
-            ax.semilogy(logN_part, times, ['b.', 'rx', 'g^'][method])
+            ax.semilogy(logN_part, times, ['k.', 'kx'][device])
+            ax.set_title(['Predict', 'Update', 'Resample'][method])
 
-        ax.legend(['Predict', 'Update', 'Resample'])
-        if device == 0:
-            ax.set_ylabel('Time (s)')
-        ax.set_xlabel('$ \log_2(N) $ particles')
-        ax.set_xlim(xmin=1, xmax=19.5)
+            ax.legend(['CPU', 'GPU'])
+            if method == 0:
+                ax.set_ylabel('Time (s)')
+            ax.set_xlabel('$ \log_2(N) $ particles')
+            ax.set_xlim(xmin=1, xmax=19.5)
     fig.suptitle('Run times particle filter methods')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig('PF_times.pdf')
