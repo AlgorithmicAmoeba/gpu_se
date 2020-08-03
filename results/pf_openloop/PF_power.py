@@ -179,7 +179,7 @@ def cpu_gpu_power_seqs():
 
 def plot_energy_per_run():
     powerss = cpu_gpu_power_seqs()
-    fig, axes = plt.subplots(1, 3, figsize=(10, 5), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(10, 5), sharey='all')
     plt.rcParams.update({'font.size': 12})
 
     for cpu_gpu in range(2):
@@ -200,7 +200,8 @@ def plot_energy_per_run():
             )
             ax.legend()
             ax.set_xlabel(r'$\log_2(N_p)$', fontsize=12)
-            ax.set_ylabel(r'$\frac{\mathrm{J}}{\mathrm{run}}$', fontsize=12)
+            if method == 0:
+                ax.set_ylabel(r'$\frac{\mathrm{J}}{\mathrm{run}}$', fontsize=12)
             ax.set_title(['Predict', 'Update', 'Resample'][method])
 
     fig.suptitle('Energy per run')
