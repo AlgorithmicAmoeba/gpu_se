@@ -579,28 +579,32 @@ def plot_max_auto():
     """
     run_seqss = cpu_gpu_run_seqs()
 
+    fig, axes = plt.subplots(2, 3, sharey='row')
     for row in range(2):
         for col in range(3):
-            plt.subplot(2, 3, 3*row + col + 1)
+            ax = axes[row, col]
             N_parts, run_seqs = run_seqss[row][col]
             N_logs = numpy.log2(N_parts)
 
             for N_log, run_seq in zip(N_logs, run_seqs):
                 abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
-                plt.plot(N_log, numpy.max(abs_cors), 'kx')
-            plt.ylim(0, 1)
-            plt.xlim(0, 20)
-            plt.axhline(0.2, color='r')
-            plt.xlabel(r'$\log_2(N_p)$')
+                ax.plot(N_log, numpy.max(abs_cors), 'kx')
+            ax.set_ylim(0, 1)
+            ax.set_xlim(0, 20)
+            ax.axhline(0.2, color='r')
+            ax.set_xlabel(r'$\log_2(N_p)$')
 
             if row == 0:
-                plt.title(['Predict', 'Update', 'Resample'][col])
+                ax.set_title(['Predict', 'Update', 'Resample'][col])
 
             if row == 0 and col == 0:
-                plt.ylabel('CPU', rotation=0)
+                ax.set_ylabel('CPU', rotation=0)
 
             if col == 0 and row == 1:
-                plt.ylabel('GPU', rotation=0)
+                ax.set_ylabel('GPU', rotation=0)
+    fig.suptitle('Maximum autocorrelation values')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('max_autocorrelation.pdf')
     plt.show()
 
 
@@ -697,18 +701,23 @@ def plot_sub_routine_max_auto():
         'cumsum', 'Nicely algorithm', 'Index copying'
      ]
 
+    fig, axes = plt.subplots(3, 3, sharey='row', sharex='col')
     for i, (N_parts, run_seqs) in enumerate(run_seqss):
-        plt.subplot(3, 3, i+1)
+        ax = axes.flatten()[i]
         N_logs = numpy.log2(N_parts)
 
         for N_log, run_seq in zip(N_logs, run_seqs):
             abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
-            plt.plot(N_log, numpy.max(abs_cors), 'kx')
-        plt.ylim(0, 1)
-        plt.xlim(0, 20)
-        plt.axhline(0.2, color='r')
-        plt.xlabel(r'$\log_2(N_p)$')
-        plt.title(names[i])
+            ax.plot(N_log, numpy.max(abs_cors), 'kx')
+        ax.set_ylim(0, 1)
+        ax.set_xlim(0, 20)
+        ax.axhline(0.2, color='r')
+        if i > 5:
+            ax.set_xlabel(r'$\log_2(N_p)$')
+        ax.set_title(names[i])
+    fig.suptitle('Maximum autocorrelation values')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('max_autocorrelation_subroutine.pdf')
     plt.show()
 
 
@@ -759,13 +768,20 @@ def plot_sub_routine_fractions():
 
         total_times = numpy.zeros_like(N_parts)
         for func_indx in func_indxs:
-            total_times += numpy.min(abs(func_seqss[func_indx][1]), axis=1)
+            total_times += numpy.average(abs(func_seqss[func_indx][1]), axis=1)
 
         bottom = None
-        for func_indx in func_indxs:
-            times = numpy.min(abs(func_seqss[func_indx][1]), axis=1)
+        for j, func_indx in enumerate(func_indxs):
+            times = numpy.average(abs(func_seqss[func_indx][1]), axis=1)
             frac_times = times / total_times
-            plt.bar(logN_part, frac_times, width=0.55, bottom=bottom, label=names[func_indx])
+            plt.bar(
+                logN_part,
+                frac_times,
+                width=0.55,
+                bottom=bottom,
+                label=names[func_indx],
+                color=['#292929', '#c2c2c2', '#808080'][j]
+            )
             if bottom is None:
                 bottom = frac_times
             else:
@@ -782,11 +798,9 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    # plot_sub_routine_max_auto()
-    # plot_sub_routine_fractions()
+    plot_sub_routine_fractions()
     # plot_example_benchmark()
-
-    # pf_sub_routine_run_seqs()
+    # plot_sub_routine_max_auto()
     # plot_max_auto()
-    plot_times()
-    plot_speed_up()
+    # plot_times()
+    # plot_speed_up()
