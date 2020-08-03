@@ -160,7 +160,7 @@ def cpu_gpu_power_seqs():
     power_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; power_seq]
     """
-    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(1, 20, 0.5)])
+    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(1, 24, 0.5)])
     N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(1, 24, 0.5)])
     power_seqss = [
         [
@@ -179,14 +179,13 @@ def cpu_gpu_power_seqs():
 
 def plot_energy_per_run():
     powerss = cpu_gpu_power_seqs()
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(10, 5), sharey=True)
     plt.rcParams.update({'font.size': 12})
 
     for cpu_gpu in range(2):
-
-        ax = axes[cpu_gpu]
-
         for method in range(3):
+            ax = axes[method]
+
             N_parts, powers = powerss[cpu_gpu][method]
             N_logs = numpy.log2(N_parts)
             total_power = powers[:, 0]
@@ -197,12 +196,12 @@ def plot_energy_per_run():
                 N_logs,
                 total_power,
                 '.',
-                label=['Predict', 'Update', 'Resample'][method]
+                label=['CPU', 'GPU'][cpu_gpu]
             )
-        ax.legend()
-        ax.set_xlabel(r'$\log_2(N_p)$', fontsize=12)
-        ax.set_ylabel(r'$\frac{W}{\mathrm{run}}$', fontsize=12)
-        ax.set_title(['CPU', 'GPU'][cpu_gpu])
+            ax.legend()
+            ax.set_xlabel(r'$\log_2(N_p)$', fontsize=12)
+            ax.set_ylabel(r'$\frac{\mathrm{J}}{\mathrm{run}}$', fontsize=12)
+            ax.set_title(['Predict', 'Update', 'Resample'][method])
 
     fig.suptitle('Energy per run')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
