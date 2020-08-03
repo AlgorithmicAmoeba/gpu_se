@@ -13,9 +13,20 @@ import filter.particle
 
 
 class RunSequences:
+    """A class to manage run sequences for functions.
+    Specifically designed to allow vectorization of the process
+
+    Parameters
+    ----------
+    function : callable
+        The function to be vectorized/managed
+
+    path : string
+        Location where joblib cache should be recalled and saved to
+    """
     def __init__(self, function, path='cache/'):
-        self.memory = joblib.Memory(path + function.__name__)
-        self.function = self.memory.cache(function)
+        self._memory = joblib.Memory(path + function.__name__)
+        self.function = self._memory.cache(function)
 
     def __call__(self, N_particles, N_runs, *args, **kwargs):
         run_seqs = numpy.array(
@@ -25,15 +36,53 @@ class RunSequences:
         return N_particles, run_seqs
 
     def clear(self, *args):
+        """Clears the stored result of the function with the arguments given
+
+        Parameters
+        ----------
+        args : tuple
+            Arguments of the function
+        """
         self.function.call_and_shelve(*args).clear()
 
     @staticmethod
     def vectorize(function):
+        """Decorator function that creates a callable RunSequences class
+
+        Parameters
+        ----------
+        function : function to be vectorized/managed
+
+        Returns
+        -------
+        rs : RunSequences
+            The RunSequences object that handles vectorized calls
+        """
         return RunSequences(function)
 
 
 @RunSequences.vectorize
 def predict_run_seq(N_particle, N_runs, gpu):
+    """Performs a run sequence on the prediction function with the given number
+    of particle and number of runs on the CPU or GPU
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    gpu : bool
+        If `True` then the GPU implementation is used.
+        Otherwise, the CPU implementation is used
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -52,6 +101,26 @@ def predict_run_seq(N_particle, N_runs, gpu):
 
 @RunSequences.vectorize
 def update_run_seq(N_particle, N_runs, gpu):
+    """Performs a run sequence on the update function with the given number
+    of particle and number of runs on the CPU or GPU
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    gpu : bool
+        If `True` then the GPU implementation is used.
+        Otherwise, the CPU implementation is used
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -70,6 +139,26 @@ def update_run_seq(N_particle, N_runs, gpu):
 
 @RunSequences.vectorize
 def resample_run_seq(N_particle, N_runs, gpu):
+    """Performs a run sequence on the resample function with the given number
+    of particle and number of runs on the CPU or GPU
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    gpu : bool
+        If `True` then the GPU implementation is used.
+        Otherwise, the CPU implementation is used
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -89,6 +178,26 @@ def resample_run_seq(N_particle, N_runs, gpu):
 
 @RunSequences.vectorize
 def f_vectorize_run_seq(N_particle, N_runs, mem_gpu):
+    """Performs a run sequence on the f_vectorize function with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    mem_gpu : bool
+        If `True` then the GPU memory is used.
+        Otherwise, the CPU memory is used
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -109,6 +218,26 @@ def f_vectorize_run_seq(N_particle, N_runs, mem_gpu):
 
 @RunSequences.vectorize
 def g_vectorize_run_seq(N_particle, N_runs, mem_gpu):
+    """Performs a run sequence on the g_vectorize function with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    mem_gpu : bool
+        If `True` then the GPU memory is used.
+        Otherwise, the CPU memory is used
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -130,6 +259,22 @@ def g_vectorize_run_seq(N_particle, N_runs, mem_gpu):
 
 @RunSequences.vectorize
 def state_pdf_draw_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the state_pdf.draw() function with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -147,6 +292,22 @@ def state_pdf_draw_run_seq(N_particle, N_runs):
 
 @RunSequences.vectorize
 def measurement_pdf_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the measurement_pdf.draw() function with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -166,6 +327,22 @@ def measurement_pdf_run_seq(N_particle, N_runs):
 
 @RunSequences.vectorize
 def cumsum_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the cumsum subpart with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -189,6 +366,22 @@ def cumsum_run_seq(N_particle, N_runs):
 # noinspection PyProtectedMember
 @RunSequences.vectorize
 def parallel_resample_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the Nicely resample subpart with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -220,6 +413,22 @@ def parallel_resample_run_seq(N_particle, N_runs):
 # noinspection PyProtectedMember
 @RunSequences.vectorize
 def index_copying_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the index copying subpart with the given number
+    of particle and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     _, _, _, p = sim_base.get_parts(
@@ -253,6 +462,22 @@ def index_copying_run_seq(N_particle, N_runs):
 
 @RunSequences.vectorize
 def no_op_run_seq(N_time, N_runs):
+    """Performs a run sequence on a no-op routine with the given sleep time
+     and number of runs
+
+    Parameters
+    ----------
+    N_time : float
+        Sleep time
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
     times = []
 
     for _ in tqdm.tqdm(range(N_runs)):
@@ -264,7 +489,7 @@ def no_op_run_seq(N_time, N_runs):
 
 
 def cpu_gpu_run_seqs():
-    """Returns the run sequences for all the runs
+    """Returns the run sequences for the predict, update and resample method
 
     Returns
     -------
@@ -289,6 +514,13 @@ def cpu_gpu_run_seqs():
 
 
 def pf_sub_routine_run_seqs():
+    """Returns the run sequences for the subroutines
+
+    Returns
+    -------
+    run_seqss : List
+        [subroutines; N_particles; run_seq]
+    """
     N_particles = 2**numpy.arange(1, 24, 0.5)
     f_vec_gpu_mem = lambda x, y: f_vectorize_run_seq(x, y, True)
     f_vec_cpu_mem = lambda x, y: f_vectorize_run_seq(x, y, False)
@@ -307,7 +539,10 @@ def pf_sub_routine_run_seqs():
 
 
 def plot_example_benchmark():
-    N_times = [10]  # numpy.logspace(1e-3, 10, 30)
+    """Plot the no_op run sequence, lag chart and autocorrelation graphs
+    """
+    N_times = numpy.array([10.])
+    # noinspection PyTypeChecker
     N_times, run_seqs = no_op_run_seq(N_times, 100)
     run_seq = run_seqs[-1]
 
@@ -340,6 +575,8 @@ def plot_example_benchmark():
 
 
 def plot_max_auto():
+    """Plot the maximum autocorrelation for the predict, update and resample run sequences
+    """
     run_seqss = cpu_gpu_run_seqs()
 
     for row in range(2):
@@ -369,6 +606,8 @@ def plot_max_auto():
 
 # noinspection PyUnresolvedReferences
 def plot_run_seqs():
+    """Plot the run sequences for predict, update and resample functions
+    """
     run_seqss = cpu_gpu_run_seqs()
 
     cmap = matplotlib.cm.get_cmap('Spectral')
@@ -397,6 +636,9 @@ def plot_run_seqs():
 
 
 def plot_speed_up():
+    """Plot the speed-up between CPU and GPU implementations
+     for predict, update and resample functions
+    """
     run_seqss = cpu_gpu_run_seqs()
 
     for method in range(3):
@@ -419,6 +661,9 @@ def plot_speed_up():
 
 
 def plot_times():
+    """Plot the run times of CPU and GPU implementations
+     for predict, update and resample functions
+    """
     run_seqss = cpu_gpu_run_seqs()
 
     fig, axes = plt.subplots(1, 3, sharey='all', figsize=(15, 5))
@@ -442,6 +687,9 @@ def plot_times():
 
 
 def plot_sub_routine_max_auto():
+    """Plot the autocorrelation of GPU implementation subroutines used in
+     predict, update and resample functions
+    """
     run_seqss = pf_sub_routine_run_seqs()
     names = [
         'f (GPU memory)', 'f (CPU memory)', 'State noise - draw',
@@ -465,6 +713,9 @@ def plot_sub_routine_max_auto():
 
 
 def plot_sub_routine_times():
+    """Plot the run times of GPU implementation subroutines used in
+     predict, update and resample functions
+    """
     names = [
         'f', 'f (memory copy)', 'State noise - draw',
         'g', 'g ((memory copy)', 'Measurement noise - pdf',
@@ -478,7 +729,7 @@ def plot_sub_routine_times():
 
     for i, (N_parts, run_seqs) in enumerate(run_seqss):
         plt.subplot(3, 3, i + 1)
-        times = numpy.max(run_seqs, axis=1)
+        times = numpy.min(run_seqs, axis=1)
         logN_part = numpy.log2(N_parts)
         plt.semilogy(logN_part, times, '.')
         plt.title(names[i])
@@ -487,6 +738,9 @@ def plot_sub_routine_times():
 
 
 def plot_sub_routine_fractions():
+    """Plot the run time fractions of GPU implementation subroutines used in
+     predict, update and resample functions
+    """
     names = [
         'f', 'f (memory copy)', 'State noise - draw',
         'g', 'g (memory copy)', 'Measurement noise - pdf',
@@ -505,11 +759,11 @@ def plot_sub_routine_fractions():
 
         total_times = numpy.zeros_like(N_parts)
         for func_indx in func_indxs:
-            total_times += numpy.average(abs(func_seqss[func_indx][1]), axis=1)
+            total_times += numpy.min(abs(func_seqss[func_indx][1]), axis=1)
 
         bottom = None
         for func_indx in func_indxs:
-            times = numpy.average(abs(func_seqss[func_indx][1]), axis=1)
+            times = numpy.min(abs(func_seqss[func_indx][1]), axis=1)
             frac_times = times / total_times
             plt.bar(logN_part, frac_times, width=0.55, bottom=bottom, label=names[func_indx])
             if bottom is None:
