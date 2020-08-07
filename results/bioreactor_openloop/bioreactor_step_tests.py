@@ -8,7 +8,7 @@ import warnings
 import matplotlib
 warnings.filterwarnings("ignore", category=matplotlib.MatplotlibDeprecationWarning)
 
-memory = joblib.Memory('cache/')
+memory = joblib.Memory('cache/step_test/')
 
 
 @memory.cache
