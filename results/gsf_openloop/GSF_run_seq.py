@@ -759,7 +759,6 @@ def no_op_run_seq(N_time, N_runs):
 
     for _ in tqdm.tqdm(range(N_runs)):
         t = time.time()
-        time.sleep(N_time)
         times.append(time.time() - t)
 
     return numpy.array(times)
@@ -1044,9 +1043,10 @@ def plot_sub_routine_fractions():
 
     func_seqss = pf_sub_routine_run_seqs()
 
-    func_seqss[2] = (func_seqss[2][0], func_seqss[2][1] - func_seqss[1][1])
-    func_seqss[7] = (func_seqss[7][0], func_seqss[7][1] - func_seqss[6][1])
-    func_seqss[11] = (func_seqss[11][0], func_seqss[11][1] - func_seqss[10][1])
+    for i in [2, 7, 11]:
+        vals = func_seqss[i][1] - func_seqss[i-1][1]
+        vals[vals < 0] = numpy.NaN
+        func_seqss[i] = (func_seqss[i][0], vals)
 
     plt.figure(figsize=(15, 5))
     for i, func_indxs in enumerate([
@@ -1060,16 +1060,16 @@ def plot_sub_routine_fractions():
 
         total_times = numpy.zeros_like(N_parts, dtype=numpy.float)
         for func_indx in func_indxs:
-            total_times += numpy.min(abs(func_seqss[func_indx][1]), axis=1)
+            total_times += numpy.nanmin(func_seqss[func_indx][1], axis=1)
 
         bottom = None
         for j, func_indx in enumerate(func_indxs):
-            times = numpy.min(abs(func_seqss[func_indx][1]), axis=1)
+            times = numpy.nanmin(func_seqss[func_indx][1], axis=1)
             frac_times = times / total_times
             plt.bar(
                 logN_part,
                 frac_times,
-                width=0.55,
+                width=1.0,
                 bottom=bottom,
                 label=names[func_indx],
                 # color=['#292929', '#c2c2c2', '#808080'][j]
@@ -1091,8 +1091,9 @@ def plot_sub_routine_fractions():
 
 if __name__ == '__main__':
     plot_sub_routine_fractions()
-    # plot_example_benchmark()
-    # plot_sub_routine_max_auto()
+    plot_example_benchmark()
+    # plot_sub_rls
+    # outine_max_auto()
     # plot_max_auto()
     # plot_times()
     # plot_speed_up()
