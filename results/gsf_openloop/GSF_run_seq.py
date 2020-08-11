@@ -709,38 +709,6 @@ def plot_times():
     plt.show()
 
 
-def plot_sub_routine_max_auto():
-    """Plot the autocorrelation of GPU implementation subroutines used in
-     predict, update and resample functions
-    """
-    run_seqss = pf_sub_routine_run_seqs()
-    names = [
-        'sigma points', 'f (GPU memory)', 'f (CPU memory)', 'State noise - draw',
-        'means', 'covariances', 'g sigmas (GPU memory)', 'g sigmas (CPU memory)',
-        'Kalman gain', 'Kalman update', 'g means (GPU memory)', 'g means (CPU memory)',
-        'Measurement noise - pdf', 'cumsum', 'Nicely algorithm', 'Index copying'
-     ]
-
-    fig, axes = plt.subplots(3, 3, sharey='row', sharex='col')
-    for i, (N_parts, run_seqs) in enumerate(run_seqss):
-        ax = axes.flatten()[i]
-        N_logs = numpy.log2(N_parts)
-
-        for N_log, run_seq in zip(N_logs, run_seqs):
-            abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
-            ax.plot(N_log, numpy.max(abs_cors), 'kx')
-        ax.set_ylim(0, 1)
-        ax.set_xlim(0, 20)
-        ax.axhline(0.2, color='r')
-        if i > 5:
-            ax.set_xlabel(r'$\log_2(N_p)$')
-        ax.set_title(names[i])
-    fig.suptitle('Maximum autocorrelation values')
-    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('max_autocorrelation_subroutine.pdf')
-    plt.show()
-
-
 def plot_sub_routine_fractions():
     """Plot the run time fractions of GPU implementation subroutines used in
      predict, update and resample functions
