@@ -758,10 +758,57 @@ def no_op_run_seq(N_time, N_runs):
     times = []
 
     for _ in tqdm.tqdm(range(N_runs)):
+        time.sleep(N_time)
         t = time.time()
         times.append(time.time() - t)
 
     return numpy.array(times)
+
+
+@RunSequences.vectorize
+def time_time_run_seq(N_time, N_runs):
+    """Performs a run sequence on the time.time() function with the given sleep time
+     and number of runs
+
+    Parameters
+    ----------
+    N_time : float
+        Sleep time
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
+    times = []
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        time.sleep(N_time)
+        t = time.time()
+        time.time()
+        times.append(time.time() - t)
+
+    return numpy.array(times)
+
+
+# noinspection PyTypeChecker
+def example_run_seqs():
+    """Returns the run sequences for the no_op and time.time() methods
+
+    Returns
+    -------
+    run_seqss : List
+        [no_op; time_time] x [N_particles; run_seq]
+    """
+    N_times = numpy.array([0.])
+    run_seqss = [
+        no_op_run_seq(N_times, 100),
+        time_time_run_seq(N_times, 100)
+    ]
+    return run_seqss
 
 
 # noinspection PyTypeChecker
@@ -822,34 +869,38 @@ def pf_sub_routine_run_seqs():
 def plot_example_benchmark():
     """Plot the no_op run sequence, lag chart and autocorrelation graphs
     """
-    N_times = numpy.array([10.])
-    # noinspection PyTypeChecker
-    N_times, run_seqs = no_op_run_seq(N_times, 100)
-    run_seq = run_seqs[-1]
 
-    print(N_times[-1])
+    run_seqss = example_run_seqs()
 
-    plt.figure(figsize=(15, 5))
-    plt.subplot(1, 3, 1)
-    plt.semilogy(run_seq, 'kx')
-    plt.title('Run sequence')
-    plt.xlabel('Iterations')
-    plt.ylabel('Time (s)')
+    fig, axes = plt.subplots(2, 3, sharex='col')
+    for i, (N_time, run_seqs) in enumerate(run_seqss):
+        run_seq = run_seqs[0, :]
+        ax = axes[i][0]
+        ax.plot(run_seq, 'kx')
+        if i == 0:
+            ax.set_title('Run sequence')
+        else:
+            ax.set_xlabel('Iterations')
+        ax.set_ylabel('Time (s)')
 
-    plt.subplot(1, 3, 2)
-    plt.plot(run_seq[:-1], run_seq[1:], 'kx')
-    plt.title('Lag chart')
-    plt.xlabel(r'$X_{i-1}$')
-    plt.ylabel(r'$X_{i}$')
+        ax = axes[i][1]
+        ax.plot(run_seq[:-1], run_seq[1:], 'kx')
+        if i == 0:
+            ax.set_title('Lag chart')
+        else:
+            ax.set_xlabel(r'$X_{i-1}$')
+        ax.set_ylabel(r'$X_{i}$')
 
-    plt.subplot(1, 3, 3)
-    abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
-    plt.plot(abs_cors, 'kx')
-    plt.title('Autocorrelation graph')
-    plt.xlabel('Lag')
-    plt.ylabel('Autocorrelation')
+        ax = axes[i][2]
+        abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
+        ax.plot(abs_cors, 'kx')
+        if i == 0:
+            ax.set_title('Autocorrelation graph')
+        else:
+            ax.set_xlabel('Lag')
+        ax.set_ylabel('Autocorrelation')
 
-    plt.suptitle(r'Benchmarking for CPU update with $N_p = 2^{19.5}$')
+    plt.suptitle(r'Benchmarking for no-op and time.time()')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('benchmark.pdf')
     plt.show()
@@ -941,7 +992,7 @@ def plot_speed_up():
     plt.xlim(xmin=1, xmax=19.5)
     plt.axhline(1, color='black', alpha=0.4)
     plt.tight_layout()
-    plt.savefig('PF_speedup.pdf')
+    plt.savefig('GSF_speedup.pdf')
     plt.show()
 
 
@@ -1090,7 +1141,7 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    plot_sub_routine_fractions()
+    # plot_sub_routine_fractions()
     plot_example_benchmark()
     # plot_sub_rls
     # outine_max_auto()
