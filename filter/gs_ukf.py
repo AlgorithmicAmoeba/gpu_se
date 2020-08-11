@@ -275,7 +275,7 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
 
     @staticmethod
     @cuda.jit
-    def __parallel_resample(cumsum, sample_index, random_number, N_particles):
+    def _parallel_resample(cumsum, sample_index, random_number, N_particles):
         """Implements the parallel aspect of the
         systematic resampling algorithm by Nicely
 
@@ -409,7 +409,7 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
             threads_per_block = 32 * div_32
             blocks_per_grid = 1
 
-        ParallelGaussianSumUnscentedKalmanFilter.__parallel_resample[blocks_per_grid, threads_per_block](
+        ParallelGaussianSumUnscentedKalmanFilter._parallel_resample[blocks_per_grid, threads_per_block](
             cumsum, sample_index, random_number, self.N_particles
         )
 
