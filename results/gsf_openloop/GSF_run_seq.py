@@ -769,8 +769,6 @@ def plot_sub_routine_fractions():
 if __name__ == '__main__':
     plot_sub_routine_fractions()
     # plot_example_benchmark()
-    # plot_sub_rls
-    # outine_max_auto()
     # plot_max_auto()
     # plot_times()
     # plot_speed_up()
