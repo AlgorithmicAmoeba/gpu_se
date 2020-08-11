@@ -10,6 +10,7 @@ import statsmodels.tsa.stattools as stats_tools
 import torch
 import torch.utils.dlpack as torch_dlpack
 import filter.particle
+import filter.gs_ukf
 
 
 class RunSequences:
@@ -215,6 +216,209 @@ def sigma_points_run_seq(N_particle, N_runs):
         times.append(time.time() - t)
 
     return numpy.array(times)
+
+
+# noinspection PyProtectedMember
+@RunSequences.vectorize
+def predict_subs_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the prediction function's subroutines
+     with the given number of particles and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
+    timess = []
+
+    _, _, _, gsf = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True,
+        pf=False
+    )
+
+    dt = 1.
+    for _ in tqdm.tqdm(range(N_runs)):
+        u, _ = sim_base.get_random_io()
+        gsf.predict(u, 1.)
+
+        times = []
+        t = time.time()
+        sigmas = gsf._get_sigma_points()
+        times.append(time.time() - t)
+
+        # Move the sigma points through the state transition function
+        u = cupy.asarray(u)
+        times.append(time.time() - times[-1])
+
+        sigmas += gsf.f_vectorize(sigmas, u, dt)
+        times.append(time.time() - times[-1])
+
+        sigmas += gsf.state_pdf.draw((gsf.N_particles, gsf._N_sigmas))
+        times.append(time.time() - times[-1])
+
+        gsf.means = cupy.average(sigmas, axis=1, weights=gsf._w_sigma)
+        times.append(time.time() - times[-1])
+
+        sigmas -= gsf.means[:, None, :]
+        gsf.covariances = sigmas.swapaxes(1, 2) @ (sigmas * gsf._w_sigma[:, None])
+        times.append(time.time() - times[-1])
+
+        timess.append(times)
+
+    return numpy.array(timess)
+
+
+# noinspection PyProtectedMember
+@RunSequences.vectorize
+def update_subs_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the update function's subroutines
+     with the given number of particles and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
+    timess = []
+
+    _, _, _, gsf = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True,
+        pf=False
+    )
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        u, z = sim_base.get_random_io()
+        gsf.predict(u, 1.)
+
+        times = []
+        t = time.time()
+        # Local Update
+        sigmas = gsf._get_sigma_points()
+        times.append(time.time() - t)
+
+        # Move the sigma points through the state observation function
+        u = cupy.asarray(u)
+        times.append(time.time() - times[-1])
+
+        etas = gsf.g_vectorize(sigmas, u, gsf._y_dummy)
+        times.append(time.time() - times[-1])
+
+        # Compute the Kalman gain
+        eta_means = cupy.average(etas, axis=1, weights=gsf._w_sigma)
+        sigmas -= gsf.means[:, None, :]
+        etas -= eta_means[:, None, :]
+
+        P_xys = sigmas.swapaxes(1, 2) @ (etas * gsf._w_sigma[:, None])
+        P_yys = etas.swapaxes(1, 2) @ (etas * gsf._w_sigma[:, None])
+        P_yy_invs = cupy.linalg.inv(P_yys)
+        Ks = P_xys @ P_yy_invs
+        times.append(time.time() - times[-1])
+
+        # Use the gain to update the means and covariances
+        z = cupy.asarray(z, dtype=cupy.float32)
+        times.append(time.time() - times[-1])
+
+        es = z - eta_means
+        gsf.means += (Ks @ es[:, :, None]).squeeze()
+        # Dimensions from paper do not work, use corrected version
+        gsf.covariances -= Ks @ P_yys @ Ks.swapaxes(1, 2)
+        times.append(time.time() - times[-1])
+
+        # Global Update
+        # Move the means through the state observation function
+        y_means = gsf.g_vectorize(gsf.means, u, gsf._y_dummy)
+        times.append(time.time() - times[-1])
+
+        glob_es = z - y_means
+        gsf.weights *= gsf.measurement_pdf.pdf(glob_es)
+        times.append(time.time() - times[-1])
+
+        timess.append(times)
+
+    return numpy.array(timess)
+
+
+# noinspection PyProtectedMember
+@RunSequences.vectorize
+def resample_subs_run_seq(N_particle, N_runs):
+    """Performs a run sequence on the resample function's subroutines
+     with the given number of particles and number of runs
+
+    Parameters
+    ----------
+    N_particle : int
+        Number of particles
+
+    N_runs : int
+        Number of runs in the sequence
+
+    Returns
+    -------
+    times : numpy.array
+        The times of the run sequence
+    """
+    timess = []
+
+    _, _, _, gsf = sim_base.get_parts(
+        N_particles=N_particle,
+        gpu=True,
+        pf=False
+    )
+
+    for _ in tqdm.tqdm(range(N_runs)):
+        u, z = sim_base.get_random_io()
+        gsf.predict(u, 1.)
+
+        times = []
+        t = time.time()
+        t_weights = torch_dlpack.from_dlpack(cupy.asarray(gsf.weights).toDlpack())
+        t_cumsum = torch.cumsum(t_weights, 0)
+        cumsum = cupy.fromDlpack(torch_dlpack.to_dlpack(t_cumsum))
+        cumsum /= cumsum[-1]
+        times.append(time.time() - t)
+
+        sample_index = cupy.zeros(gsf.N_particles, dtype=cupy.int64)
+        random_number = cupy.float64(cupy.random.rand())
+
+        if gsf.N_particles >= 1024:
+            threads_per_block = 1024
+            blocks_per_grid = (gsf.N_particles - 1) // threads_per_block + 1
+        else:
+            div_32 = (gsf.N_particles - 1) // 32 + 1
+            threads_per_block = 32 * div_32
+            blocks_per_grid = 1
+
+        filter.gs_ukf.ParallelGaussianSumUnscentedKalmanFilter._parallel_resample[blocks_per_grid, threads_per_block](
+            cumsum, sample_index, random_number, gsf.N_particles
+        )
+        times.append(time.time() - t)
+
+        gsf.means = cupy.asarray(gsf.means)[sample_index]
+        gsf.covariances = cupy.asarray(gsf.covariances)[sample_index]
+        gsf.weights = cupy.full(gsf.N_particles, 1 / gsf.N_particles)
+        times.append(time.time() - times[-1])
+
+        timess.append(times)
+
+    return numpy.array(timess)
 
 
 @RunSequences.vectorize
@@ -833,6 +1037,24 @@ def cpu_gpu_run_seqs():
             update_run_seq(N_particles_gpu, 100, True),
             resample_run_seq(N_particles_gpu, 100, True)
         ]
+    ]
+    return run_seqss
+
+
+# noinspection PyTypeChecker
+def gpu_subs_run_seqs():
+    """Returns the run sequences for the predict, update and resample subroutines
+
+    Returns
+    -------
+    run_seqss : List
+        [predict; update; resample] x [N_particles; run_seq]
+    """
+    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(1, 19, 0.5)])
+    run_seqss = [
+        predict_subs_run_seq(N_particles_gpu, 100),
+        update_subs_run_seq(N_particles_gpu, 100),
+        resample_subs_run_seq(N_particles_gpu, 100)
     ]
     return run_seqss
 
