@@ -256,21 +256,26 @@ def predict_subs_run_seq(N_particle, N_runs):
         times.append(time.time() - t)
 
         # Move the sigma points through the state transition function
+        t = time.time()
         u = cupy.asarray(u)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         sigmas += gsf.f_vectorize(sigmas, u, dt)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         sigmas += gsf.state_pdf.draw((gsf.N_particles, gsf._N_sigmas))
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         gsf.means = cupy.average(sigmas, axis=1, weights=gsf._w_sigma)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         sigmas -= gsf.means[:, None, :]
         gsf.covariances = sigmas.swapaxes(1, 2) @ (sigmas * gsf._w_sigma[:, None])
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
         timess.append(times)
 
@@ -315,13 +320,16 @@ def update_subs_run_seq(N_particle, N_runs):
         times.append(time.time() - t)
 
         # Move the sigma points through the state observation function
+        t = time.time()
         u = cupy.asarray(u)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         etas = gsf.g_vectorize(sigmas, u, gsf._y_dummy)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
         # Compute the Kalman gain
+        t = time.time()
         eta_means = cupy.average(etas, axis=1, weights=gsf._w_sigma)
         sigmas -= gsf.means[:, None, :]
         etas -= eta_means[:, None, :]
@@ -330,26 +338,30 @@ def update_subs_run_seq(N_particle, N_runs):
         P_yys = etas.swapaxes(1, 2) @ (etas * gsf._w_sigma[:, None])
         P_yy_invs = cupy.linalg.inv(P_yys)
         Ks = P_xys @ P_yy_invs
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
         # Use the gain to update the means and covariances
+        t = time.time()
         z = cupy.asarray(z, dtype=cupy.float32)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         es = z - eta_means
         gsf.means += (Ks @ es[:, :, None]).squeeze()
         # Dimensions from paper do not work, use corrected version
         gsf.covariances -= Ks @ P_yys @ Ks.swapaxes(1, 2)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
         # Global Update
         # Move the means through the state observation function
+        t = time.time()
         y_means = gsf.g_vectorize(gsf.means, u, gsf._y_dummy)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
+        t = time.time()
         glob_es = z - y_means
         gsf.weights *= gsf.measurement_pdf.pdf(glob_es)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
         timess.append(times)
 
@@ -395,6 +407,7 @@ def resample_subs_run_seq(N_particle, N_runs):
         cumsum /= cumsum[-1]
         times.append(time.time() - t)
 
+        t = time.time()
         sample_index = cupy.zeros(gsf.N_particles, dtype=cupy.int64)
         random_number = cupy.float64(cupy.random.rand())
 
@@ -411,10 +424,11 @@ def resample_subs_run_seq(N_particle, N_runs):
         )
         times.append(time.time() - t)
 
+        t = time.time()
         gsf.means = cupy.asarray(gsf.means)[sample_index]
         gsf.covariances = cupy.asarray(gsf.covariances)[sample_index]
         gsf.weights = cupy.full(gsf.N_particles, 1 / gsf.N_particles)
-        times.append(time.time() - times[-1])
+        times.append(time.time() - t)
 
         timess.append(times)
 
@@ -1308,54 +1322,52 @@ def plot_sub_routine_fractions():
      predict, update and resample functions
     """
     names = [
-        'sigma points', 'f', 'f (memory copy)', 'State noise - draw',
-        'means', 'covariances', 'g sigmas', 'g sigmas (memory copy)',
-        'Kalman gain', 'Kalman update', 'g means ', 'g means (memory copy)',
-        'Measurement noise - pdf', 'cumsum', 'Nicely algorithm', 'Index copying'
+        [
+            'sigma points', 'f (memory copy)', 'f', 'State noise - draw',
+            'means', 'covariances'
+        ],
+        [
+            'sigma points', 'g sigmas (memory copy)', 'g sigmas',
+            'Kalman gain', 'g means (memory copy)', 'Kalman update', 'g means ',
+            'Measurement noise - pdf'
+        ],
+        [
+            'cumsum', 'Nicely algorithm', 'Index copying'
+        ]
     ]
 
-    func_seqss = pf_sub_routine_run_seqs()
+    func_seqss = gpu_subs_run_seqs()
 
-    for i in [2, 7, 11]:
-        vals = func_seqss[i][1] - func_seqss[i-1][1]
-        vals[vals < 0] = numpy.NaN
-        func_seqss[i] = (func_seqss[i][0], vals)
-
-    plt.figure(figsize=(15, 5))
-    for i, func_indxs in enumerate([
-        [0, 1, 2, 3, 4, 5],
-        [0, 6, 7, 8, 9, 10, 11, 12],
-        [13, 14, 15]
-    ]):
-        plt.subplot(1, 3, i+1)
-        N_parts = func_seqss[0][0]
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    for i in range(3):
+        ax = axes[i]
+        N_parts, func_seqs = func_seqss[i]
         logN_part = numpy.log2(N_parts)
 
-        total_times = numpy.zeros_like(N_parts, dtype=numpy.float)
-        for func_indx in func_indxs:
-            total_times += numpy.nanmin(func_seqss[func_indx][1], axis=1)
+        total_times = numpy.sum(numpy.nanmin(func_seqs, axis=1), axis=1)
 
         bottom = None
-        for j, func_indx in enumerate(func_indxs):
-            times = numpy.nanmin(func_seqss[func_indx][1], axis=1)
+        for j in range(func_seqs.shape[2]):
+            func_seq = func_seqs[:, :, j]
+            times = numpy.nanmin(func_seq, axis=1)
             frac_times = times / total_times
-            plt.bar(
+            ax.bar(
                 logN_part,
                 frac_times,
                 width=1.0,
                 bottom=bottom,
-                label=names[func_indx],
+                label=names[i][j],
                 # color=['#292929', '#c2c2c2', '#808080'][j]
             )
             if bottom is None:
                 bottom = frac_times
             else:
                 bottom += frac_times
-        plt.legend()
-        plt.title(['Predict', 'Update', 'Resample'][i])
+        ax.legend()
+        ax.set_title(['Predict', 'Update', 'Resample'][i])
         if i == 0:
-            plt.ylabel('Fraction of runtime')
-        plt.xlabel(r'$\log_2(N_p)$')
+            ax.set_ylabel('Fraction of runtime')
+        ax.set_xlabel(r'$\log_2(N_p)$')
 
     plt.tight_layout()
     plt.savefig('gsf_frac_breakdown.pdf')
@@ -1363,8 +1375,8 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    # plot_sub_routine_fractions()
-    plot_example_benchmark()
+    plot_sub_routine_fractions()
+    # plot_example_benchmark()
     # plot_sub_rls
     # outine_max_auto()
     # plot_max_auto()
