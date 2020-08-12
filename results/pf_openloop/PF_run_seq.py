@@ -9,7 +9,7 @@ import statsmodels.tsa.stattools as stats_tools
 import torch
 import torch.utils.dlpack as torch_dlpack
 import filter.particle
-from decorators import RunSequences
+from decorators import RunSequences, Pickler
 
 
 @RunSequences.vectorize
@@ -318,6 +318,7 @@ def no_op_run_seq(N_time, N_runs):
     return numpy.array(times)
 
 
+@Pickler.pickle_me
 def cpu_gpu_run_seqs():
     """Returns the run sequences for the predict, update and resample method
 
@@ -344,6 +345,7 @@ def cpu_gpu_run_seqs():
 
 
 # noinspection PyTypeChecker
+@Pickler.pickle_me
 def pf_sub_routine_run_seqs():
     """Returns the run sequences for the predict, update and resample subroutines
 
@@ -569,8 +571,7 @@ def plot_sub_routine_fractions():
 
 if __name__ == '__main__':
     plot_sub_routine_fractions()
-    # plot_example_benchmark()
-    # plot_sub_routine_max_auto()
-    # plot_max_auto()
-    # plot_times()
-    # plot_speed_up()
+    plot_example_benchmark()
+    plot_max_auto()
+    plot_times()
+    plot_speed_up()

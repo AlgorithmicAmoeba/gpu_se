@@ -6,6 +6,7 @@ import numpy
 import psutil
 import scipy.integrate
 import pickle
+import os
 
 
 class RunSequences:
@@ -207,17 +208,21 @@ class Pickler:
     def __init__(self, function, path='pickled/'):
         self.path = path + function.__name__
         self.function = function
+        try:
+            os.makedirs(self.path)
+        except FileExistsError:
+            pass
 
     def __call__(self, *args, **kwargs):
         # noinspection PyBroadException
         try:
             result = self.function(*args, **kwargs)
-            f = open(self.path+'.pickle', 'wb')
+            f = open(self.path + '/object.pickle', 'wb')
             pickle.dump(result, f)
             f.close()
             return result
         except:
-            f = open(self.path + '.pickle', 'rb')
+            f = open(self.path + '/object.pickle', 'rb')
             result = pickle.load(f)
             return result
 

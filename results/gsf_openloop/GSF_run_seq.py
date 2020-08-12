@@ -10,7 +10,7 @@ import torch
 import torch.utils.dlpack as torch_dlpack
 import filter.particle
 import filter.gs_ukf
-from decorators import RunSequences
+from decorators import RunSequences, Pickler
 
 
 @RunSequences.vectorize
@@ -444,6 +444,7 @@ def time_time_run_seq(N_time, N_runs):
 
 
 # noinspection PyTypeChecker
+@Pickler.pickle_me
 def example_run_seqs():
     """Returns the run sequences for the no_op and time.time() methods
 
@@ -461,6 +462,7 @@ def example_run_seqs():
 
 
 # noinspection PyTypeChecker
+@Pickler.pickle_me
 def cpu_gpu_run_seqs():
     """Returns the run sequences for the predict, update and resample method
 
@@ -487,6 +489,7 @@ def cpu_gpu_run_seqs():
 
 
 # noinspection PyTypeChecker
+@Pickler.pickle_me
 def pf_sub_routine_run_seqs():
     """Returns the run sequences for the predict, update and resample subroutines
 
@@ -718,8 +721,8 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    plot_sub_routine_fractions()
+    # plot_sub_routine_fractions()
     # plot_example_benchmark()
-    # plot_max_auto()
-    # plot_times()
-    # plot_speed_up()
+    plot_max_auto()
+    plot_times()
+    plot_speed_up()
