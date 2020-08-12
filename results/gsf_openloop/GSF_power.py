@@ -2,7 +2,7 @@ import numpy
 import matplotlib.pyplot as plt
 import sim_base
 import time
-from decorators import PowerMeasurement
+from decorators import PowerMeasurement, Pickler
 
 
 @PowerMeasurement.vectorize
@@ -150,6 +150,7 @@ def nothing_power_seq(N_particle, t_run):
 
 
 # noinspection PyTypeChecker
+@Pickler.pickle_me
 def cpu_gpu_power_seqs():
     """Returns the power sequences for all the runs
 
