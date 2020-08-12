@@ -4,62 +4,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 import tqdm
 import sim_base
-import joblib
 import cupy
 import statsmodels.tsa.stattools as stats_tools
 import torch
 import torch.utils.dlpack as torch_dlpack
 import filter.particle
 import filter.gs_ukf
-
-
-class RunSequences:
-    """A class to manage run sequences for functions.
-    Specifically designed to allow vectorization of the process
-
-    Parameters
-    ----------
-    function : callable
-        The function to be vectorized/managed
-
-    path : string
-        Location where joblib cache should be recalled and saved to
-    """
-    def __init__(self, function, path='cache/'):
-        self._memory = joblib.Memory(path + function.__name__)
-        self.function = self._memory.cache(function)
-
-    def __call__(self, N_particles, N_runs, *args, **kwargs):
-        run_seqs = numpy.array(
-            [self.function(N_particle, N_runs, *args, **kwargs) for N_particle in N_particles]
-        )
-
-        return N_particles, run_seqs
-
-    def clear(self, *args):
-        """Clears the stored result of the function with the arguments given
-
-        Parameters
-        ----------
-        args : tuple
-            Arguments of the function
-        """
-        self.function.call_and_shelve(*args).clear()
-
-    @staticmethod
-    def vectorize(function):
-        """Decorator function that creates a callable RunSequences class
-
-        Parameters
-        ----------
-        function : function to be vectorized/managed
-
-        Returns
-        -------
-        rs : RunSequences
-            The RunSequences object that handles vectorized calls
-        """
-        return RunSequences(function)
+from decorators import RunSequences
 
 
 @RunSequences.vectorize
