@@ -5,6 +5,7 @@ import joblib
 import numpy
 import psutil
 import scipy.integrate
+import pickle
 
 
 class RunSequences:
@@ -41,7 +42,7 @@ class RunSequences:
         self.function.call_and_shelve(*args).clear()
 
     @staticmethod
-    def vectorize(function):
+    def vectorize(function, *agrs, **kwargs):
         """Decorator function that creates a callable RunSequences class
 
         Parameters
@@ -53,7 +54,7 @@ class RunSequences:
         rs : RunSequences
             The RunSequences object that handles vectorized calls
         """
-        return RunSequences(function)
+        return RunSequences(function, *agrs, **kwargs)
 
 
 class PowerMeasurement:
@@ -130,7 +131,7 @@ class PowerMeasurement:
         self._particle_call.call_and_shelve(*args).clear()
 
     @staticmethod
-    def vectorize(function):
+    def vectorize(function, *agrs, **kwargs):
         """Decorator function that creates a callable PowerMeasurement class
 
         Parameters
@@ -142,7 +143,7 @@ class PowerMeasurement:
         pm : RunSequences
             The PowerMeasurement object that handles vectorized calls
         """
-        return PowerMeasurement(function)
+        return PowerMeasurement(function, *agrs, **kwargs)
 
     @staticmethod
     def get_GPU_power():
@@ -191,3 +192,35 @@ class PowerMeasurement:
             time.sleep(0.2)
 
         q.put(numpy.array([times, cpu_frac, gpu_power]))
+
+
+class Pickler:
+    """
+    Parameters
+    ----------
+    function : callable
+            The function to be managed
+
+    path : string, optional
+        Location where pickle cache should be recalled and saved to
+    """
+    def __init__(self, function, path='pickled/'):
+        self.path = path + function.__name__
+        self.function = function
+
+    def __call__(self, *args, **kwargs):
+        # noinspection PyBroadException
+        try:
+            result = self.function(*args, **kwargs)
+            f = open(self.path+'.pickle', 'wb')
+            pickle.dump(result, f)
+            f.close()
+            return result
+        except:
+            f = open(self.path + '.pickle', 'rb')
+            result = pickle.load(f)
+            return result
+
+    @staticmethod
+    def pickle_me(function, *args, **kwargs):
+        return Pickler(function, *args, **kwargs)
