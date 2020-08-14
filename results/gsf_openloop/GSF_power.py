@@ -77,6 +77,7 @@ def update_power_seq(N_particle, t_run, gpu):
         runs += 1
         u, y = sim_base.get_random_io()
         gsf.update(u, y)
+        gsf.weights /= 1e3
 
     return runs
 
