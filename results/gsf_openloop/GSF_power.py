@@ -114,8 +114,6 @@ def resample_power_seq(N_particle, t_run, gpu):
     runs = 0
     while time.time() - t < t_run:
         runs += 1
-        gsf.weights = numpy.random.random(size=gsf.N_particles)
-        gsf.weights /= numpy.sum(gsf.weights)
         gsf.resample()
 
     return runs
