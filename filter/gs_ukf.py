@@ -371,7 +371,7 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
 
         P_xys = sigmas.swapaxes(1, 2) @ (etas * self._w_sigma[:, None])
         P_yys = etas.swapaxes(1, 2) @ (etas * self._w_sigma[:, None])
-        P_yy_invs = cupy.linalg.pinv(P_yys)
+        P_yy_invs = cupy.linalg.inv(P_yys)
         Ks = P_xys @ P_yy_invs
 
         # Use the gain to update the means and covariances
