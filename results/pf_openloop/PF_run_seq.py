@@ -565,7 +565,7 @@ def plot_sub_routine_fractions():
         ax.set_xlabel(r'$\log_2(N_p)$')
 
     plt.tight_layout()
-    plt.savefig('gsf_frac_breakdown.pdf')
+    plt.savefig('pf_frac_breakdown.pdf')
     plt.show()
 
 
