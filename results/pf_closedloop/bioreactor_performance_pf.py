@@ -1,6 +1,7 @@
 import numpy
 import sim_base
 import model
+import joblib
 import sys
 import os
 sys.path.append(os.path.abspath('../pf_openloop'))
@@ -47,6 +48,10 @@ class TimeLookup:
         return time
 
 
+memory = joblib.Memory('cache/')
+
+
+@memory.cache
 def get_simulation_performance(N_particles, dt_control, dt_predict):
     # Simulation set-up
     end_time = 50
@@ -121,4 +126,3 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
     performance = sim_base.performance(ys_pf, lin_model.yd2n(K.ysp), ts)
 
     return performance, predict_count, update_count
-
