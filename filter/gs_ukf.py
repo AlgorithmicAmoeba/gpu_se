@@ -171,6 +171,10 @@ class GaussianSumUnscentedKalmanFilter:
         self.covariances = self.covariances[sample_index_result]
         self.weights = numpy.full(self.N_particles, 1 / self.N_particles)
 
+    def point_estimate(self):
+        """Returns the point estimate of the filter"""
+        return self.weights @ self.means
+
 
 class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter):
     """Gaussian Sum Unscented Kalman Filter class implemented to run on the GPU.
@@ -416,3 +420,7 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
         self.means = cupy.asarray(self.means)[sample_index]
         self.covariances = cupy.asarray(self.covariances)[sample_index]
         self.weights = cupy.full(self.N_particles, 1 / self.N_particles)
+
+    def point_estimate(self):
+        """Returns the point estimate of the filter"""
+        return (self.weights @ self.means).get()
