@@ -47,12 +47,12 @@ class TimeLookup:
         return time
 
 
-def get_simulation_performance(N_particles, dt_control=1):
+def get_simulation_performance(N_particles, dt_control, dt_predict):
     # Simulation set-up
     end_time = 50
     ts = numpy.linspace(0, end_time, end_time*10)
     dt = ts[1]
-    assert dt <= dt_control
+    assert dt <= dt_control and dt <= dt_predict
 
     bioreactor, lin_model, K, pf = sim_base.get_parts(
         dt_control=dt_control,
@@ -75,20 +75,28 @@ def get_simulation_performance(N_particles, dt_control=1):
 
     biass = []
 
-    t_next = 0
+    t_next_control, t_next_predict = 0, 0
+    predict_count, update_count = 0, 0
     for t in ts[1:]:
-        if t > t_next:
+        if t > t_next_predict:
+            pf.predict(us[-1], dt)
+            predict_count += 1
+            t_next_predict += dt_predict
+
+        if t > t_next_control:
             U_temp = us[-1].copy()
             if K.y_predicted is not None:
                 biass.append(lin_model.yn2d(ys_meas[-1]) - K.y_predicted)
 
             pf.update(us[-1], ys_meas[-1][lin_model.outputs])
             pf.resample()
+            update_count += 1
+
             x_pf = (pf.weights @ pf.particles).get()
             u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
             U_temp[lin_model.inputs] = lin_model.ud2n(u)
             us.append(U_temp.copy())
-            t_next += dt_control
+            t_next_control += dt_control
         else:
             us.append(us[-1])
 
@@ -100,11 +108,10 @@ def get_simulation_performance(N_particles, dt_control=1):
         ys_meas.append(outputs)
         xs.append(bioreactor.X.copy())
 
-        pf.predict(us[-1], dt)
         ys_pf.append(
             numpy.array(
                 model.Bioreactor.static_outputs(
-                    (pf.weights @ pf.particles).get(),
+                    pf.point_estimate(),
                     us[-1]
                 )
             )
@@ -113,4 +120,5 @@ def get_simulation_performance(N_particles, dt_control=1):
     ys_pf = numpy.array(ys_pf)
     performance = sim_base.performance(ys_pf, lin_model.yd2n(K.ysp), ts)
 
-    return
+    return performance, predict_count, update_count
+
