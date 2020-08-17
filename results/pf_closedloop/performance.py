@@ -21,7 +21,7 @@ def get_simulation_performance(N_particles, dt_control=1):
     state_pdf, measurement_pdf = sim_base.get_noise()
 
     # Initial values
-    us = [numpy.array([0.06, 5/180, 0.2])]
+    us = [numpy.array([0.06, 0.2])]
     xs = [bioreactor.X.copy()]
     ys = [bioreactor.outputs(us[-1])]
     ys_meas = [bioreactor.outputs(us[-1])]
