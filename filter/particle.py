@@ -102,6 +102,10 @@ class ParticleFilter:
         self.particles = self.particles[sample_index_result]
         self.weights = numpy.full(self.N_particles, 1 / self.N_particles)
 
+    def point_estimate(self):
+        """Returns the point estimate of the filter"""
+        return self.weights @ self.particles
+
 
 class ParallelParticleFilter(ParticleFilter):
     """Particle filter class implemented to run on the GPU.
@@ -300,3 +304,7 @@ class ParallelParticleFilter(ParticleFilter):
 
         self.particles = cupy.asarray(self.particles)[sample_index]
         self.weights = cupy.full(self.N_particles, 1 / self.N_particles)
+
+    def point_estimate(self):
+        """Returns the point estimate of the filter"""
+        return (self.weights @ self.particles).get()
