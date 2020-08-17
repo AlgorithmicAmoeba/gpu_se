@@ -27,7 +27,7 @@ def get_simulation_performance(N_particles, dt_control=1):
     ys_meas = [bioreactor.outputs(us[-1])]
     ys_pf = [
         model.Bioreactor.static_outputs(
-                (pf.weights @ pf.particles).get(),
+                pf.point_estimate(),
                 us[-1]
             )
     ]

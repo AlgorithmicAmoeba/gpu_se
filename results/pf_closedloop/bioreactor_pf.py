@@ -24,7 +24,7 @@ ys = [bioreactor.outputs(us[-1])]
 ys_meas = [bioreactor.outputs(us[-1])]
 ys_pf = [
     model.Bioreactor.static_outputs(
-            (pf.weights @ pf.particles).get(),
+            pf.point_estimate(),
             us[-1]
         )
 ]
