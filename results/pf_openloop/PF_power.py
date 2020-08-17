@@ -192,7 +192,7 @@ def plot_energy_per_run():
             ax.semilogy(
                 N_logs,
                 total_power,
-                '.',
+                ['k.', 'kx'][cpu_gpu],
                 label=['CPU', 'GPU'][cpu_gpu]
             )
             ax.legend()
