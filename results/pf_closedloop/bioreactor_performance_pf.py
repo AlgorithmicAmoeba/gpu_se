@@ -2,12 +2,13 @@ import numpy
 import sim_base
 import model
 import joblib
+import matplotlib.pyplot as plt
 import sys
 import os
 sys.path.append(os.path.abspath('../pf_openloop'))
-import PF_power
 # noinspection PyUnresolvedReferences
-import PF_run_seqs
+import PF_run_seq
+import PF_power
 
 
 class PowerLookup:
@@ -17,6 +18,30 @@ class PowerLookup:
         self.powerss = PF_power.cpu_gpu_power_seqs()
 
     def __call__(self, cpu_gpu, method, N_part=None):
+        """Looks up the run time for a specific method
+
+        Parameters
+        ----------
+        cpu_gpu : [0, 1]
+            0 - cpu; 1 - gpu
+
+        method : [0, 1, 2]
+            0 - predict; 1 - update; 2 - resample
+
+        N_part : int
+            Number of particles
+
+        Returns
+        -------
+        N_parts : numpy.array
+            An array of the numbers of particles
+
+        times : numpy.array
+            An array of the powers
+
+        time : float
+            The power used for the method
+        """
         N_parts, powers = self.powerss[cpu_gpu][method]
         total_power = powers[:, 0]
         if cpu_gpu:
@@ -34,9 +59,33 @@ class TimeLookup:
     """Looks up the amount of time a method uses.
     Prevents cpu_gpu_run_seqs from being called multiple times"""
     def __init__(self):
-        self.run_seqss = PF_run_seqs.cpu_gpu_run_seqs()
+        self.run_seqss = PF_run_seq.cpu_gpu_run_seqs()
 
     def __call__(self, cpu_gpu, method, N_part=None):
+        """Looks up the run time for a specific method
+
+        Parameters
+        ----------
+        cpu_gpu : [0, 1]
+            0 - cpu; 1 - gpu
+
+        method : [0, 1, 2]
+            0 - predict; 1 - update; 2 - resample
+
+        N_part : int
+            Number of particles
+
+        Returns
+        -------
+        N_parts : numpy.array
+            An array of the numbers of particles
+
+        times : numpy.array
+            An array of the run times
+
+        time : float
+            The time taken for the method
+        """
         N_parts, run_seqs = self.run_seqss[cpu_gpu][method]
         times = numpy.min(run_seqs, axis=1)
 
@@ -57,7 +106,6 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
     end_time = 50
     ts = numpy.linspace(0, end_time, end_time*10)
     dt = ts[1]
-    assert dt <= dt_control and dt <= dt_predict
 
     bioreactor, lin_model, K, pf = sim_base.get_parts(
         dt_control=dt_control,
@@ -71,9 +119,10 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
     xs = [bioreactor.X.copy()]
     ys = [bioreactor.outputs(us[-1])]
     ys_meas = [bioreactor.outputs(us[-1])]
+    xs_pf = [pf.point_estimate()]
     ys_pf = [
         model.Bioreactor.static_outputs(
-                (pf.weights @ pf.particles).get(),
+                pf.point_estimate(),
                 us[-1]
             )
     ]
@@ -97,8 +146,8 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
             pf.resample()
             update_count += 1
 
-            x_pf = (pf.weights @ pf.particles).get()
-            u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
+            xs_pf.append(pf.point_estimate())
+            u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
             U_temp[lin_model.inputs] = lin_model.ud2n(u)
             us.append(U_temp.copy())
             t_next_control += dt_control
@@ -126,3 +175,69 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
     performance = sim_base.performance(ys_pf, lin_model.yd2n(K.ysp), ts)
 
     return performance, predict_count, update_count
+
+
+def performance_per_joule():
+    run_seqss = PF_run_seq.cpu_gpu_run_seqs()
+    powerss = PF_power.cpu_gpu_power_seqs()
+
+    ppjs = []
+    for cpu_gpu in range(2):
+        dt_controls = numpy.min(run_seqss[cpu_gpu][0][1], axis=1)
+        dt_predicts = dt_controls.copy()
+        N_particles = run_seqss[cpu_gpu][0][0]
+        for method in range(1, 3):
+            _, run_seqs = run_seqss[cpu_gpu][method]
+            times = numpy.min(run_seqs, axis=1)
+            dt_controls += times
+
+        dt_controls = numpy.maximum(dt_controls, 1)
+        dt_predicts = numpy.maximum(dt_predicts, 0.1)
+
+        method_power = []
+        for method in range(3):
+            _, powers = powerss[cpu_gpu][method]
+            power = powers[:, 0]
+            if cpu_gpu:
+                power += powers[:, 1]
+
+            method_power.append(power)
+
+        ppj = []
+        for i in range(len(N_particles)):
+            while True:
+                # noinspection PyBroadException
+                try:
+                    performance, predict_count, update_count = get_simulation_performance(
+                        int(N_particles[i]),
+                        dt_controls[i],
+                        dt_predicts[i]
+                    )
+                    break
+                except:
+                    pass
+            predict_power, update_power, resample_power = [method_power[j][i] for j in range(3)]
+
+            total_power = predict_count * predict_power + update_count * (update_power + resample_power)
+            ppj.append((1/performance)/total_power)
+
+        ppjs.append(ppj)
+
+    N_particles = [run_seqss[0][0][0], run_seqss[1][0][0]]
+    ppjs = numpy.array(ppjs)
+
+    return N_particles, ppjs
+
+
+def plot_ppjs():
+    N_particles, ppjs = performance_per_joule()
+    plt.semilogy(numpy.log2(N_particles[0]), ppjs[0], 'k.', label='CPU')
+    plt.semilogy(numpy.log2(N_particles[1]), ppjs[1], 'kx', label='GPU')
+    plt.xlabel('$ \log_2(N) $ particles')
+    plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
+    plt.title('Performance per energy')
+    plt.legend()
+    plt.show()
+
+
+plot_ppjs()
