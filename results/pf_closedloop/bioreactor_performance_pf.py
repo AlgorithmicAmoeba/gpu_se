@@ -61,7 +61,11 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
             update_count += 1
 
             xs_pf.append(pf.point_estimate())
-            u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
+            # noinspection PyBroadException
+            try:
+                u = K.step(lin_model.xn2d(xs_pf[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
+            except:
+                u = numpy.array([0.06, 0.2])
             U_temp[lin_model.inputs] = lin_model.ud2n(u)
             us.append(U_temp.copy())
             t_next_control += dt_control
@@ -119,17 +123,12 @@ def performance_per_joule():
 
         ppj = []
         for i in range(len(N_particles)):
-            while True:
-                # noinspection PyBroadException
-                try:
-                    performance, predict_count, update_count = get_simulation_performance(
-                        int(N_particles[i]),
-                        dt_controls[i],
-                        dt_predicts[i]
-                    )
-                    break
-                except:
-                    pass
+            performance, predict_count, update_count = get_simulation_performance(
+                int(N_particles[i]),
+                dt_controls[i],
+                dt_predicts[i]
+            )
+
             predict_power, update_power, resample_power = [method_power[j][i] for j in range(3)]
 
             total_power = predict_count * predict_power + update_count * (update_power + resample_power)
