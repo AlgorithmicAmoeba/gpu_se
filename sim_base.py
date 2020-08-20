@@ -70,7 +70,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True, pf=True):
     # Controller
     K = controller.MPC(
         P=int(300//dt_control),
-        M=int(200//dt_control),
+        M=max(int(200//dt_control), 1),
         Q=numpy.diag([0.1, 1]),
         R=numpy.diag([1, 1]),
         lin_model=lin_model,
