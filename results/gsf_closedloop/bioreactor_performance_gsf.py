@@ -25,7 +25,7 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
     bioreactor, lin_model, K, gsf = sim_base.get_parts(
         dt_control=dt_control,
         N_particles=N_particles,
-        pf=False
+
     )
     state_pdf, measurement_pdf = sim_base.get_noise()
 
@@ -46,6 +46,7 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
 
     t_next_control, t_next_predict = 0, 0
     predict_count, update_count = 0, 0
+    mpc_converged, mpc_no_converged = 0, 0
     for t in ts[1:]:
         if t > t_next_predict:
             gsf.predict(us[-1], dt)
@@ -65,8 +66,10 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
             # noinspection PyBroadException
             try:
                 u = K.step(lin_model.xn2d(xs_pf[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
+                mpc_converged += 1
             except:
                 u = numpy.array([0.06, 0.2])
+                mpc_no_converged += 1
             U_temp[lin_model.inputs] = lin_model.ud2n(u)
             us.append(U_temp.copy())
             t_next_control += dt_control
@@ -92,15 +95,16 @@ def get_simulation_performance(N_particles, dt_control, dt_predict):
 
     ys_pf = numpy.array(ys_pf)
     performance = sim_base.performance(ys_pf, lin_model.yd2n(K.ysp), ts)
+    mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
 
-    return performance, predict_count, update_count
+    return performance, predict_count, update_count, mpc_frac
 
 
 def performance_per_joule():
     run_seqss = GSF_run_seq.cpu_gpu_run_seqs()
     powerss = GSF_power.cpu_gpu_power_seqs()
 
-    ppjs = []
+    ppjs, mpc_fracss = [], []
     for cpu_gpu in range(2):
         dt_controls = numpy.min(run_seqss[cpu_gpu][0][1], axis=1)
         dt_predicts = dt_controls.copy()
@@ -122,9 +126,9 @@ def performance_per_joule():
 
             method_power.append(power)
 
-        ppj = []
+        ppj, mpc_fracs = [], []
         for i in range(len(N_particles)):
-            performance, predict_count, update_count = get_simulation_performance(
+            performance, predict_count, update_count, mpc_frac = get_simulation_performance(
                 int(N_particles[i]),
                 dt_controls[i],
                 dt_predicts[i]
@@ -134,17 +138,20 @@ def performance_per_joule():
 
             total_power = predict_count * predict_power + update_count * (update_power + resample_power)
             ppj.append((1/performance)/total_power)
+            mpc_fracs.append(mpc_frac)
 
         ppjs.append(ppj)
+        mpc_fracss.append(mpc_fracs)
 
     N_particles = [run_seqss[0][0][0], run_seqss[1][0][0]]
     ppjs = numpy.array(ppjs)
+    mpc_fracss = numpy.array(mpc_fracss)
 
-    return N_particles, ppjs
+    return N_particles, ppjs, mpc_fracss
 
 
 def plot_ppjs():
-    N_particles, ppjs = performance_per_joule()
+    N_particles, ppjs, _ = performance_per_joule()
     plt.semilogy(numpy.log2(N_particles[0]), ppjs[0], 'k.', label='CPU')
     plt.semilogy(numpy.log2(N_particles[1]), ppjs[1], 'kx', label='GPU')
     plt.xlabel('$ \log_2(N) $ particles')
@@ -154,4 +161,16 @@ def plot_ppjs():
     plt.show()
 
 
+def plot_mpc_fracs():
+    N_particles, _, mpc_fracss = performance_per_joule()
+    plt.plot(numpy.log2(N_particles[0]), mpc_fracss[0], 'k.', label='CPU')
+    plt.plot(numpy.log2(N_particles[1]), mpc_fracss[1], 'kx', label='GPU')
+    plt.xlabel('$ \log_2(N) $ particles')
+    plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
+    plt.title('Performance per energy')
+    plt.legend()
+    plt.show()
+
+
 plot_ppjs()
+plot_mpc_fracs()
