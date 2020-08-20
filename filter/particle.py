@@ -106,6 +106,12 @@ class ParticleFilter:
         """Returns the point estimate of the filter"""
         return self.weights @ self.particles
 
+    def point_covariance(self):
+        """Returns the maximum singular value of the filter's covariance"""
+        w_cov = self.particles.T @ (self.particles * self.weights[:, None])
+        s = numpy.linalg.svd(w_cov, compute_uv=False)
+        return s[0]
+
 
 class ParallelParticleFilter(ParticleFilter):
     """Particle filter class implemented to run on the GPU.
@@ -308,3 +314,9 @@ class ParallelParticleFilter(ParticleFilter):
     def point_estimate(self):
         """Returns the point estimate of the filter"""
         return (self.weights @ self.particles).get()
+
+    def point_covariance(self):
+        """Returns the maximum singular value of the filter's covariance"""
+        w_cov = self.particles.T @ (self.particles * self.weights[:, None])
+        s = cupy.linalg.svd(w_cov, compute_uv=False)
+        return (s[0]).get()
