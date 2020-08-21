@@ -24,6 +24,10 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True, pf=True):
     gpu : bool, optional
         Should the GPU implementation be used?
 
+    pf : bool
+        If `True` then the particle filter is used
+        otherwise, the GSF is used
+
     Returns
     -------
     bioreactor : model.Bioreactor
