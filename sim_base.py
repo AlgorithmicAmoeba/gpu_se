@@ -159,7 +159,7 @@ def get_noise(lib=cupy, deterministic=False):
 
 
 def performance(ys, r, ts):
-    """Returns the IAE performance of a run.
+    """Returns the ITAE performance of a run.
 
     Parameters
     ----------
@@ -174,12 +174,12 @@ def performance(ys, r, ts):
 
     Returns
     -------
-    iae : float
-        Integral of the Absolute Error
+    itae : float
+        Integral of the Time Absolute Error
     """
     ae = numpy.abs((ys - r)/r)
-    iae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
-    return iae
+    itae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
+    return itae
 
 
 def get_random_io():
