@@ -1,6 +1,5 @@
 import numpy
 import sim_base
-import model
 import joblib
 import matplotlib.pyplot as plt
 import sys
@@ -15,88 +14,10 @@ memory = joblib.Memory('cache/')
 
 
 @memory.cache
-def get_simulation_performance(N_particles, dt_control, dt_predict):
-    # Simulation set-up
-    end_time = 50
-    ts = numpy.linspace(0, end_time, end_time*10)
-    dt = ts[1]
-
-    bioreactor, lin_model, K, pf = sim_base.get_parts(
-        dt_control=dt_control,
-        N_particles=N_particles,
-
-    )
-    state_pdf, measurement_pdf = sim_base.get_noise()
-
-    # Initial values
-    us = [numpy.array([0.06, 0.2])]
-    xs = [bioreactor.X.copy()]
-    ys = [bioreactor.outputs(us[-1])]
-    ys_meas = [bioreactor.outputs(us[-1])]
-    xs_pf = [pf.point_estimate()]
-    ys_pf = [
-        model.Bioreactor.static_outputs(
-                pf.point_estimate(),
-                us[-1]
-            )
-    ]
-
-    biass = []
-
-    t_next_control, t_next_predict = 0, 0
-    predict_count, update_count = 0, 0
-    mpc_converged, mpc_no_converged = 0, 0
-    for t in ts[1:]:
-        if t > t_next_predict:
-            pf.predict(us[-1], dt)
-            predict_count += 1
-            t_next_predict += dt_predict
-
-        if t > t_next_control:
-            U_temp = us[-1].copy()
-            if K.y_predicted is not None:
-                biass.append(lin_model.yn2d(ys_meas[-1]) - K.y_predicted)
-
-            pf.update(us[-1], ys_meas[-1][lin_model.outputs])
-            pf.resample()
-            update_count += 1
-
-            xs_pf.append(pf.point_estimate())
-            # noinspection PyBroadException
-            try:
-                u = K.step(lin_model.xn2d(xs_pf[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
-                mpc_converged += 1
-            except:
-                u = numpy.array([0.06, 0.2])
-                mpc_no_converged += 1
-            U_temp[lin_model.inputs] = lin_model.ud2n(u)
-            us.append(U_temp.copy())
-            t_next_control += dt_control
-        else:
-            us.append(us[-1])
-
-        bioreactor.step(dt, us[-1])
-        bioreactor.X += state_pdf.draw().get()
-        outputs = bioreactor.outputs(us[-1])
-        ys.append(outputs.copy())
-        outputs[lin_model.outputs] += measurement_pdf.draw().get()
-        ys_meas.append(outputs)
-        xs.append(bioreactor.X.copy())
-
-        ys_pf.append(
-            numpy.array(
-                model.Bioreactor.static_outputs(
-                    pf.point_estimate(),
-                    us[-1]
-                )
-            )
-        )
-
-    ys_pf = numpy.array(ys_pf)
-    performance = sim_base.performance(ys_pf, lin_model.yd2n(K.ysp), ts)
-    mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
-
-    return performance, predict_count, update_count, mpc_frac
+def get_sim(N_particles, dt_control, dt_predict, end_time=50, pf=True):
+    sim = sim_base.Simulation(N_particles, dt_control, dt_predict, end_time, pf)
+    sim.simulate()
+    return sim
 
 
 def performance_per_joule():
@@ -127,17 +48,18 @@ def performance_per_joule():
 
         ppj, mpc_fracs = [], []
         for i in range(len(N_particles)):
-            performance, predict_count, update_count, mpc_frac = get_simulation_performance(
+            sim = get_sim(
                 int(N_particles[i]),
                 dt_controls[i],
-                dt_predicts[i]
+                dt_predicts[i],
+                pf=True
             )
 
             predict_power, update_power, resample_power = [method_power[j][i] for j in range(3)]
 
-            total_power = predict_count * predict_power + update_count * (update_power + resample_power)
-            ppj.append((1/performance)/total_power)
-            mpc_fracs.append(mpc_frac)
+            total_power = sim.predict_count * predict_power + sim.update_count * (update_power + resample_power)
+            ppj.append(sim.performance/total_power)
+            mpc_fracs.append(sim.mpc_frac)
 
         ppjs.append(ppj)
         mpc_fracss.append(mpc_fracs)
