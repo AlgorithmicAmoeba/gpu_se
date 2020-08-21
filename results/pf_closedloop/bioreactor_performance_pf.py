@@ -157,6 +157,7 @@ def plot_ppjs():
     plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
     plt.title('Performance per energy')
     plt.legend()
+    plt.savefig('PF_ppj.pdf')
     plt.show()
 
 
@@ -168,6 +169,7 @@ def plot_mpc_fracs():
     plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
     plt.title('Performance per energy')
     plt.legend()
+    plt.savefig('PF_mpc_frac.pdf')
     plt.show()
 
 
