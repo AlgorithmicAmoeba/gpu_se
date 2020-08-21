@@ -199,3 +199,101 @@ def get_random_io():
         numpy.random.uniform(low=0.8, high=0.9)
     ])
     return u, y
+
+
+class Simulation:
+    """An object that holds details of a simulation"""
+    def __init__(self, N_particles, dt_control, dt_predict, end_time=50, pf=True):
+        self.ts = numpy.linspace(0, end_time, end_time*10)
+        self.dt = self.ts[1]
+        self.dt_control = dt_control
+        self.dt_predict = dt_predict
+
+        self.bioreactor, self.lin_model, self.K, self.f = get_parts(
+            dt_control=dt_control,
+            N_particles=N_particles,
+            pf=pf
+        )
+
+        self.state_pdf, self.measurement_pdf = get_noise()
+
+        self.us = [numpy.array([0.06, 0.2])]
+        self.xs = [self.bioreactor.X.copy()]
+        self.ys = [self.bioreactor.outputs(self.us[-1])]
+        self.ys_meas = [self.bioreactor.outputs(self.us[-1])]
+        self.xs_pf = [self.f.point_estimate()]
+        self.ys_pf = [
+            numpy.array(
+                model.Bioreactor.static_outputs(
+                    self.f.point_estimate(),
+                    self.us[-1]
+                )
+            )
+        ]
+
+        self.biass = []
+        self.performance = None
+        self.mpc_frac = None
+        self.predict_count, self.update_count = 0, 0
+
+    def simulate(self):
+        t_next_control, t_next_predict = 0, 0
+        mpc_converged, mpc_no_converged = 0, 0
+        for t in self.ts[1:]:
+            if t > t_next_predict:
+                self.f.predict(self.us[-1], self.dt)
+                self.predict_count += 1
+                t_next_predict += self.dt_predict
+
+            if t > t_next_control:
+                U_temp = self.us[-1].copy()
+                if self.K.y_predicted is not None:
+                    self.biass.append(self.lin_model.yn2d(self.ys_meas[-1]) - self.K.y_predicted)
+
+                self.f.update(self.us[-1], self.ys_meas[-1][self.lin_model.outputs])
+                self.f.resample()
+                self.update_count += 1
+
+                self.xs_pf.append(self.f.point_estimate())
+                # noinspection PyBroadException
+                try:
+                    u = self.K.step(
+                        self.lin_model.xn2d(self.xs_pf[-1]),
+                        self.lin_model.un2d(self.us[-1]),
+                        self.lin_model.yn2d(self.ys_meas[-1])
+                    )
+                    mpc_converged += 1
+                except:
+                    u = numpy.array([0.06, 0.2])
+                    mpc_no_converged += 1
+                U_temp[self.lin_model.inputs] = self.lin_model.ud2n(u)
+                self.us.append(U_temp.copy())
+                t_next_control += self.dt_control
+            else:
+                self.us.append(self.us[-1])
+
+            self.bioreactor.step(self.dt, self.us[-1])
+            self.bioreactor.X += self.state_pdf.draw().get()
+            outputs = self.bioreactor.outputs(self.us[-1])
+            self.ys.append(outputs.copy())
+            outputs[self.lin_model.outputs] += self.measurement_pdf.draw().get()
+            self.ys_meas.append(outputs)
+            self.xs.append(self.bioreactor.X.copy())
+
+            self.ys_pf.append(
+                numpy.array(
+                    model.Bioreactor.static_outputs(
+                        self.f.point_estimate(),
+                        self.us[-1]
+                    )
+                )
+            )
+
+        self.us = numpy.array(self.us)
+        self.xs = numpy.array(self.xs)
+        self.ys = numpy.array(self.ys)
+        self.ys_meas = numpy.array(self.ys_meas)
+        self.xs_pf = numpy.array(self.xs_pf)
+        self.ys_pf = numpy.array(self.ys_pf)
+        self.performance = 1/performance(self.ys_pf, self.lin_model.yd2n(self.K.ysp), self.ts)
+        self.mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
