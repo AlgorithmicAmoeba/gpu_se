@@ -627,7 +627,7 @@ def plot_speed_up():
         plt.semilogy(logN_part, speed_up, ['k.', 'kx', 'k^'][method])
 
     plt.legend(['Predict', 'Update', 'Resample'])
-    plt.title('Speed-up of particle filter')
+    plt.title('Speed-up of Gaussian sum filter')
     plt.ylabel('Speed-up')
     plt.xlabel('$ \log_2(N) $ particles')
     plt.xlim(xmin=1, xmax=19.5)
@@ -657,7 +657,7 @@ def plot_times():
                 ax.set_ylabel('Time (s)')
             ax.set_xlabel('$ \log_2(N) $ particles')
             ax.set_xlim(xmin=1, xmax=19.5)
-    fig.suptitle('Run times particle filter methods')
+    fig.suptitle('Run times Gaussian sum filter methods')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig('GSF_times.pdf')
     plt.show()
