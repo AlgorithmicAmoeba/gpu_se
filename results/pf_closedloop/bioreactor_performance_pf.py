@@ -17,7 +17,8 @@ memory = joblib.Memory('cache/')
 def get_sim(N_particles, dt_control, dt_predict, end_time=50, pf=True):
     sim = sim_base.Simulation(N_particles, dt_control, dt_predict, end_time, pf)
     sim.simulate()
-    return sim
+    ans = sim.performance, sim.mpc_frac, sim.predict_count, sim.update_count
+    return ans
 
 
 def performance_per_joule():
@@ -48,7 +49,7 @@ def performance_per_joule():
 
         ppj, mpc_fracs = [], []
         for i in range(len(N_particles)):
-            sim = get_sim(
+            performance, mpc_frac, predict_count, update_count = get_sim(
                 int(N_particles[i]),
                 dt_controls[i],
                 dt_predicts[i],
@@ -57,9 +58,9 @@ def performance_per_joule():
 
             predict_power, update_power, resample_power = [method_power[j][i] for j in range(3)]
 
-            total_power = sim.predict_count * predict_power + sim.update_count * (update_power + resample_power)
-            ppj.append(sim.performance/total_power)
-            mpc_fracs.append(sim.mpc_frac)
+            total_power = predict_count * predict_power + update_count * (update_power + resample_power)
+            ppj.append(performance / total_power)
+            mpc_fracs.append(mpc_frac)
 
         ppjs.append(ppj)
         mpc_fracss.append(mpc_fracs)
@@ -95,5 +96,18 @@ def plot_mpc_fracs():
     plt.show()
 
 
+def plot_performances():
+    N_particles, performancess = performance()
+    plt.semilogy(numpy.log2(N_particles[0]), performancess[0], 'k.', label='CPU')
+    plt.semilogy(numpy.log2(N_particles[1]), performancess[1], 'kx', label='GPU')
+    plt.xlabel('$ \log_2(N) $ particles')
+    plt.ylabel(r'$\mathrm{ITAE}^{-1}$')
+    plt.title('Performance')
+    plt.legend()
+    plt.savefig('PF_performance.pdf')
+    plt.show()
+
+
 plot_ppjs()
 plot_mpc_fracs()
+plot_performances()
