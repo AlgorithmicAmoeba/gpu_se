@@ -182,6 +182,12 @@ def performance(ys, r, ts):
     return itae
 
 
+def performance2(ys, ys_filter, ts):
+    ae = numpy.abs(ys - ys_filter)
+    itae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
+    return 1/itae
+
+
 def get_random_io():
     """Get random system input and output for simulations
 
@@ -295,5 +301,9 @@ class Simulation:
         self.ys_meas = numpy.array(self.ys_meas)
         self.xs_pf = numpy.array(self.xs_pf)
         self.ys_pf = numpy.array(self.ys_pf)
-        self.performance = 1/performance(self.ys_pf, self.lin_model.yd2n(self.K.ysp), self.ts)
+        self.performance = performance2(
+            self.ys[:, self.lin_model.outputs],
+            self.ys_pf,
+            self.ts
+        )
         self.mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
