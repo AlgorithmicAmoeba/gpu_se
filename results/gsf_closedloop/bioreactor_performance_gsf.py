@@ -145,6 +145,6 @@ def plot_performances():
     plt.show()
 
 
-# plot_ppjs()
-# plot_mpc_fracs()
+plot_ppjs()
+plot_mpc_fracs()
 plot_performances()

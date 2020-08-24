@@ -72,7 +72,7 @@ def performance_per_joule():
     return N_particles, ppjs, mpc_fracss
 
 
-def performance():
+def get_performance():
     run_seqss = PF_run_seq.cpu_gpu_run_seqs()
 
     performancess = []
@@ -90,14 +90,14 @@ def performance():
 
         performances = []
         for i in range(len(N_particles)):
-            sim = get_sim(
+            performance, _, _, _ = get_sim(
                 int(N_particles[i]),
                 dt_controls[i],
                 dt_predicts[i],
                 pf=True
             )
 
-            performances.append(sim.performance)
+            performances.append(performance)
 
         performancess.append(performances)
 
@@ -124,15 +124,16 @@ def plot_mpc_fracs():
     plt.plot(numpy.log2(N_particles[0]), mpc_fracss[0], 'k.', label='CPU')
     plt.plot(numpy.log2(N_particles[1]), mpc_fracss[1], 'kx', label='GPU')
     plt.xlabel('$ \log_2(N) $ particles')
-    plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
-    plt.title('Performance per energy')
+    plt.ylabel(r'Fraction MPC convergence')
+    plt.title('MPC convergence')
+    plt.ylim(ymin=0)
     plt.legend()
     plt.savefig('PF_mpc_frac.pdf')
     plt.show()
 
 
 def plot_performances():
-    N_particles, performancess = performance()
+    N_particles, performancess = get_performance()
     plt.semilogy(numpy.log2(N_particles[0]), performancess[0], 'k.', label='CPU')
     plt.semilogy(numpy.log2(N_particles[1]), performancess[1], 'kx', label='GPU')
     plt.xlabel('$ \log_2(N) $ particles')
