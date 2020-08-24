@@ -73,6 +73,41 @@ def performance_per_joule():
     return N_particles, ppjs, mpc_fracss
 
 
+def get_performance():
+    run_seqss = GSF_run_seq.cpu_gpu_run_seqs()
+
+    performancess = []
+    for cpu_gpu in range(2):
+        dt_controls = numpy.min(run_seqss[cpu_gpu][0][1], axis=1)
+        dt_predicts = dt_controls.copy()
+        N_particles = run_seqss[cpu_gpu][0][0]
+        for method in range(1, 3):
+            _, run_seqs = run_seqss[cpu_gpu][method]
+            times = numpy.min(run_seqs, axis=1)
+            dt_controls += times
+
+        dt_controls = numpy.maximum(dt_controls, 1)
+        dt_predicts = numpy.maximum(dt_predicts, 0.1)
+
+        performances = []
+        for i in range(len(N_particles)):
+            performance, _, _, _ = get_sim(
+                int(N_particles[i]),
+                dt_controls[i],
+                dt_predicts[i],
+                pf=False
+            )
+
+            performances.append(performance)
+
+        performancess.append(performances)
+
+    N_particles = [run_seqss[0][0][0], run_seqss[1][0][0]]
+    performancess = numpy.array(performancess)
+
+    return N_particles, performancess
+
+
 def plot_ppjs():
     N_particles, ppjs, _ = performance_per_joule()
     plt.semilogy(numpy.log2(N_particles[0]), ppjs[0], 'k.', label='CPU')
@@ -90,12 +125,26 @@ def plot_mpc_fracs():
     plt.plot(numpy.log2(N_particles[0]), mpc_fracss[0], 'k.', label='CPU')
     plt.plot(numpy.log2(N_particles[1]), mpc_fracss[1], 'kx', label='GPU')
     plt.xlabel('$ \log_2(N) $ particles')
-    plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
-    plt.title('Performance per energy')
+    plt.ylabel(r'Fraction MPC convergence')
+    plt.title('MPC convergence')
+    plt.ylim(ymin=0)
     plt.legend()
     plt.savefig('GSF_mpc_frac.pdf')
     plt.show()
 
 
-plot_ppjs()
-plot_mpc_fracs()
+def plot_performances():
+    N_particles, performancess = get_performance()
+    plt.plot(numpy.log2(N_particles[0]), performancess[0], 'k.', label='CPU')
+    plt.plot(numpy.log2(N_particles[1]), performancess[1], 'kx', label='GPU')
+    plt.xlabel('$ \log_2(N) $ particles')
+    plt.ylabel(r'$\mathrm{ITAE}^{-1}$')
+    plt.title('Performance')
+    plt.legend()
+    plt.savefig('PF_performance.pdf')
+    plt.show()
+
+
+# plot_ppjs()
+# plot_mpc_fracs()
+plot_performances()
