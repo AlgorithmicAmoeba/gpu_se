@@ -158,8 +158,8 @@ def cpu_gpu_power_seqs():
     power_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; power_seq]
     """
-    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(1, 19, 0.5)])
-    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(1, 19, 0.5)])
+    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(0, 19, 0.5)])
+    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(0, 19, 0.5)])
     power_seqss = [
         [
             predict_power_seq(N_particles_cpu, 5, False),
@@ -212,13 +212,4 @@ def plot_energy_per_run():
 
 
 if __name__ == '__main__':
-    _, _, _, gsf = sim_base.get_parts(
-        N_particles=1,
-        gpu=True,
-        pf=False
-    )
-    u, z = sim_base.get_random_io()
-    gsf.predict(u, 1.)
-    gsf.update(u, z)
-    gsf.resample()
-    # plot_energy_per_run()
+    plot_energy_per_run()
