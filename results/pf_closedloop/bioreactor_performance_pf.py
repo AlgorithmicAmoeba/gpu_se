@@ -134,8 +134,8 @@ def plot_mpc_fracs():
 
 def plot_performances():
     N_particles, performancess = get_performance()
-    plt.semilogy(numpy.log2(N_particles[0]), performancess[0], 'k.', label='CPU')
-    plt.semilogy(numpy.log2(N_particles[1]), performancess[1], 'kx', label='GPU')
+    plt.plot(numpy.log2(N_particles[0]), performancess[0], 'k.', label='CPU')
+    plt.plot(numpy.log2(N_particles[1]), performancess[1], 'kx', label='GPU')
     plt.xlabel('$ \log_2(N) $ particles')
     plt.ylabel(r'$\mathrm{ITAE}^{-1}$')
     plt.title('Performance')
