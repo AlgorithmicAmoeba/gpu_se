@@ -7,6 +7,7 @@ import psutil
 import scipy.integrate
 import pickle
 import os
+import cupy
 
 
 class RunSequences:
@@ -221,7 +222,7 @@ class Pickler:
             pickle.dump(result, f)
             f.close()
             return result
-        except:
+        except cupy.cuda.runtime.CUDARuntimeError:
             f = open(self.path + '/object.pickle', 'rb')
             result = pickle.load(f)
             return result
