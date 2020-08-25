@@ -212,4 +212,13 @@ def plot_energy_per_run():
 
 
 if __name__ == '__main__':
-    plot_energy_per_run()
+    _, _, _, gsf = sim_base.get_parts(
+        N_particles=1,
+        gpu=True,
+        pf=False
+    )
+    u, z = sim_base.get_random_io()
+    gsf.predict(u, 1.)
+    gsf.update(u, z)
+    gsf.resample()
+    # plot_energy_per_run()
