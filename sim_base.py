@@ -279,10 +279,10 @@ class Simulation:
                 self.us.append(self.us[-1])
 
             self.bioreactor.step(self.dt, self.us[-1])
-            self.bioreactor.X += self.state_pdf.draw().get()
+            self.bioreactor.X += self.state_pdf.draw().get().squeeze()
             outputs = self.bioreactor.outputs(self.us[-1])
             self.ys.append(outputs.copy())
-            outputs[self.lin_model.outputs] += self.measurement_pdf.draw().get()
+            outputs[self.lin_model.outputs] += self.measurement_pdf.draw().get().squeeze()
             self.ys_meas.append(outputs)
             self.xs.append(self.bioreactor.X.copy())
 

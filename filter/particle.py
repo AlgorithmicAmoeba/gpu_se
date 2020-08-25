@@ -64,7 +64,8 @@ class ParticleFilter:
             The time step since the previous prediction
         """
         for i, particle in enumerate(self.particles):
-            self.particles[i] += self.f(particle, u, dt) + self.state_pdf.draw()
+            self.particles[i] += self.f(particle, u, dt)
+        self.particles += self.state_pdf.draw(self.N_particles)
 
     def update(self, u, z):
         """Performs an update step on the particles
@@ -167,7 +168,10 @@ class ParallelParticleFilter(ParticleFilter):
         self._tpb = threads_per_block
         self._bpg = blocks_per_grid
 
-        self._y_dummy = cupy.zeros_like(self.measurement_pdf.draw())
+        self._y_dummy = cupy.zeros(
+            self.measurement_pdf.draw().shape[1],
+            dtype=cupy.float32
+        )
 
     def __f_vec(self):
         """Vectorizes the state transition function to run on the GPU
