@@ -59,7 +59,7 @@ class GaussianSumUnscentedKalmanFilter:
         self.measurement_pdf = measurement_pdf
 
         self._Nx = self.means.shape[1]
-        self._Ny = measurement_pdf.draw().shape[0]
+        self._Ny = measurement_pdf.draw().shape[1]
         self._N_sigmas = 2 * self._Nx + 1
 
         # weights calculated such that:
@@ -234,7 +234,10 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
         self._threads_per_block = self._tpb = 1024
         self._blocks_per_grid = self._bpg = (self.N_particles - 1) // self._threads_per_block + 1
 
-        self._y_dummy = cupy.zeros_like(self.measurement_pdf.draw())
+        self._y_dummy = cupy.zeros(
+            self.measurement_pdf.draw().shape[1],
+            dtype=cupy.float32
+        )
 
     def __f_vec(self):
         """Vectorizes the state transition function to run on the GPU

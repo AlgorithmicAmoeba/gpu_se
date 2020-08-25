@@ -94,4 +94,4 @@ class MultivariateGaussianSum:
             out[index:index + n] = self.lib.random.multivariate_normal(mean, cov, int(n))
             index += n
 
-        return out.reshape(shape + (self._Nx,)).squeeze()
+        return out.reshape(shape + (self._Nx,))
