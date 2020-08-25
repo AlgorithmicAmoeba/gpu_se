@@ -154,8 +154,8 @@ def cpu_gpu_power_seqs():
     power_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; power_seq]
     """
-    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(1, 24, 0.5)])
-    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(1, 24, 0.5)])
+    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(0, 24, 0.5)])
+    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(0, 24, 0.5)])
     power_seqss = [
         [
             predict_power_seq(N_particles_cpu, 5, False),

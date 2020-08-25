@@ -471,8 +471,8 @@ def cpu_gpu_run_seqs():
     run_seqss : List
         [CPU; GPU] x [predict; update; resample] x [N_particles; run_seq]
     """
-    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(1, 19, 0.5)])
-    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(1, 19, 0.5)])
+    N_particles_cpu = numpy.array([int(i) for i in 2**numpy.arange(0, 19, 0.5)])
+    N_particles_gpu = numpy.array([int(i) for i in 2**numpy.arange(0, 19, 0.5)])
     run_seqss = [
         [
             predict_run_seq(N_particles_cpu, 20, False),
