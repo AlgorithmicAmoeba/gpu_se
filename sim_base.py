@@ -236,6 +236,7 @@ class Simulation:
                 )
             )
         ]
+        self.covariance_point_size = [self.f.point_covariance()]
 
         self.biass = []
         self.performance = None
@@ -293,6 +294,7 @@ class Simulation:
                     )
                 )
             )
+            self.covariance_point_size.append(self.f.point_covariance())
 
         self.us = numpy.array(self.us)
         self.xs = numpy.array(self.xs)
@@ -300,6 +302,7 @@ class Simulation:
         self.ys_meas = numpy.array(self.ys_meas)
         self.xs_f = numpy.array(self.xs_f)
         self.ys_f = numpy.array(self.ys_f)
+        self.covariance_point_size = numpy.array(self.covariance_point_size)
         self.performance = performance2(
             self.ys[:, self.lin_model.outputs],
             self.ys_f,
