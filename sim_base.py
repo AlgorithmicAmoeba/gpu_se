@@ -227,8 +227,8 @@ class Simulation:
         self.xs = [self.bioreactor.X.copy()]
         self.ys = [self.bioreactor.outputs(self.us[-1])]
         self.ys_meas = [self.bioreactor.outputs(self.us[-1])]
-        self.xs_pf = [self.f.point_estimate()]
-        self.ys_pf = [
+        self.xs_f = [self.f.point_estimate()]
+        self.ys_f = [
             numpy.array(
                 model.Bioreactor.static_outputs(
                     self.f.point_estimate(),
@@ -260,11 +260,11 @@ class Simulation:
                 self.f.resample()
                 self.update_count += 1
 
-                self.xs_pf.append(self.f.point_estimate())
+                self.xs_f.append(self.f.point_estimate())
                 # noinspection PyBroadException
                 try:
                     u = self.K.step(
-                        self.lin_model.xn2d(self.xs_pf[-1]),
+                        self.lin_model.xn2d(self.xs_f[-1]),
                         self.lin_model.un2d(self.us[-1]),
                         self.lin_model.yn2d(self.ys_meas[-1])
                     )
@@ -285,8 +285,7 @@ class Simulation:
             outputs[self.lin_model.outputs] += self.measurement_pdf.draw().get().squeeze()
             self.ys_meas.append(outputs)
             self.xs.append(self.bioreactor.X.copy())
-
-            self.ys_pf.append(
+            self.ys_f.append(
                 numpy.array(
                     model.Bioreactor.static_outputs(
                         self.f.point_estimate(),
@@ -299,11 +298,11 @@ class Simulation:
         self.xs = numpy.array(self.xs)
         self.ys = numpy.array(self.ys)
         self.ys_meas = numpy.array(self.ys_meas)
-        self.xs_pf = numpy.array(self.xs_pf)
-        self.ys_pf = numpy.array(self.ys_pf)
+        self.xs_f = numpy.array(self.xs_f)
+        self.ys_f = numpy.array(self.ys_f)
         self.performance = performance2(
             self.ys[:, self.lin_model.outputs],
-            self.ys_pf,
+            self.ys_f,
             self.ts
         )
         self.mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
