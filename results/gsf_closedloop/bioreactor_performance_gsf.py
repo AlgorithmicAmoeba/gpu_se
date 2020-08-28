@@ -191,7 +191,7 @@ def plot_performances():
     plt.ylabel(r'$\mathrm{ITAE}^{-1}$')
     plt.title('Performance')
     plt.legend()
-    plt.savefig('PF_performance.pdf')
+    plt.savefig('GSF_performance.pdf')
     plt.show()
 
 
