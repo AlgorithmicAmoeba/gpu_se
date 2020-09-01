@@ -145,7 +145,8 @@ def covariance_point_estimates():
                 int(N_particles[i]),
                 dt_controls[i],
                 dt_predicts[i],
-                pf=False
+                pf=False,
+                end_time=500
             )
 
             pcovs.append(pcov)
@@ -198,7 +199,7 @@ def plot_performances():
 def plot_pcov():
     N_particles, pcovss = covariance_point_estimates()
     cmap = matplotlib.cm.get_cmap('plasma')
-    ts = numpy.linspace(0, 50, 500)
+    ts = numpy.linspace(0, 500, 5000)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey='row')
     for cpu_gpu in range(2):
