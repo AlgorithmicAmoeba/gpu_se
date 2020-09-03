@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sim_base
 
 # Simulation set-up
-end_time = 200
+end_time = 50
 ts = numpy.linspace(0, end_time, end_time*10)
 dt = ts[1]
 dt_control = 1
