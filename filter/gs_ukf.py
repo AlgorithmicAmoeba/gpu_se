@@ -50,8 +50,7 @@ class GaussianSumUnscentedKalmanFilter:
 
         self.means = x0.draw(N_particles)
 
-        average_cov = numpy.average(state_pdf.covariances, axis=0)
-        self.covariances = numpy.repeat(average_cov[None, :, :], N_particles, axis=0)
+        self.covariances = numpy.repeat(state_pdf.covariances[0][None, :, :], N_particles, axis=0)
 
         self.weights = numpy.full(N_particles, 1 / N_particles, dtype=numpy.float32)
 
@@ -332,7 +331,11 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
         """Return the sigma points for the current particles
         """
         t_covariances = torch_dlpack.from_dlpack(cupy.asarray(self.covariances).toDlpack())
-        t_stds = torch.cholesky(t_covariances)
+        try:
+            t_stds = torch.cholesky(t_covariances)
+        except RuntimeError:
+            t_stds = torch.cholesky(t_covariances + 1e-10)
+
         stds = cupy.fromDlpack(torch_dlpack.to_dlpack(t_stds)).swapaxes(1, 2)
         sigmas = cupy.repeat(self.means[:, None, :], self._N_sigmas, axis=1)
         sigmas[:, 1:self._Nx + 1, :] += stds
