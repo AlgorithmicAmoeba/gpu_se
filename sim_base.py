@@ -101,7 +101,7 @@ def get_parts(dt_control=1, N_particles=2*15, gpu=True, pf=True):
 
     state_pdf, measurement_pdf = get_noise(my_library)
     x0, _ = get_noise(my_library)
-    x0.means = bioreactor.X[numpy.newaxis, :]
+    x0.means += my_library.array(bioreactor.X[numpy.newaxis, :])
     pf = my_filter(
         f=bioreactor.homeostatic_DEs,
         g=bioreactor.static_outputs,
@@ -139,9 +139,12 @@ def get_noise(lib=cupy, deterministic=False):
     else:
         distribution = gpu_funcs.MultivariateGaussianSum
     state_pdf = distribution(
-        means=numpy.zeros(shape=(1, 5)),
-        covariances=numpy.diag([1e-4, 1e-7, 1e-3, 1e-3, 1e-7])[numpy.newaxis, :, :],
-        weights=numpy.array([1.]),
+        means=numpy.zeros(shape=(2, 5)),
+        covariances=numpy.array([
+            numpy.diag([1e-4, 1e-7, 1e-3, 1e-3, 1e-7]),
+            numpy.diag([1e-3, 1e-6, 1e-2, 1e-2, 1e-6])*10
+        ]),
+        weights=numpy.array([0.9, 0.1]),
         library=lib
     )
     measurement_pdf = distribution(
@@ -150,8 +153,8 @@ def get_noise(lib=cupy, deterministic=False):
         covariances=numpy.array([[[6e-2, 0],
                                   [0, 8e-2]],
 
-                                 [[5e-2, 1e-2],
-                                  [1e-2, 7e-2]]]),
+                                 [[50, 10],
+                                  [10, 70]]]),
         weights=numpy.array([0.85, 0.15]),
         library=lib
     )
