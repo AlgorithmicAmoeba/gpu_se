@@ -307,8 +307,8 @@ class Simulation:
         self.ys_f = numpy.array(self.ys_f)
         self.covariance_point_size = numpy.array(self.covariance_point_size)
         self.performance = performance(
+            self.ys[:, self.lin_model.outputs],
             self.ys_f,
-            self.K.ysp,
             self.ts
         )
         self.mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
