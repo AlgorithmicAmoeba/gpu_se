@@ -180,9 +180,9 @@ def performance(ys, r, ts):
     itae : float
         Integral of the Time Absolute Error
     """
-    ae = numpy.abs((ys - r)/r)
+    ae = numpy.abs(ys - r)
     itae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
-    return itae
+    return 1/itae
 
 
 def performance2(ys, ys_filter, ts):
@@ -306,9 +306,9 @@ class Simulation:
         self.xs_f = numpy.array(self.xs_f)
         self.ys_f = numpy.array(self.ys_f)
         self.covariance_point_size = numpy.array(self.covariance_point_size)
-        self.performance = performance2(
-            self.ys[:, self.lin_model.outputs],
+        self.performance = performance(
             self.ys_f,
+            self.K.ysp,
             self.ts
         )
         self.mpc_frac = mpc_converged / (mpc_converged + mpc_no_converged)
