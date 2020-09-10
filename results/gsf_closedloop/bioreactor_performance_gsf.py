@@ -20,7 +20,7 @@ memory = joblib.Memory('cache/')
 
 
 @memory.cache
-def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=50, pf=False):
+def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=500, pf=False):
     _ = monte_carlo
     sim = sim_base.Simulation(N_particles, dt_control, dt_predict, end_time, pf)
     sim.simulate()
@@ -36,16 +36,15 @@ def get_results():
 
     ppj_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu = [], [], [], []
     for cpu_gpu in range(2):
-        dt_controls = numpy.min(run_seqss[cpu_gpu][0][1], axis=1)
-        dt_predicts = dt_controls.copy()
+        sums = numpy.min(run_seqss[cpu_gpu][0][1], axis=1)
+        t_predicts = sums.copy()
         N_particles = run_seqss[cpu_gpu][0][0]
         for method in range(1, 3):
             _, run_seqs = run_seqss[cpu_gpu][method]
             times = numpy.min(run_seqs, axis=1)
-            dt_controls += times
+            sums += times
 
-        dt_controls = numpy.maximum(dt_controls, 1)
-        dt_predicts = numpy.maximum(dt_predicts, 0.1)
+        dt_controls = numpy.maximum(sums, 1)
 
         method_power = []
         for method in range(3):
@@ -58,12 +57,19 @@ def get_results():
 
         ppjss, mpc_fracss, performancess, pcovss = [], [], [], []
         for i in range(len(N_particles)):
+            dt_control = dt_controls[i]
+            if dt_control > 1:
+                dt_predict = t_predicts[i]
+            else:
+                n = numpy.floor((1 - sums[i]) / t_predicts[i]) + 1
+                dt_predict = max(dt_control / n, 0.1)
+
             ppjs, mpc_fracs, performances, pcovs = [], [], [], []
             for monte_carlo in range(monte_carlo_sims):
                 performance, mpc_frac, predict_count, update_count, pcov = get_sim(
                     int(N_particles[i]),
                     dt_controls[i],
-                    dt_predicts[i],
+                    dt_predict,
                     monte_carlo,
                     pf=False
                 )
