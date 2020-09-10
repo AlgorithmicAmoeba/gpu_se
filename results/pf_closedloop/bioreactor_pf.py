@@ -41,7 +41,14 @@ for t in tqdm.tqdm(ts[1:]):
         pf.update(us[-1], ys_meas[-1][lin_model.outputs])
         pf.resample()
         x_pf = (pf.weights @ pf.particles).get()
-        u = K.step(lin_model.xn2d(x_pf), lin_model.un2d(us[-1]), lin_model.yn2d(ys_meas[-1]))
+        try:
+            u = K.step(
+                lin_model.xn2d(x_pf),
+                lin_model.un2d(us[-1]),
+                lin_model.yn2d(ys_meas[-1])
+            )
+        except:
+            u = numpy.array([0.06, 0.2])
         U_temp[lin_model.inputs] = lin_model.ud2n(u)
         us.append(U_temp.copy())
         t_next += dt_control
@@ -49,10 +56,10 @@ for t in tqdm.tqdm(ts[1:]):
         us.append(us[-1])
 
     bioreactor.step(dt, us[-1])
-    bioreactor.X += state_pdf.draw().get()
+    bioreactor.X += state_pdf.draw().get().squeeze()
     outputs = bioreactor.outputs(us[-1])
     ys.append(outputs.copy())
-    outputs[lin_model.outputs] += measurement_pdf.draw().get()
+    outputs[lin_model.outputs] += measurement_pdf.draw().get().squeeze()
     ys_meas.append(outputs)
     xs.append(bioreactor.X.copy())
 
@@ -77,6 +84,7 @@ plt.subplot(2, 3, 1)
 plt.plot(ts, ys_meas[:, 2])
 plt.plot(ts, ys_pf[:, 1])
 plt.plot(ts, ys[:, 2])
+plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')
 plt.legend(['measured', 'predicted', 'true'])
 plt.title('Cfa')
 
@@ -84,6 +92,7 @@ plt.subplot(2, 3, 2)
 plt.plot(ts, ys_meas[:, 0])
 plt.plot(ts, ys_pf[:, 0])
 plt.plot(ts, ys[:, 0])
+plt.axhline(lin_model.yd2n(K.ysp)[0], color='red')
 plt.legend(['measured', 'predicted', 'true'])
 plt.title('Cg')
 
