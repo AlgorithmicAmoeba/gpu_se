@@ -111,7 +111,7 @@ def plot_perf_per_watt():
         for i in range(len(energys)):
             if i == 0:
                 plt.loglog(
-                    energys[i] / controls[i],
+                    energys[i] / (controls[i] * 60),
                     performances[i],
                     ['k.', 'k^'][cpu_gpu],
                     label=['CPU', 'GPU]'][cpu_gpu],
@@ -119,7 +119,7 @@ def plot_perf_per_watt():
                 )
             else:
                 plt.loglog(
-                    energys[i] / controls[i],
+                    energys[i] / (controls[i] * 60),
                     performances[i],
                     ['k.', 'k^'][cpu_gpu],
                     color=cmap(norm(log2_Npart[i]))
