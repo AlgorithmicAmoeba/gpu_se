@@ -180,9 +180,9 @@ def performance(ys, r, ts):
     itae : float
         Integral of the Time Absolute Error
     """
-    ae = numpy.abs(ys - r)
-    itae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
-    return 1/itae
+    se = (ys - r)**2
+    ise = sum([scipy.integrate.simps(se_ax * ts, ts) for se_ax in numpy.rollaxis(se, 1)])
+    return ise
 
 
 def performance2(ys, ys_filter, ts):
