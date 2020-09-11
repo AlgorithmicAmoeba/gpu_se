@@ -144,7 +144,7 @@ def get_noise(lib=cupy, deterministic=False):
             numpy.diag([1e-4, 1e-7, 1e-3, 1e-3, 1e-7]),
             numpy.diag([1e-3, 1e-6, 1e-2, 1e-2, 1e-6])*10
         ]),
-        weights=numpy.array([0.9, 0.1]),
+        weights=numpy.array([0.75, 0.25]),
         library=lib
     )
     measurement_pdf = distribution(
@@ -153,8 +153,8 @@ def get_noise(lib=cupy, deterministic=False):
         covariances=numpy.array([[[6e-2, 0],
                                   [0, 8e-2]],
 
-                                 [[50, 10],
-                                  [10, 70]]]),
+                                 [[500, 100],
+                                  [100, 700]]]),
         weights=numpy.array([0.85, 0.15]),
         library=lib
     )
