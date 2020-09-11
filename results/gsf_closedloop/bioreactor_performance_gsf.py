@@ -139,6 +139,26 @@ def plot_perf_per_watt():
     plt.show()
 
 
+def plot_control_periods():
+    N_particles, _, control_cpugpu, _, _, _ = get_results()
+    for cpu_gpu in range(2):
+        controls = control_cpugpu[cpu_gpu]
+        logN_part = numpy.log2(N_particles[cpu_gpu])
+        plt.semilogy(
+            logN_part,
+            controls,
+            ['k.', 'kx'][cpu_gpu],
+            label=['CPU', 'GPU]'][cpu_gpu]
+        )
+
+    plt.xlabel('$ \log_2(N) $ particles')
+    plt.ylabel(r'Control period (min)')
+    # plt.title('Control periods')
+    plt.legend()
+    plt.savefig('GSF_control.pdf')
+    plt.show()
+
+
 def plot_ppjs():
     N_particles, energy_cpugpu, _, _, performance_cpugpu, _ = get_results()
     for cpu_gpu in range(2):
@@ -227,6 +247,7 @@ def plot_pcov():
     plt.show()
 
 
+plot_control_periods()
 plot_perf_per_watt()
 plot_performances()
 plot_pcov()
