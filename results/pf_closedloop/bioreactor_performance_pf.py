@@ -130,7 +130,7 @@ def plot_perf_per_watt():
 
     plt.xlabel(r'$ \frac{\mathrm{energy}}{\mathrm{period}} $ (W)')
     plt.ylabel(r'ISE')
-    plt.title('Closedloop performance versus power')
+    # plt.title('Closedloop performance versus power')
     plt.legend()
     plt.tight_layout()
     plt.savefig('PF_epe.pdf')
@@ -150,8 +150,8 @@ def plot_ppjs():
             label=['CPU', 'GPU]'][cpu_gpu]
         )
     plt.xlabel('$ \log_2(N) $ particles')
-    plt.ylabel(r'$\frac{\mathrm{ITAE}^{-1}}{\mathrm{J}}$')
-    plt.title('Performance per energy')
+    plt.ylabel(r'$\frac{\mathrm{ISE}}{\mathrm{J}}$')
+    # plt.title('Performance per energy')
     plt.legend()
     plt.savefig('PF_ppj.pdf')
     plt.show()
@@ -171,7 +171,7 @@ def plot_mpc_fracs():
         )
     plt.xlabel('$ \log_2(N) $ particles')
     plt.ylabel(r'Fraction MPC convergence')
-    plt.title('MPC convergence')
+    # plt.title('MPC convergence')
     plt.ylim(ymin=0)
     plt.legend()
     plt.savefig('PF_mpc_frac.pdf')
@@ -191,8 +191,8 @@ def plot_performances():
             label=['CPU', 'GPU]'][cpu_gpu]
         )
     plt.xlabel('$ \log_2(N) $ particles')
-    plt.ylabel(r'$\mathrm{ITAE}^{-1}$')
-    plt.title('Performance')
+    plt.ylabel(r'$\mathrm{ISE}$')
+    # plt.title('Performance')
     plt.legend()
     plt.savefig('PF_performance.pdf')
     plt.show()
@@ -226,7 +226,5 @@ def plot_pcov():
 
 
 plot_perf_per_watt()
-plot_ppjs()
-plot_mpc_fracs()
 plot_performances()
 plot_pcov()
