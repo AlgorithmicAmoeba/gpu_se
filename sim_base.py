@@ -185,12 +185,6 @@ def performance(ys, r, ts):
     return ise
 
 
-def performance2(ys, ys_filter, ts):
-    ae = numpy.abs(ys - ys_filter)
-    itae = sum([scipy.integrate.simps(ae_ax * ts, ts) for ae_ax in numpy.rollaxis(ae, 1)])
-    return 1/itae
-
-
 def get_random_io():
     """Get random system input and output for simulations
 
