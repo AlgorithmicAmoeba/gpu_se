@@ -6,7 +6,7 @@ import sim_base
 
 
 def get_simulation_performance(dt_control):
-    end_time = 200
+    end_time = 50
     ts = numpy.linspace(0, end_time, end_time*10)
     dt = ts[1]
     assert dt <= dt_control
@@ -15,7 +15,7 @@ def get_simulation_performance(dt_control):
     state_pdf, measurement_pdf = sim_base.get_noise()
 
     # Initial values
-    us = [numpy.array([0.06, 5/180, 0.2])]
+    us = [numpy.array([0.06, 0.2])]
     xs = [bioreactor.X.copy()]
     ys = [bioreactor.outputs(us[-1])]
 
@@ -24,11 +24,20 @@ def get_simulation_performance(dt_control):
     t_next = 0
     for t in ts[1:]:
         if t > t_next:
+            # noinspection PyUnresolvedReferences
             U_temp = us[-1].copy()
             if K.y_predicted is not None:
                 biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
 
-            u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+            # noinspection PyBroadException
+            try:
+                u = K.step(
+                    lin_model.xn2d(xs[-1]),
+                    lin_model.un2d(us[-1]),
+                    lin_model.yn2d(ys[-1])
+                )
+            except:
+                u = numpy.array([0.06, 0.2])
             U_temp[lin_model.inputs] = lin_model.ud2n(u)
             us.append(U_temp.copy())
             t_next += dt_control
@@ -36,9 +45,9 @@ def get_simulation_performance(dt_control):
             us.append(us[-1])
 
         bioreactor.step(dt, us[-1])
-        bioreactor.X += state_pdf.draw().get()
+        bioreactor.X += state_pdf.draw().get().squeeze()
         outputs = bioreactor.outputs(us[-1])
-        outputs[lin_model.outputs] += measurement_pdf.draw().get()
+        outputs[lin_model.outputs] += measurement_pdf.draw().get().squeeze()
         ys.append(outputs.copy())
         xs.append(bioreactor.X.copy())
 
@@ -77,9 +86,9 @@ def generate_results(redo=False, number=50, low=0.2, high=30.):
 
 def plot_results():
     df = pandas.read_csv('bioreactor_noisy_performance.csv')
-    plt.plot(df['dt_controls'], df['performance'], '.')
+    plt.plot(df['dt_controls'], df['performance'], 'k.')
     plt.title("Closedloop performance vs control period")
-    plt.ylabel(r'$P_{\mathrm{ITAE}}$')
+    plt.ylabel(r'$P_{\mathrm{ISE}}$')
     plt.xlabel('Control period (min)')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     # plt.axvline(1)
@@ -91,7 +100,7 @@ def plot_pretty_results():
     plt.style.use('seaborn-deep')
 
     black = '#2B2B2D'
-    red = '#E90039'
+    # red = '#E90039'
     # orange = '#FF1800'
     white = '#FFFFFF'
     yellow = '#FF9900'
@@ -114,6 +123,6 @@ def plot_pretty_results():
 
 
 if __name__ == '__main__':
-    # generate_results(redo=False, number=400)
+    # generate_results(redo=False, number=100)
     plot_results()
     # plot_pretty_results()
