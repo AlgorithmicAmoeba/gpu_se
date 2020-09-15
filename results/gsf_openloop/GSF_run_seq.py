@@ -691,24 +691,9 @@ def plot_sub_routine_fractions():
         logN_part = numpy.log2(N_parts)
 
         total_times = numpy.sum(numpy.nanmin(func_seqs, axis=1), axis=1)
+        frac_times = numpy.nanmin(func_seqs, axis=1).T / total_times
+        ax.stackplot(logN_part, frac_times, labels=names[i])
 
-        bottom = None
-        for j in range(func_seqs.shape[2]):
-            func_seq = func_seqs[:, :, j]
-            times = numpy.nanmin(func_seq, axis=1)
-            frac_times = times / total_times
-            ax.bar(
-                logN_part,
-                frac_times,
-                width=1.0,
-                bottom=bottom,
-                label=names[i][j],
-                # color=['#292929', '#c2c2c2', '#808080'][j]
-            )
-            if bottom is None:
-                bottom = frac_times
-            else:
-                bottom += frac_times
         ax.legend()
         ax.set_title(['Predict', 'Update', 'Resample'][i])
         if i == 0:
@@ -721,8 +706,8 @@ def plot_sub_routine_fractions():
 
 
 if __name__ == '__main__':
-    # plot_sub_routine_fractions()
-    # plot_example_benchmark()
+    plot_sub_routine_fractions()
+    plot_example_benchmark()
     plot_max_auto()
     plot_times()
     plot_speed_up()
