@@ -56,7 +56,7 @@ def get_simulation_performance(dt_control):
     return sim_base.performance(ys[:, lin_model.outputs], lin_model.yd2n(K.ysp), ts)
 
 
-def generate_results(redo=False, number=50, low=0.2, high=30.):
+def generate_results(redo=False, number=50, low=0.1, high=30.):
     try:
         if redo:
             raise FileNotFoundError
@@ -87,6 +87,8 @@ def generate_results(redo=False, number=50, low=0.2, high=30.):
 def plot_results():
     df = pandas.read_csv('bioreactor_noisy_performance.csv')
     plt.plot(df['dt_controls'], df['performance'], 'k.')
+    plt.axvline(0.1, color='red')
+
     plt.title("Closedloop performance vs control period")
     plt.ylabel(r'$P_{\mathrm{ISE}}$')
     plt.xlabel('Control period (min)')
