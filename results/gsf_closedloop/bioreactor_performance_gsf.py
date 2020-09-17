@@ -29,8 +29,7 @@ def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=50, pf=
 
 
 @decorators.Pickler.pickle_me
-def get_results(end_time=50):
-    monte_carlo_sims = 1
+def get_results(end_time=50, monte_carlo_sims=1):
     run_seqss = GSF_run_seq.cpu_gpu_run_seqs()
     powerss = GSF_power.cpu_gpu_power_seqs()
 
