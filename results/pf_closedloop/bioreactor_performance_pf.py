@@ -141,6 +141,7 @@ def plot_perf_per_watt():
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
+    plt.figure(figsize=(6.25, 5))
     for cpu_gpu in range(2):
         log2_Npart = numpy.log2(N_particles[cpu_gpu])
         energys = numpy.average(energy_cpugpu[cpu_gpu], axis=1)
@@ -240,6 +241,7 @@ def plot_mpc_fracs():
 
 def plot_performances():
     N_particles, _, _, _, performance_cpugpu, _ = get_results()
+    plt.figure(figsize=(6.25, 5))
     for cpu_gpu in range(2):
         performancess = performance_cpugpu[cpu_gpu]
         logN_part = numpy.log2(N_particles[cpu_gpu])
@@ -259,9 +261,13 @@ def plot_performances():
 
 
 def plot_pcov():
-    N_particles, _, _, _, _, pcov_cpugpu = get_results()
+    N_particles, _, _, _, _, pcov_cpugpu = get_results(
+        end_time=500,
+        monte_carlo_sims=1
+    )
     cmap = matplotlib.cm.get_cmap('plasma')
-    ts = numpy.linspace(0, 50, 500)
+    plt.figure(figsize=(6.25, 5))
+    ts = numpy.linspace(0, 500, 5000)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey='row')
     for cpu_gpu in range(2):
@@ -288,4 +294,4 @@ def plot_pcov():
 plot_utilisation_per_watt()
 plot_perf_per_watt()
 plot_performances()
-plot_pcov()
+# plot_pcov()
