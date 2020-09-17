@@ -93,7 +93,49 @@ def get_results(end_time=50, monte_carlo_sims=1):
     performance_cpugpu = numpy.array(performance_cpugpu)
     pcov_cpugpu = numpy.array(pcov_cpugpu)
 
-    return N_particles, energy_cpugpu, control_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu
+    return N_particles, energy_cpugpu, runtime_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu
+
+
+def plot_utilisation_per_watt():
+    N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
+
+    cmap = matplotlib.cm.get_cmap('plasma')
+    plt.figure(figsize=(6.25, 5))
+    for cpu_gpu in range(2):
+        energys = numpy.log10(numpy.average(energy_cpugpu[cpu_gpu], axis=1))
+        performances = numpy.average(performance_cpugpu[cpu_gpu], axis=1)
+        utilizations = runtime_cpugpu[cpu_gpu] / (0.1*60)
+
+        norm = matplotlib.colors.Normalize(vmin=energys[0], vmax=energys[-1])
+        for i in range(len(energys)):
+            if i == 0:
+                plt.loglog(
+                    utilizations[i],
+                    performances[i],
+                    ['k.', 'k^'][cpu_gpu],
+                    label=['CPU', 'GPU'][cpu_gpu],
+                    color=cmap(norm(energys[i]))
+                )
+            else:
+                plt.loglog(
+                    utilizations[i],
+                    performances[i],
+                    ['k.', 'k^'][cpu_gpu],
+                    color=cmap(norm(energys[i]))
+                )
+
+        if cpu_gpu:
+            cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
+            cbar.ax.set_xlabel(r'$ \log(\frac{\mathrm{energy}}{\mathrm{period}}) $')
+
+    plt.axvline(1, color='red')
+    plt.xlabel(r'Utilization')
+    plt.ylabel(r'ISE')
+    # plt.title('Closedloop performance versus utilization')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('GSF_util.pdf')
+    plt.show()
 
 
 def plot_perf_per_watt():
@@ -105,6 +147,7 @@ def plot_perf_per_watt():
         energys = numpy.average(energy_cpugpu[cpu_gpu], axis=1)
         controls = control_cpugpu[cpu_gpu][:len(energys)]
         performances = numpy.average(performance_cpugpu[cpu_gpu], axis=1)
+        utilizations = runtime_cpugpu[cpu_gpu] / (0.1 * 60)
 
         norm = matplotlib.colors.Normalize(vmin=log2_Npart[0], vmax=log2_Npart[-1])
         for i in range(len(energys)):
@@ -112,7 +155,7 @@ def plot_perf_per_watt():
                 plt.loglog(
                     energys[i] / (0.1 * 60),
                     performances[i],
-                    ['k.', 'k^'][cpu_gpu],
+                    ['.', '^'][cpu_gpu] if utilizations[i] < 1 else 'x',
                     label=['CPU', 'GPU]'][cpu_gpu],
                     color=cmap(norm(log2_Npart[i]))
                 )
@@ -120,7 +163,7 @@ def plot_perf_per_watt():
                 plt.loglog(
                     energys[i] / (0.1 * 60),
                     performances[i],
-                    ['k.', 'k^'][cpu_gpu],
+                    ['.', '^'][cpu_gpu] if utilizations[i] < 1 else 'x',
                     color=cmap(norm(log2_Npart[i]))
                 )
 
@@ -244,7 +287,7 @@ def plot_pcov():
     plt.show()
 
 
-plot_control_periods()
+plot_utilisation_per_watt()
 plot_perf_per_watt()
 plot_performances()
 plot_pcov()
