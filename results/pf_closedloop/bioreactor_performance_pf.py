@@ -32,7 +32,7 @@ def get_results(end_time=50, monte_carlo_sims=1):
     run_seqss = PF_run_seq.cpu_gpu_run_seqs()
     powerss = PF_power.cpu_gpu_power_seqs()
 
-    energy_cpugpu, control_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu = [], [], [], [], []
+    energy_cpugpu, runtime_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu = [], [], [], [], []
     for cpu_gpu in range(2):
         sums = numpy.min(run_seqss[cpu_gpu][0][1], axis=1)
         N_particles = run_seqss[0][0][0]
@@ -42,8 +42,7 @@ def get_results(end_time=50, monte_carlo_sims=1):
             times = numpy.min(run_seqs, axis=1)
             sums += times
 
-        dt_controls = numpy.maximum(sums, 0.1)
-        control_cpugpu.append(dt_controls)
+        runtime_cpugpu.append(sums)
 
         method_power = []
         for method in range(3):
@@ -56,8 +55,7 @@ def get_results(end_time=50, monte_carlo_sims=1):
 
         energyss, mpc_fracss, performancess, pcovss = [], [], [], []
         for i in range(len(N_particles)):
-            dt_control = dt_controls[i]
-            dt_predict = dt_control
+            dt_control = dt_predict = 0.1
 
             energys, mpc_fracs, performances, pcovs = [], [], [], []
             for monte_carlo in range(monte_carlo_sims):
@@ -66,7 +64,8 @@ def get_results(end_time=50, monte_carlo_sims=1):
                     dt_controls[i],
                     dt_predict,
                     monte_carlo,
-                    pf=True
+                    pf=True,
+                    end_time=end_time
                 )
 
                 predict_energy, update_energy, resample_energy = [method_power[j][i] for j in range(3)]
@@ -97,20 +96,19 @@ def get_results(end_time=50, monte_carlo_sims=1):
 
 
 def plot_perf_per_watt():
-    N_particles, energy_cpugpu, control_cpugpu, _, performance_cpugpu, _ = get_results()
+    N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
     for cpu_gpu in range(2):
         log2_Npart = numpy.log2(N_particles[cpu_gpu])
         energys = numpy.average(energy_cpugpu[cpu_gpu], axis=1)
-        controls = control_cpugpu[cpu_gpu][:len(energys)]
         performances = numpy.average(performance_cpugpu[cpu_gpu], axis=1)
 
         norm = matplotlib.colors.Normalize(vmin=log2_Npart[0], vmax=log2_Npart[-1])
         for i in range(len(energys)):
             if i == 0:
                 plt.loglog(
-                    energys[i] / (controls[i] * 60),
+                    energys[i] / (0.1 * 60),
                     performances[i],
                     ['k.', 'k^'][cpu_gpu],
                     label=['CPU', 'GPU]'][cpu_gpu],
@@ -118,7 +116,7 @@ def plot_perf_per_watt():
                 )
             else:
                 plt.loglog(
-                    energys[i] / (controls[i] * 60),
+                    energys[i] / (0.1 * 60),
                     performances[i],
                     ['k.', 'k^'][cpu_gpu],
                     color=cmap(norm(log2_Npart[i]))
