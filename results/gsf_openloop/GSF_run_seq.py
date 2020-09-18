@@ -647,12 +647,38 @@ def plot_times():
     for device in range(2):
         for method in range(3):
             ax = axes[method]
-            times = numpy.min(run_seqss[device][method][1], axis=1)
+            ax.set_yscale('log')
+            timess = run_seqss[device][method][1]
             logN_part = numpy.log2(run_seqss[device][method][0])
-            ax.semilogy(logN_part, times, ['k.', 'kx'][device])
-            ax.set_title(['Predict', 'Update', 'Resample'][method])
 
-            ax.legend(['CPU', 'GPU'])
+            times = numpy.median(timess, axis=1)
+
+            times_err = numpy.abs(numpy.quantile(timess, [0, 1], axis=1) - times)
+            ax.errorbar(
+                logN_part,
+                times,
+                yerr=times_err,
+                fmt=['k.', 'kx'][device],
+                capsize=0,
+                elinewidth=2,
+                markeredgewidth=1,
+                ecolor=(0, 0, 1, 0.3),
+            )
+
+            times_err = numpy.abs(numpy.quantile(timess, [0.1, 0.9], axis=1) - times)
+            ax.errorbar(
+                logN_part,
+                times,
+                yerr=times_err,
+                fmt=['k.', 'kx'][device],
+                capsize=[5, 3][device],
+                elinewidth=2,
+                markeredgewidth=1,
+                ecolor=(1, 0, 0, 1),
+                label=['CPU', 'GPU'][device]
+            )
+
+            ax.legend()
             if method == 0:
                 ax.set_ylabel('Time (s)')
             ax.set_xlabel('$ \log_2(N) $ particles')
