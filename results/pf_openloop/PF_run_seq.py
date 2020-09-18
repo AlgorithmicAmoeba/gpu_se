@@ -535,8 +535,11 @@ def plot_times():
 
             if method == 0:
                 ax.set_ylabel('Time (s)')
-            ax.set_xlabel('$ \log_2(N) $ particles')
+            ax.set_xlabel('$ N $ particles')
             ax.set_xlim(xmin=1, xmax=19.5)
+
+            if device:
+                ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
     fig.suptitle('Run times particle filter methods')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig('PF_times.pdf')
