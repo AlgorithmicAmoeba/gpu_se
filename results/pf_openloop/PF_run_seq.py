@@ -417,7 +417,8 @@ def plot_max_auto():
             ax.set_ylim(0, 1)
             ax.set_xlim(0, 20)
             ax.axhline(0.2, color='r')
-            ax.set_xlabel(r'$\log_2(N_p)$')
+            ax.set_xlabel(r'$N_p$')
+            ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
 
             if row == 0:
                 ax.set_title(['Predict', 'Update', 'Resample'][col])
@@ -513,9 +514,15 @@ def plot_speed_up():
         )
 
     plt.legend()
+    ticks, _ = plt.xticks()
+    plt.xticks(
+        ticks,
+        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
+    )
+
     plt.title('Speed-up of particle filter')
     plt.ylabel('Speed-up')
-    plt.xlabel('$ \log_2(N) $ particles')
+    plt.xlabel('$ N_p $')
     plt.xlim(xmin=1, xmax=19.5)
     plt.axhline(1, color='black', alpha=0.4)
     plt.tight_layout()
@@ -569,7 +576,7 @@ def plot_times():
 
             if method == 0:
                 ax.set_ylabel('Time (s)')
-            ax.set_xlabel('$ N $ particles')
+            ax.set_xlabel('$ N_p $')
             ax.set_xlim(xmin=1, xmax=19.5)
 
             if device:
@@ -612,7 +619,8 @@ def plot_sub_routine_fractions():
         ax.set_title(['Predict', 'Update', 'Resample'][i])
         if i == 0:
             ax.set_ylabel('Fraction of runtime')
-        ax.set_xlabel(r'$\log_2(N_p)$')
+        ax.set_xlabel(r'$ N_p $')
+        ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
 
     plt.tight_layout()
     plt.savefig('pf_frac_breakdown.pdf')
