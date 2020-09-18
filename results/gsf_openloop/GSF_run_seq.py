@@ -619,14 +619,48 @@ def plot_speed_up():
     run_seqss = cpu_gpu_run_seqs()
 
     for method in range(3):
-        cpu_time = numpy.min(run_seqss[0][method][1], axis=1)
-        gpu_time = numpy.min(run_seqss[1][method][1], axis=1)
-
-        speed_up = cpu_time / gpu_time[:cpu_time.shape[0]]
+        plt.yscale('log')
         logN_part = numpy.log2(run_seqss[0][method][0])
-        plt.semilogy(logN_part, speed_up, ['k.', 'kx', 'k^'][method])
+        cpu_times = run_seqss[0][method][1]
+        gpu_times = run_seqss[1][method][1][:cpu_times.shape[0]]
 
-    plt.legend(['Predict', 'Update', 'Resample'])
+        speed_up = numpy.median(cpu_times, axis=1) / numpy.median(gpu_times, axis=1)
+        speed_up_err = numpy.abs(
+            (
+                    numpy.quantile(cpu_times, [0, 1], axis=1) /
+                    numpy.quantile(gpu_times, [0, 1], axis=1)
+            ) - speed_up
+        )
+        plt.errorbar(
+            logN_part,
+            speed_up,
+            yerr=speed_up_err,
+            fmt=['k.', 'kx', 'k^'][method],
+            capsize=3,
+            elinewidth=2,
+            markeredgewidth=1,
+            ecolor=(0, 0, 1, 0.3),
+        )
+
+        speed_up_err = numpy.abs(
+            (
+                    numpy.quantile(cpu_times, [0.1, 0.9], axis=1) /
+                    numpy.quantile(gpu_times, [0.1, 0.9], axis=1)
+            ) - speed_up
+        )
+        plt.errorbar(
+            logN_part,
+            speed_up,
+            yerr=speed_up_err,
+            fmt=['k.', 'kx', 'k^'][method],
+            capsize=5,
+            elinewidth=2,
+            markeredgewidth=1,
+            ecolor=(1, 0, 0, 1),
+            label=['Predict', 'Update', 'Resample'][method]
+        )
+
+    plt.legend()
     plt.title('Speed-up of Gaussian sum filter')
     plt.ylabel('Speed-up')
     plt.xlabel('$ \log_2(N) $ particles')
