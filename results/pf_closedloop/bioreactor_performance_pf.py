@@ -125,7 +125,8 @@ def plot_utilisation_per_watt():
 
         if cpu_gpu:
             cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
-            cbar.ax.set_xlabel(r'$ \log(\frac{\mathrm{energy}}{\mathrm{period}}) $')
+            cbar.ax.set_xlabel(r'$ \frac{\mathrm{energy}}{\mathrm{period}} $ ($ W $)')
+            cbar.ax.set_yticklabels('$10^{' + numpy.char.array(cbar.ax.get_yticks(), unicode=True) + '}$')
 
     plt.axvline(1, color='red')
     plt.xlabel(r'Utilization')
@@ -167,9 +168,11 @@ def plot_perf_per_watt():
                 )
 
         if cpu_gpu:
-            plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
+            cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
+            cbar.ax.set_xlabel(r'$ N_p $')
+            cbar.ax.set_yticklabels('$ 2^{' + numpy.char.array(cbar.ax.get_yticks(), unicode=True) + '}$')
 
-    plt.xlabel(r'$ \frac{\mathrm{energy}}{\mathrm{period}} $ (W)')
+    plt.xlabel(r'$ \frac{\mathrm{energy}}{\mathrm{period}} $ ($ W $)')
     plt.ylabel(r'ISE')
     # plt.title('Closedloop performance versus power')
     plt.legend()
@@ -190,7 +193,13 @@ def plot_control_periods():
             label=['CPU', 'GPU]'][cpu_gpu]
         )
 
-    plt.xlabel('$ \log_2(N) $ particles')
+    ticks, _ = plt.xticks()
+    plt.xticks(
+        ticks,
+        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
+    )
+
+    plt.xlabel('$ N_p $')
     plt.ylabel(r'Control period (min)')
     # plt.title('Control periods')
     plt.legend()
@@ -210,7 +219,14 @@ def plot_ppjs():
             ['k.', 'kx'][cpu_gpu],
             label=['CPU', 'GPU]'][cpu_gpu]
         )
-    plt.xlabel('$ \log_2(N) $ particles')
+
+    ticks, _ = plt.xticks()
+    plt.xticks(
+        ticks,
+        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
+    )
+
+    plt.xlabel('$ N_p $')
     plt.ylabel(r'$\frac{\mathrm{ISE}}{\mathrm{J}}$')
     # plt.title('Performance per energy')
     plt.legend()
@@ -230,7 +246,14 @@ def plot_mpc_fracs():
             ['k.', 'kx'][cpu_gpu],
             label=['CPU', 'GPU]'][cpu_gpu]
         )
-    plt.xlabel('$ \log_2(N) $ particles')
+
+    ticks, _ = plt.xticks()
+    plt.xticks(
+        ticks,
+        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
+    )
+
+    plt.xlabel('$ N_p $')
     plt.ylabel(r'Fraction MPC convergence')
     # plt.title('MPC convergence')
     plt.ylim(ymin=0)
@@ -252,7 +275,14 @@ def plot_performances():
             ['k.', 'kx'][cpu_gpu],
             label=['CPU', 'GPU]'][cpu_gpu]
         )
-    plt.xlabel('$ \log_2(N) $ particles')
+
+    ticks, _ = plt.xticks()
+    plt.xticks(
+        ticks,
+        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
+    )
+
+    plt.xlabel('$ N_p $')
     plt.ylabel(r'$\mathrm{ISE}$')
     # plt.title('Performance')
     plt.legend()
@@ -283,7 +313,9 @@ def plot_pcov():
         ax.set_xlabel('Time (min)')
 
         if cpu_gpu:
-            fig.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
+            cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
+            cbar.ax.set_xlabel(r'$ N_p $')
+            cbar.ax.set_yticklabels('$ 2^{' + numpy.char.array(cbar.ax.get_yticks(), unicode=True) + '}$')
         else:
             ax.set_ylabel(r'$\bar{\sigma}(\Sigma)$')
 
