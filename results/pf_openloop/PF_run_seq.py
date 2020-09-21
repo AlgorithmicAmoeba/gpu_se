@@ -393,7 +393,7 @@ def plot_example_benchmark():
     plt.xlabel('Lag')
     plt.ylabel('Autocorrelation')
 
-    plt.suptitle(r'Benchmarking for CPU update with $N_p = 2^{19.5}$')
+    # plt.suptitle(r'Benchmarking for CPU update with $N_p = 2^{19.5}$')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('benchmark.pdf')
     plt.show()
@@ -428,7 +428,7 @@ def plot_max_auto():
 
             if col == 0 and row == 1:
                 ax.set_ylabel('GPU', rotation=0)
-    fig.suptitle('Maximum autocorrelation values')
+    # fig.suptitle('Maximum autocorrelation values')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('max_autocorrelation.pdf')
     plt.show()
@@ -520,7 +520,7 @@ def plot_speed_up():
         '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
     )
 
-    plt.title('Speed-up of particle filter')
+    # plt.title('Speed-up of particle filter')
     plt.ylabel('Speed-up')
     plt.xlabel('$ N_p $')
     plt.xlim(xmin=1, xmax=19.5)
@@ -581,7 +581,7 @@ def plot_times():
 
             if device:
                 ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
-    fig.suptitle('Run times particle filter methods')
+    # fig.suptitle('Run times particle filter methods')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig('PF_times.pdf')
     plt.show()
