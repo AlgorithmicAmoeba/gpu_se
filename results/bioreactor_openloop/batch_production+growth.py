@@ -1,5 +1,6 @@
 import numpy
 import tqdm
+import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 import model
@@ -63,6 +64,9 @@ def add_time_lines():
     plt.xlim([0, ts[-1]])
 
 
+matplotlib.rcParams.update({'font.size': 24})
+plt.figure(figsize=(6.25*3, 5*2))
+
 plt.subplot(2, 3, 1)
 plt.plot(ts, ys_meas[:, 2], 'k')
 plt.title(r'$C_{FA}$')
@@ -87,6 +91,7 @@ add_time_lines()
 
 plt.subplot(2, 3, 4)
 plt.plot(ts, us[:, select_inputs[1]], 'k')
+plt.title(r'$F_{m, in}$')
 plt.ylabel(r'$\frac{L}{min}$')
 plt.xlabel(r't ($min$)')
 add_time_lines()
