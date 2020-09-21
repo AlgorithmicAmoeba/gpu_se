@@ -90,6 +90,7 @@ def plot_benchmarks():
     plt.subplot(1, 3, 3)
     abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
     plt.plot(abs_cors, 'kx')
+    plt.axhline(0.2, color='red')
     plt.title('Autocorrelation graph')
     plt.xlabel('Lag')
     plt.ylabel('Autocorrelation')
