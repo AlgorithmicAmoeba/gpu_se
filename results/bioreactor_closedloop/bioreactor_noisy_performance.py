@@ -89,7 +89,7 @@ def plot_results():
     plt.plot(df['dt_controls'], df['performance'], 'k.')
     plt.axvline(0.1, color='red')
 
-    plt.title("Closedloop performance vs control period")
+    # plt.title("Closedloop performance vs control period")
     plt.ylabel(r'$P_{\mathrm{ISE}}$')
     plt.xlabel('Control period (min)')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
