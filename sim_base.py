@@ -142,7 +142,7 @@ def get_noise(lib=cupy, deterministic=False):
         means=numpy.zeros(shape=(2, 5)),
         covariances=numpy.array([
             numpy.diag([1e-4, 1e-7, 1e-3, 1e-3, 1e-7]),
-            numpy.diag([1e-3, 1e-6, 1e-2, 1e-2, 1e-6])*10
+            numpy.diag([1e-3, 1e-6, 1e-2, 1e-2, 1e-6])
         ]),
         weights=numpy.array([0.75, 0.25]),
         library=lib
