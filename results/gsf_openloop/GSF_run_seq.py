@@ -541,7 +541,7 @@ def plot_example_benchmark():
             ax.set_xlabel('Lag')
         ax.set_ylabel('Autocorrelation')
 
-    plt.suptitle(r'Benchmarking for no-op and time.time()')
+    # plt.suptitle(r'Benchmarking for no-op and time.time()')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('benchmark.pdf')
     plt.show()
@@ -576,7 +576,7 @@ def plot_max_auto():
 
             if col == 0 and row == 1:
                 ax.set_ylabel('GPU', rotation=0)
-    fig.suptitle('Maximum autocorrelation values')
+    # fig.suptitle('Maximum autocorrelation values')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('max_autocorrelation.pdf')
     plt.show()
@@ -668,7 +668,7 @@ def plot_speed_up():
         '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
     )
 
-    plt.title('Speed-up of Gaussian sum filter')
+    # plt.title('Speed-up of Gaussian sum filter')
     plt.ylabel('Speed-up')
     plt.xlabel(r'$ N_p$')
     plt.xlim(xmin=1, xmax=19.5)
@@ -726,7 +726,7 @@ def plot_times():
             ax.set_xlim(xmin=1, xmax=19.5)
             if device:
                 ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
-    fig.suptitle('Run times Gaussian sum filter methods')
+    # fig.suptitle('Run times Gaussian sum filter methods')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig('GSF_times.pdf')
     plt.show()
