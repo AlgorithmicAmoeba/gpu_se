@@ -36,9 +36,9 @@ for t in tqdm.tqdm(ts[1:]):
                 lin_model.yn2d(ys_meas[-1])
             )
         except:
-            u = numpy.array([0.06, 0.2])
+            u = numpy.array([0.04, 0.1])
         U_temp[lin_model.inputs] = lin_model.ud2n(u)
-        us.append(U_temp.copy())
+        us.append(numpy.maximum(0, U_temp.copy()))
         t_next += dt_control
     else:
         us.append(us[-1])
