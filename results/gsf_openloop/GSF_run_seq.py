@@ -519,7 +519,7 @@ def plot_example_benchmark():
         ax = axes[i][0]
         ax.plot(run_seq, 'kx')
         if i == 0:
-            ax.set_title('Run sequence')
+            ax.set_title('Run sequence', pad=12)
         else:
             ax.set_xlabel('Iterations')
         ax.set_ylabel('Time (s)')
@@ -527,7 +527,7 @@ def plot_example_benchmark():
         ax = axes[i][1]
         ax.plot(run_seq[:-1], run_seq[1:], 'kx')
         if i == 0:
-            ax.set_title('Lag chart')
+            ax.set_title('Lag chart', pad=12)
         else:
             ax.set_xlabel(r'$X_{i-1}$')
         ax.set_ylabel(r'$X_{i}$')
@@ -536,7 +536,7 @@ def plot_example_benchmark():
         abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
         ax.plot(abs_cors, 'kx')
         if i == 0:
-            ax.set_title('Autocorrelation graph')
+            ax.set_title('Autocorrelation graph', pad=12)
         else:
             ax.set_xlabel('Lag')
         ax.set_ylabel('Autocorrelation')
