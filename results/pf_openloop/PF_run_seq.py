@@ -363,42 +363,6 @@ def pf_sub_routine_run_seqs():
     return run_seqss
 
 
-def plot_example_benchmark():
-    """Plot the no_op run sequence, lag chart and autocorrelation graphs
-    """
-    N_times = numpy.array([10.])
-    # noinspection PyTypeChecker
-    N_times, run_seqs = no_op_run_seq(N_times, 100)
-    run_seq = run_seqs[-1]
-
-    print(N_times[-1])
-
-    plt.figure(figsize=(15, 5))
-    plt.subplot(1, 3, 1)
-    plt.semilogy(run_seq, 'kx')
-    plt.title('Run sequence')
-    plt.xlabel('Iterations')
-    plt.ylabel('Time (s)')
-
-    plt.subplot(1, 3, 2)
-    plt.plot(run_seq[:-1], run_seq[1:], 'kx')
-    plt.title('Lag chart')
-    plt.xlabel(r'$X_{i-1}$')
-    plt.ylabel(r'$X_{i}$')
-
-    plt.subplot(1, 3, 3)
-    abs_cors = numpy.abs(stats_tools.pacf(run_seq, nlags=10)[1:])
-    plt.plot(abs_cors, 'kx')
-    plt.title('Autocorrelation graph')
-    plt.xlabel('Lag')
-    plt.ylabel('Autocorrelation')
-
-    # plt.suptitle(r'Benchmarking for CPU update with $N_p = 2^{19.5}$')
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('benchmark.pdf')
-    plt.show()
-
-
 def plot_max_auto():
     """Plot the maximum autocorrelation for the predict, update and resample run sequences
     """
@@ -629,7 +593,6 @@ def plot_sub_routine_fractions():
 
 if __name__ == '__main__':
     plot_sub_routine_fractions()
-    plot_example_benchmark()
     plot_max_auto()
     plot_times()
     plot_speed_up()
