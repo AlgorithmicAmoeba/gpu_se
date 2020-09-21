@@ -39,7 +39,8 @@ def plot():
     dts = [0.1]
 
     # u = numpy.array([0.06, 0.2])
-    plt.figure(figsize=(6.4*2, 4.8))
+    matplotlib.rcParams.update({'font.size': 16})
+    plt.figure(figsize=(6.25*2, 5))
 
     max_slope = 0
     argmax = 0
@@ -53,7 +54,7 @@ def plot():
         Cg = ys[:, 0]
         Cga = numpy.abs(Cg - Cg[0])
         Cga_max = numpy.max(Cga)
-        ts_max = ts[numpy.where(Cga == Cga_max)]
+        ts_max = ts[numpy.where(Cga == Cga_max)][0]
         slope = Cga_max / ts_max
         argmax = argmax
         if slope > max_slope:
@@ -64,14 +65,14 @@ def plot():
         plt.subplot(1, 2, 1)
         plt.plot(ts, ys[:, 2])
         plt.title(r'$C_{FA}$')
-        plt.ylabel(r'$\frac{mol}{L}$')
+        plt.ylabel(r'$\frac{mmol}{L}$')
         plt.xlabel(r't ($min$)')
         plt.xlim(xmin=0, xmax=100)
 
         plt.subplot(1, 2, 2)
         plt.plot(ts, ys[:, 0])
         plt.title(r'$C_{G}$')
-        plt.ylabel(r'$\frac{mol}{L}$')
+        plt.ylabel(r'$\frac{mmol}{L}$')
         plt.xlabel(r't ($min$)')
         plt.xlim(xmin=0, xmax=300)
 
@@ -87,7 +88,7 @@ def plot():
         # plt.ylabel(r'$\frac{L}{min}$')
         # plt.xlabel(r't ($min$)')
 
-        plt.suptitle('Step tests')
+        # plt.suptitle('Step tests')
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         plt.savefig('step_tests.pdf')
     plt.show()
