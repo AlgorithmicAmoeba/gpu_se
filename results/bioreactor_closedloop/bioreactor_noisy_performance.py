@@ -3,6 +3,7 @@ import tqdm
 import matplotlib.pyplot as plt
 import pandas
 import sim_base
+import matplotlib
 
 
 def get_simulation_performance(dt_control):
@@ -85,6 +86,9 @@ def generate_results(redo=False, number=50, low=0.1, high=30.):
 
 
 def plot_results():
+    matplotlib.rcParams.update({'font.size': 9})
+    plt.figure(figsize=(6.25/1.4, 5/1.4))
+
     df = pandas.read_csv('bioreactor_noisy_performance.csv')
     plt.plot(df['dt_controls'], df['performance'], 'k.')
     plt.axvline(0.1, color='red')

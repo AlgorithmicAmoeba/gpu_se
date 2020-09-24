@@ -3,6 +3,7 @@ import time
 import joblib
 import tqdm
 import sim_base
+import matplotlib
 import matplotlib.pyplot as plt
 import statsmodels.tsa.stattools as stats_tools
 
@@ -74,7 +75,8 @@ def mpc_run_seq(N_runs):
 def plot_benchmarks():
     run_seq = mpc_run_seq(1000)
 
-    plt.figure(figsize=(15, 5))
+    matplotlib.rcParams.update({'font.size': 20})
+    plt.figure(figsize=(6.25*3, 5))
     plt.subplot(1, 3, 1)
     plt.plot(run_seq, 'kx')
     plt.title('Run sequence')

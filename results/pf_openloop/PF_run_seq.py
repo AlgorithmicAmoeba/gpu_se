@@ -368,7 +368,8 @@ def plot_max_auto():
     """
     run_seqss = cpu_gpu_run_seqs()
 
-    fig, axes = plt.subplots(2, 3, sharey='row')
+    matplotlib.rcParams.update({'font.size': 20})
+    fig, axes = plt.subplots(2, 3, sharey='row', figsize=(6.25 * 3, 5 * 2))
     for row in range(2):
         for col in range(3):
             ax = axes[row, col]
@@ -388,10 +389,10 @@ def plot_max_auto():
                 ax.set_title(['Predict', 'Update', 'Resample'][col])
 
             if row == 0 and col == 0:
-                ax.set_ylabel('CPU', rotation=0)
+                ax.set_ylabel('CPU', rotation=0, labelpad=25)
 
             if col == 0 and row == 1:
-                ax.set_ylabel('GPU', rotation=0)
+                ax.set_ylabel('GPU', rotation=0, labelpad=25)
     # fig.suptitle('Maximum autocorrelation values')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('max_autocorrelation.pdf')
@@ -435,6 +436,8 @@ def plot_speed_up():
     """
     run_seqss = cpu_gpu_run_seqs()
 
+    matplotlib.rcParams.update({'font.size': 9})
+    plt.figure(figsize=(6.25, 5))
     for method in range(3):
         plt.yscale('log')
         logN_part = numpy.log2(run_seqss[0][method][0])
@@ -500,7 +503,8 @@ def plot_times():
     """
     run_seqss = cpu_gpu_run_seqs()
 
-    fig, axes = plt.subplots(1, 3, sharey='all', figsize=(15, 5))
+    matplotlib.rcParams.update({'font.size': 9})
+    fig, axes = plt.subplots(3, 1, sharey='all', figsize=(6.25, 11))
     for device in range(2):
         for method in range(3):
             ax = axes[method]
@@ -569,7 +573,8 @@ def plot_sub_routine_fractions():
 
     func_seqss = pf_sub_routine_run_seqs()
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    matplotlib.rcParams.update({'font.size': 9})
+    fig, axes = plt.subplots(3, 1, sharey='all', figsize=(6.25, 11))
     for i in range(3):
         ax = axes[i]
         N_parts, func_seqs = func_seqss[i]
@@ -593,6 +598,6 @@ def plot_sub_routine_fractions():
 
 if __name__ == '__main__':
     plot_sub_routine_fractions()
-    plot_max_auto()
-    plot_times()
-    plot_speed_up()
+    # plot_max_auto()
+    # plot_times()
+    # plot_speed_up()

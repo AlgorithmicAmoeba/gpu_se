@@ -1,5 +1,6 @@
 import numpy
 import tqdm
+import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 
@@ -47,6 +48,9 @@ print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.
 
 
 def plot():
+    matplotlib.rcParams.update({'font.size': 20})
+    plt.figure(figsize=(6.25 * 3, 5*2))
+
     plt.subplot(2, 3, 1)
     plt.plot(ts, ys[:, 2], 'k')
     plt.axhline(lin_model.yd2n(K.ysp)[1], color='red')

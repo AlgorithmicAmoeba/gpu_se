@@ -100,6 +100,7 @@ def plot_utilisation_per_watt():
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
+    matplotlib.rcParams.update({'font.size': 9})
     plt.figure(figsize=(6.25, 5))
     for cpu_gpu in range(2):
         energys = numpy.log10(numpy.average(energy_cpugpu[cpu_gpu], axis=1))
@@ -144,6 +145,7 @@ def plot_perf_per_watt():
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
+    matplotlib.rcParams.update({'font.size': 9})
     plt.figure(figsize=(6.25, 5))
     for cpu_gpu in range(2):
         log2_Npart = numpy.log2(N_particles[cpu_gpu])
@@ -266,6 +268,7 @@ def plot_mpc_fracs():
 
 def plot_performances():
     N_particles, _, _, _, performance_cpugpu, _ = get_results()
+    matplotlib.rcParams.update({'font.size': 9})
     plt.figure(figsize=(6.25, 5))
     for cpu_gpu in range(2):
         performancess = performance_cpugpu[cpu_gpu]
@@ -298,7 +301,8 @@ def plot_pcov():
         monte_carlo_sims=1
     )
     cmap = matplotlib.cm.get_cmap('plasma')
-    plt.figure(figsize=(6.25, 5))
+    matplotlib.rcParams.update({'font.size': 18})
+    plt.figure(figsize=(6.25*2, 5))
     ts = numpy.linspace(0, 500, 5000)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey='row')
@@ -310,7 +314,7 @@ def plot_pcov():
 
         norm = matplotlib.colors.Normalize(vmin=log2_Npart[0], vmax=log2_Npart[-1])
         for i in range(len(log2_Npart)):
-            ax.plot(ts, pcovs[i], color=cmap(norm(log2_Npart[i])))
+            ax.semilogy(ts, pcovs[i], color=cmap(norm(log2_Npart[i])))
         ax.set_title(['CPU', 'GPU'][cpu_gpu])
         ax.set_xlabel('Time (min)')
 
@@ -328,4 +332,4 @@ def plot_pcov():
 plot_utilisation_per_watt()
 plot_perf_per_watt()
 plot_performances()
-# plot_pcov()
+plot_pcov()

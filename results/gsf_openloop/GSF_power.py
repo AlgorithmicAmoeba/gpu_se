@@ -1,4 +1,5 @@
 import numpy
+import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 import time
@@ -180,8 +181,8 @@ def plot_energy_per_run():
      predict, update and resample functions
     """
     powerss = cpu_gpu_power_seqs()
-    fig, axes = plt.subplots(1, 3, figsize=(10, 5), sharey='all')
-    plt.rcParams.update({'font.size': 12})
+    matplotlib.rcParams.update({'font.size': 20})
+    fig, axes = plt.subplots(1, 3, sharey='all', figsize=(6.25*3, 10))
 
     for cpu_gpu in range(2):
         for method in range(3):
@@ -197,15 +198,16 @@ def plot_energy_per_run():
                 N_logs,
                 total_power,
                 ['k.', 'kx'][cpu_gpu],
-                label=['CPU', 'GPU'][cpu_gpu]
+                label=['CPU', 'GPU'][cpu_gpu],
+                markersize=9
             )
             ax.legend()
-            ax.set_xlabel(r'$\log_2(N_p)$', fontsize=12)
+            ax.set_xlabel(r'$\log_2(N_p)$')
             if method == 0:
-                ax.set_ylabel(r'$\frac{\mathrm{J}}{\mathrm{run}}$', fontsize=12)
+                ax.set_ylabel(r'$\frac{\mathrm{J}}{\mathrm{run}}$')
             ax.set_title(['Predict', 'Update', 'Resample'][method])
 
-    fig.suptitle('Energy per run')
+    # fig.suptitle('Energy per run')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('energy_per_run.pdf')
     plt.show()

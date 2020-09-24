@@ -1,5 +1,6 @@
 import numpy
 import tqdm
+import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 import model
@@ -62,6 +63,8 @@ def add_time_lines():
         plt.axvline(time, color='black', alpha=0.4)
     plt.xlim([25, ts[-1]])
 
+matplotlib.rcParams.update({'font.size': 24})
+plt.figure(figsize=(6.25*3, 5*2))
 
 plt.subplot(2, 3, 1)
 plt.plot(ts, ys_meas[:, 2], 'k')
