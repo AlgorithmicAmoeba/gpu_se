@@ -205,39 +205,3 @@ class PowerMeasurement:
             time.sleep(0.2)
 
         q.put(numpy.array([times, cpu_frac, gpu_power]))
-
-
-class Pickler:
-    """
-    Parameters
-    ----------
-    function : callable
-            The function to be managed
-
-    path : string, optional
-        Location where pickle cache should be recalled and saved to
-    """
-    def __init__(self, function, path='pickled/'):
-        self.path = path + function.__name__
-        self.function = function
-        try:
-            os.makedirs(self.path)
-        except FileExistsError:
-            pass
-
-    def __call__(self, *args, **kwargs):
-        # noinspection PyBroadException
-        try:
-            result = self.function(*args, **kwargs)
-            f = open(self.path + '/object.pickle', 'wb')
-            pickle.dump(result, f)
-            f.close()
-            return result
-        except cupy.cuda.runtime.CUDARuntimeError:
-            f = open(self.path + '/object.pickle', 'rb')
-            result = pickle.load(f)
-            return result
-
-    @staticmethod
-    def pickle_me(function, *args, **kwargs):
-        return Pickler(function, *args, **kwargs)
