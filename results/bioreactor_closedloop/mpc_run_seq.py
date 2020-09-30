@@ -1,16 +1,14 @@
 import numpy
 import time
-import joblib
 import tqdm
 import sim_base
 import matplotlib
 import matplotlib.pyplot as plt
 import statsmodels.tsa.stattools as stats_tools
+from decorators import PickleJar
 
-memory = joblib.Memory('cache/mpc')
 
-
-@memory.cache
+@PickleJar.pickle(path='mpc')
 def mpc_run_seq(N_runs):
     """Performs a run sequence on the MPC step function for a
      number of runs

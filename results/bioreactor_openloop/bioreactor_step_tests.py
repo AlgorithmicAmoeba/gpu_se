@@ -2,16 +2,14 @@ import numpy
 import tqdm
 import matplotlib.pyplot as plt
 import sim_base
-import joblib
 import itertools
 import warnings
 import matplotlib
 warnings.filterwarnings("ignore", category=matplotlib.MatplotlibDeprecationWarning)
+from decorators import PickleJar
 
-memory = joblib.Memory('cache/step_test/')
 
-
-@memory.cache
+@PickleJar.pickle(path='bioreactor')
 def step_test(percent, dt):
     # Simulation set-up
     end_time = 300
