@@ -1,6 +1,6 @@
 .idea/
 docs/_build
 __pycache__/
-cache/
+picklejar/
 *.pdf
 *.png
