@@ -10,41 +10,74 @@ import os
 import cupy
 
 
-class RunSequences:
-    """A class to manage run sequences for functions.
-    Specifically designed to allow vectorization of the process
+global_cache_settings = {
+    'force_rerun': False,
+    'force_same_code': True
+}
 
-    Parameters
-    ----------
-    function : callable
-        The function to be vectorized/managed
 
-    path : string
-        Location where joblib cache should be recalled and saved to
+# noinspection PyProtectedMember
+class PickleJar(joblib.memory.MemorizedFunc):
+    """Implements joblib.Memory but that allows the pickling
+    to work across multiple computers
     """
-    def __init__(self, function, path='cache/'):
-        self._memory = joblib.Memory(path + function.__name__)
-        self.function = self._memory.cache(function)
+    def __init__(self, func, location='', cache_settings=None):
+        if cache_settings is None:
+            cache_settings = global_cache_settings
+        self.cache_settings = cache_settings
 
-    def __call__(self, N_particles, N_runs, *args, **kwargs):
-        run_seqs = numpy.array(
-            [self.function(int(N_particle), N_runs, *args, **kwargs) for N_particle in N_particles]
-        )
+        joblib.memory._build_func_identifier = lambda f: f.__name__
 
-        return N_particles, run_seqs
+        dirname = os.path.dirname(__file__)
+        location = os.path.join(dirname, 'picklejar', location)
 
-    def clear(self, *args):
-        """Clears the stored result of the function with the arguments given
+        super().__init__(func, location)
+
+        if self.cache_settings['force_same_code']:
+            func_code, source_file, first_line = joblib.memory.get_func_code(self.func)
+            self._write_func_code(func_code, first_line)
+
+    @staticmethod
+    def pickle(path):
+        return lambda fun: PickleJar(fun, path)
+
+    def clear_single(self, *args, **kwargs):
+        """Clears the single stored result of the function with the arguments given
 
         Parameters
         ----------
         args : tuple
             Arguments of the function
         """
-        self.function.call_and_shelve(*args).clear()
+        self.call_and_shelve(*args, **kwargs).clear()
+
+    def __call__(self, *args, **kwargs):
+        if self.cache_settings['force_rerun']:
+            self.clear_single(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
+
+
+class RunSequences:
+    """A class to manage run sequences for functions.
+    Specifically designed to allow vectorization of the process
+
+    Parameters
+    ----------
+    func : callable
+        The function to be vectorized/managed
+    """
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, N_particles, *args, **kwargs):
+        run_seqs = numpy.array(
+            [self.func(int(N_particle), *args, **kwargs) for N_particle in N_particles]
+        )
+
+        return N_particles, run_seqs
 
     @staticmethod
-    def vectorize(function, *agrs, **kwargs):
+    def vectorize(function):
         """Decorator function that creates a callable RunSequences class
 
         Parameters
@@ -56,7 +89,7 @@ class RunSequences:
         rs : RunSequences
             The RunSequences object that handles vectorized calls
         """
-        return RunSequences(function, *agrs, **kwargs)
+        return RunSequences(function)
 
 
 class PowerMeasurement:
@@ -69,71 +102,49 @@ class PowerMeasurement:
         function : callable
             The function to be vectorized/managed
 
-        path : string, optional
-            Location where joblib cache should be recalled and saved to
-
         CPU_max_power : float, optional
             The power the CPU draws at 100% use
         """
-    def __init__(self, function, path='cache/', CPU_max_power=30):
-        self._memory = joblib.Memory(path + function.__name__)
+    def __init__(self, function, CPU_max_power=30):
         self.function = function
         self.CPU_max_power = CPU_max_power
-        self._particle_call = self._particle_call_gen()
+        self.__name__ = self.function.__name__
+        # noinspection PyUnresolvedReferences
+        self.__code__ = self.function.__code__
 
-    def __call__(self, N_particles, t_run, *args, **kwargs):
-        powers = numpy.array(
-            [
-                self._particle_call(N_particle, t_run, *args, **kwargs)
-                for N_particle in N_particles
-            ]
-        )
-        powers[:, 0] *= self.CPU_max_power
-        return N_particles, powers
+    def __call__(self, N_particle, t_run, *args, **kwargs):
+        return self._particle_call(N_particle, t_run, *args, **kwargs)
 
-    def _particle_call_gen(self):
-        """Generates the function that spawns the power measurement process
+    def _particle_call(self, N_particle, t_run, *args, **kwargs):
+        """Spawns the power measurement process
         and runs the function for the required amount of time"""
+        queue = multiprocessing.Queue()
+        power_process = multiprocessing.Process(
+            target=PowerMeasurement._power_seq,
+            args=(queue,)
+        )
+        power_process.start()
+        res = self.function(N_particle, t_run, *args, **kwargs)
+        queue.put('Done')
 
-        @self._memory.cache
-        def particle_call(N_particle, t_run, *args, **kwargs):
-            queue = multiprocessing.Queue()
-            power_process = multiprocessing.Process(
-                target=PowerMeasurement._power_seq,
-                args=(queue,)
-            )
-            power_process.start()
-            N_runs = self.function(N_particle, t_run, *args, **kwargs)
-            queue.put('Done')
+        while queue.qsize() < 2:
+            time.sleep(0.3)
 
-            while queue.qsize() < 2:
-                time.sleep(0.3)
+        queue.get()
+        power_seq = queue.get()
 
-            queue.get()
-            power_seq = queue.get()
+        power = scipy.integrate.trapz(power_seq[1:, :], power_seq[0], axis=1)
+        # noinspection PyUnresolvedReferences
+        power[0] *= self.CPU_max_power
 
-            power = scipy.integrate.trapz(power_seq[1:, :], power_seq[0], axis=1) / N_runs
+        queue.close()
+        queue.join_thread()
+        power_process.join()
 
-            queue.close()
-            queue.join_thread()
-            power_process.join()
-
-            return power
-
-        return particle_call
-
-    def clear(self, *args):
-        """Clears the stored result of the function with the arguments given
-
-        Parameters
-        ----------
-        args : tuple
-            Arguments of the function
-        """
-        self._particle_call.call_and_shelve(*args).clear()
+        return res, power
 
     @staticmethod
-    def vectorize(function, *agrs, **kwargs):
+    def measure(function, *agrs, **kwargs):
         """Decorator function that creates a callable PowerMeasurement class
 
         Parameters

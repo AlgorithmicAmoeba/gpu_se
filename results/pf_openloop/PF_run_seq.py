@@ -9,10 +9,11 @@ import statsmodels.tsa.stattools as stats_tools
 import torch
 import torch.utils.dlpack as torch_dlpack
 import filter.particle
-from decorators import RunSequences, Pickler
+from decorators import RunSequences, PickleJar
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def predict_run_seq(N_particle, N_runs, gpu):
     """Performs a run sequence on the prediction function with the given number
     of particle and number of runs on the CPU or GPU
@@ -51,6 +52,7 @@ def predict_run_seq(N_particle, N_runs, gpu):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def update_run_seq(N_particle, N_runs, gpu):
     """Performs a run sequence on the update function with the given number
     of particle and number of runs on the CPU or GPU
@@ -89,6 +91,7 @@ def update_run_seq(N_particle, N_runs, gpu):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def resample_run_seq(N_particle, N_runs, gpu):
     """Performs a run sequence on the resample function with the given number
     of particle and number of runs on the CPU or GPU
@@ -129,6 +132,7 @@ def resample_run_seq(N_particle, N_runs, gpu):
 
 # noinspection PyProtectedMember
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def predict_subs_run_seq(N_particle, N_runs):
     """Performs a run sequence on the prediction function's subroutines
      with the given number of particles and number of runs
@@ -179,6 +183,7 @@ def predict_subs_run_seq(N_particle, N_runs):
 
 # noinspection PyProtectedMember
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def update_subs_run_seq(N_particle, N_runs):
     """Performs a run sequence on the update function's subroutines
      with the given number of particles and number of runs
@@ -231,6 +236,7 @@ def update_subs_run_seq(N_particle, N_runs):
 
 # noinspection PyProtectedMember
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def resample_subs_run_seq(N_particle, N_runs):
     """Performs a run sequence on the resample function's subroutines
      with the given number of particles and number of runs
@@ -291,6 +297,7 @@ def resample_subs_run_seq(N_particle, N_runs):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
 def no_op_run_seq(N_time, N_runs):
     """Performs a run sequence on a no-op routine with the given sleep time
      and number of runs
@@ -318,7 +325,7 @@ def no_op_run_seq(N_time, N_runs):
     return numpy.array(times)
 
 
-@Pickler.pickle_me
+@PickleJar.pickle(path='pf/processed')
 def cpu_gpu_run_seqs():
     """Returns the run sequences for the predict, update and resample method
 
@@ -345,7 +352,7 @@ def cpu_gpu_run_seqs():
 
 
 # noinspection PyTypeChecker
-@Pickler.pickle_me
+@PickleJar.pickle(path='pf/processed')
 def pf_sub_routine_run_seqs():
     """Returns the run sequences for the predict, update and resample subroutines
 
@@ -598,6 +605,6 @@ def plot_sub_routine_fractions():
 
 if __name__ == '__main__':
     plot_sub_routine_fractions()
-    # plot_max_auto()
-    # plot_times()
-    # plot_speed_up()
+    plot_max_auto()
+    plot_times()
+    plot_speed_up()

@@ -10,10 +10,11 @@ import torch
 import torch.utils.dlpack as torch_dlpack
 import filter.particle
 import filter.gs_ukf
-from decorators import RunSequences, Pickler
+from decorators import RunSequences, PickleJar
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def predict_run_seq(N_particle, N_runs, gpu):
     """Performs a run sequence on the prediction function with the given number
     of particle and number of runs on the CPU or GPU
@@ -53,6 +54,7 @@ def predict_run_seq(N_particle, N_runs, gpu):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def update_run_seq(N_particle, N_runs, gpu):
     """Performs a run sequence on the update function with the given number
     of particle and number of runs on the CPU or GPU
@@ -92,6 +94,7 @@ def update_run_seq(N_particle, N_runs, gpu):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def resample_run_seq(N_particle, N_runs, gpu):
     """Performs a run sequence on the resample function with the given number
     of particle and number of runs on the CPU or GPU
@@ -132,6 +135,7 @@ def resample_run_seq(N_particle, N_runs, gpu):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def sigma_points_run_seq(N_particle, N_runs):
     """Performs a run sequence on the sigma point function with the given number
     of particle and number of runs
@@ -171,6 +175,7 @@ def sigma_points_run_seq(N_particle, N_runs):
 
 # noinspection PyProtectedMember
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def predict_subs_run_seq(N_particle, N_runs):
     """Performs a run sequence on the prediction function's subroutines
      with the given number of particles and number of runs
@@ -235,6 +240,7 @@ def predict_subs_run_seq(N_particle, N_runs):
 
 # noinspection PyProtectedMember
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def update_subs_run_seq(N_particle, N_runs):
     """Performs a run sequence on the update function's subroutines
      with the given number of particles and number of runs
@@ -321,6 +327,7 @@ def update_subs_run_seq(N_particle, N_runs):
 
 # noinspection PyProtectedMember
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def resample_subs_run_seq(N_particle, N_runs):
     """Performs a run sequence on the resample function's subroutines
      with the given number of particles and number of runs
@@ -387,6 +394,7 @@ def resample_subs_run_seq(N_particle, N_runs):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def no_op_run_seq(N_time, N_runs):
     """Performs a run sequence on a no-op routine with the given sleep time
      and number of runs
@@ -415,6 +423,7 @@ def no_op_run_seq(N_time, N_runs):
 
 
 @RunSequences.vectorize
+@PickleJar.pickle(path='gsf/raw')
 def time_time_run_seq(N_time, N_runs):
     """Performs a run sequence on the time.time() function with the given sleep time
      and number of runs
@@ -444,7 +453,7 @@ def time_time_run_seq(N_time, N_runs):
 
 
 # noinspection PyTypeChecker
-@Pickler.pickle_me
+@PickleJar.pickle(path='gsf/processed')
 def example_run_seqs():
     """Returns the run sequences for the no_op and time.time() methods
 
@@ -462,7 +471,7 @@ def example_run_seqs():
 
 
 # noinspection PyTypeChecker
-@Pickler.pickle_me
+@PickleJar.pickle(path='gsf/processed')
 def cpu_gpu_run_seqs():
     """Returns the run sequences for the predict, update and resample method
 
@@ -489,8 +498,8 @@ def cpu_gpu_run_seqs():
 
 
 # noinspection PyTypeChecker
-@Pickler.pickle_me
-def pf_sub_routine_run_seqs():
+@PickleJar.pickle(path='gsf/processed')
+def gsf_sub_routine_run_seqs():
     """Returns the run sequences for the predict, update and resample subroutines
 
     Returns
@@ -757,7 +766,7 @@ def plot_sub_routine_fractions():
         ]
     ]
 
-    func_seqss = pf_sub_routine_run_seqs()
+    func_seqss = gsf_sub_routine_run_seqs()
 
     matplotlib.rcParams.update({'font.size': 9})
     fig, axes = plt.subplots(3, 1, sharey='all', figsize=(6.25, 11))
@@ -784,7 +793,7 @@ def plot_sub_routine_fractions():
 
 if __name__ == '__main__':
     plot_sub_routine_fractions()
-    # plot_example_benchmark()
-    # plot_max_auto()
-    # plot_times()
-    # plot_speed_up()
+    plot_example_benchmark()
+    plot_max_auto()
+    plot_times()
+    plot_speed_up()

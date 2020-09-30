@@ -3,10 +3,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 import time
-from decorators import PowerMeasurement, Pickler
+from decorators import PowerMeasurement, PickleJar, RunSequences
 
 
-@PowerMeasurement.vectorize
+@RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
+@PowerMeasurement.measure
 def predict_power_seq(N_particle, t_run, gpu):
     """Performs a power sequence on the prediction function with the given number
     of particle and number of runs on the CPU or GPU
@@ -43,7 +45,9 @@ def predict_power_seq(N_particle, t_run, gpu):
     return runs
 
 
-@PowerMeasurement.vectorize
+@RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
+@PowerMeasurement.measure
 def update_power_seq(N_particle, t_run, gpu):
     """Performs a power sequence on the update function with the given number
     of particle and number of runs on the CPU or GPU
@@ -80,7 +84,9 @@ def update_power_seq(N_particle, t_run, gpu):
     return runs
 
 
-@PowerMeasurement.vectorize
+@RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
+@PowerMeasurement.measure
 def resample_power_seq(N_particle, t_run, gpu):
     """Performs a power sequence on the resample function with the given number
     of particle and number of runs on the CPU or GPU
@@ -116,7 +122,9 @@ def resample_power_seq(N_particle, t_run, gpu):
     return runs
 
 
-@PowerMeasurement.vectorize
+@RunSequences.vectorize
+@PickleJar.pickle(path='pf/raw')
+@PowerMeasurement.measure
 def nothing_power_seq(N_particle, t_run):
     """Performs a power sequence on the no-op function with the given number
     of particle and number of runs on the CPU or GPU.
@@ -146,7 +154,7 @@ def nothing_power_seq(N_particle, t_run):
 
 
 # noinspection PyTypeChecker
-@Pickler.pickle_me
+@PickleJar.pickle(path='pf/processed')
 def cpu_gpu_power_seqs():
     """Returns the power sequences for all the runs
 
@@ -169,6 +177,13 @@ def cpu_gpu_power_seqs():
             resample_power_seq(N_particles_gpu, 5, True)
         ]
     ]
+    
+    for cpu_gpu in range(2):
+        for method in range(3):
+            _, powers = power_seqss[cpu_gpu][method]
+            for i, (N_runs, power) in enumerate(powers):
+                powers[i] = power / N_runs
+        
     return power_seqss
 
 

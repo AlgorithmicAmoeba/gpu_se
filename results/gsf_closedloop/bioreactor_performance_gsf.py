@@ -1,6 +1,5 @@
 import os
 import sys
-import joblib
 import matplotlib
 import matplotlib.cm
 import matplotlib.colors
@@ -13,13 +12,10 @@ sys.path.append(os.path.abspath('../gsf_openloop'))
 import GSF_run_seq
 # noinspection PyUnresolvedReferences
 import GSF_power
-import decorators
+from decorators import PickleJar
 
 
-memory = joblib.Memory('cache/')
-
-
-@memory.cache
+@PickleJar.pickle(path='gsf/raw')
 def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=50, pf=False):
     _ = monte_carlo
     sim = sim_base.Simulation(N_particles, dt_control, dt_predict, end_time, pf)
@@ -28,7 +24,7 @@ def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=50, pf=
     return ans
 
 
-@decorators.Pickler.pickle_me
+@PickleJar.pickle(path='gsf/processed')
 def get_results(end_time=50, monte_carlo_sims=1):
     run_seqss = GSF_run_seq.cpu_gpu_run_seqs()
     powerss = GSF_power.cpu_gpu_power_seqs()
