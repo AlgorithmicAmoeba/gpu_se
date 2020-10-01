@@ -176,7 +176,7 @@ def plot_pretty():
 
     # plt.suptitle('Closedloop bioreactor without noise')
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('no_noise_cl_pretty.png', transparent=True)
+    plt.savefig('no_noise_pretty.png', transparent=True)
     plt.show()
 
 
