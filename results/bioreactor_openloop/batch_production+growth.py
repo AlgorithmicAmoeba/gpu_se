@@ -64,55 +64,125 @@ def add_time_lines():
     plt.xlim([0, ts[-1]])
 
 
-matplotlib.rcParams.update({'font.size': 24})
-plt.figure(figsize=(6.25*3, 5*2))
+def plot():
+    matplotlib.rcParams.update({'font.size': 24})
+    plt.figure(figsize=(6.25*3, 5*2))
 
-plt.subplot(2, 3, 1)
-plt.plot(ts, ys_meas[:, 2], 'k')
-plt.title(r'$C_{FA}$')
-plt.ylabel(r'$\frac{mmol}{L}$')
-plt.xlabel(r't ($min$)')
-add_time_lines()
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys_meas[:, 2], 'k')
+    plt.title(r'$C_{FA}$')
+    plt.ylabel(r'$\frac{mmol}{L}$')
+    plt.xlabel(r't ($min$)')
+    add_time_lines()
 
-plt.subplot(2, 3, 2)
-plt.plot(ts, ys_meas[:, 0], 'k')
-plt.title(r'$C_{G}$')
-plt.ylabel(r'$\frac{mmol}{L}$')
-plt.xlabel(r't ($min$)')
-plt.axhline(280, color='red')
-add_time_lines()
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys_meas[:, 0], 'k')
+    plt.title(r'$C_{G}$')
+    plt.ylabel(r'$\frac{mmol}{L}$')
+    plt.xlabel(r't ($min$)')
+    plt.axhline(280, color='red')
+    add_time_lines()
 
-plt.subplot(2, 3, 3)
-plt.plot(ts, ys_meas[:, 3], 'k')
-plt.title(r'$C_{E}$')
-plt.ylabel(r'$\frac{mmol}{L}$')
-plt.xlabel(r't ($min$)')
-add_time_lines()
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys_meas[:, 3], 'k')
+    plt.title(r'$C_{E}$')
+    plt.ylabel(r'$\frac{mmol}{L}$')
+    plt.xlabel(r't ($min$)')
+    add_time_lines()
 
-plt.subplot(2, 3, 4)
-plt.plot(ts, us[:, select_inputs[1]], 'k')
-plt.title(r'$F_{m, in}$')
-plt.ylabel(r'$\frac{L}{min}$')
-plt.xlabel(r't ($min$)')
-add_time_lines()
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, select_inputs[1]], 'k')
+    plt.title(r'$F_{m, in}$')
+    plt.ylabel(r'$\frac{L}{min}$')
+    plt.xlabel(r't ($min$)')
+    add_time_lines()
 
-plt.subplot(2, 3, 5)
-plt.plot(ts, us[:, select_inputs[0]], 'k')
-plt.title(r'$F_{G, in}$')
-plt.ylabel(r'$\frac{L}{min}$')
-plt.xlabel(r't ($min$)')
-plt.xlim([0, ts[-1]])
-add_time_lines()
-plt.axhline(0.4/5000*640, color='green')
-plt.axhline(0.5/5000*640, color='green')
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, select_inputs[0]], 'k')
+    plt.title(r'$F_{G, in}$')
+    plt.ylabel(r'$\frac{L}{min}$')
+    plt.xlabel(r't ($min$)')
+    plt.xlim([0, ts[-1]])
+    add_time_lines()
+    plt.axhline(0.4/5000*640, color='green')
+    plt.axhline(0.5/5000*640, color='green')
+
+    # plt.subplot(2, 3, 6)
+    # plt.plot(ts, ys[:, 1])
+    # plt.title(r'$C_{X}$')
+    # add_time_lines()
+
+    # plt.suptitle('Openloop transition between steady states')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('batch_production_growth.pdf')
+    plt.show()
 
 
-# plt.subplot(2, 3, 6)
-# plt.plot(ts, ys[:, 1])
-# plt.title(r'$C_{X}$')
-# add_time_lines()
+def plot_pretty():
+    black = '#2B2B2D'
+    red = '#E90039'
+    orange = '#FF1800'
+    white = '#FFFFFF'
+    yellow = '#FF9900'
 
-# plt.suptitle('Openloop transition between steady states')
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig('batch_production_growth.pdf')
-plt.show()
+    def add_time_lines():
+        for time in [25, 200, 500, 700]:
+            plt.axvline(time, color=red, alpha=0.4)
+        plt.xlim([0, ts[-1]])
+
+    plt.style.use('seaborn-deep')
+
+    plt.figure(figsize=(12.8, 9.6))
+    plt.rcParams.update({'font.size': 16, 'text.color': white, 'axes.labelcolor': white,
+                         'axes.edgecolor': white, 'xtick.color': white, 'ytick.color': white})
+
+    plt.gcf().set_facecolor(black)
+
+    plt.subplot(2, 3, 1)
+    plt.plot(ts, ys_meas[:, 2], color=orange)
+    plt.title(r'$C_{FA}$')
+    add_time_lines()
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 2)
+    plt.plot(ts, ys_meas[:, 0], color=orange)
+    plt.title(r'$C_{G}$')
+    add_time_lines()
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 3)
+    plt.plot(ts, ys_meas[:, 3], color=orange)
+    plt.title(r'$C_{E}$')
+    add_time_lines()
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 4)
+    plt.plot(ts, us[:, select_inputs[1]], color=yellow)
+    plt.title(r'$F_{m, in}$')
+    add_time_lines()
+    plt.gca().set_facecolor(black)
+
+    plt.subplot(2, 3, 5)
+    plt.plot(ts, us[:, select_inputs[0]], color=yellow)
+    plt.title(r'$F_{G, in}$')
+    plt.xlim([0, ts[-1]])
+    for c in [0.4, 0.5]:
+        glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5 / 180)
+        plt.axhline(glucose_calc, color=white, alpha=0.4)
+    plt.gca().set_facecolor(black)
+
+    # plt.subplot(2, 3, 6)
+    # plt.plot(ts, ys[:, 1], color=orange)
+    # plt.title(r'$C_{X}$')
+    # add_time_lines()
+    # plt.gca().set_facecolor(black)
+
+    # plt.suptitle('Openloop growth and production run')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('batch_production_growth.png', transparent=True)
+    plt.show()
+
+
+if __name__ == '__main__':
+    plot()
+    # plot_pretty()
