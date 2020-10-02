@@ -593,37 +593,6 @@ def plot_max_auto():
     plt.show()
 
 
-# noinspection PyUnresolvedReferences
-def plot_run_seqs():
-    """Plot the run sequences for predict, update and resample functions
-    """
-    run_seqss = cpu_gpu_run_seqs()
-
-    cmap = matplotlib.cm.get_cmap('Spectral')
-    norm = matplotlib.colors.Normalize(vmin=1, vmax=24)
-
-    for row in range(2):
-        for col in range(3):
-            plt.subplot(2, 3, row + 2*col + 1)
-            N_parts, run_seqs = run_seqss[row][col]
-            N_logs = numpy.log2(N_parts)
-
-            for N_log, run_seq in zip(N_logs, run_seqs):
-                normailised_value = (N_log - N_logs[0]) / N_logs[-1]
-                plt.semilogy(run_seq, '.', color=cmap(normailised_value))
-
-    plt.colorbar(
-        matplotlib.cm.ScalarMappable(
-            norm=norm,
-            cmap=cmap
-        ),
-        ax=plt.gcf().get_axes()
-    )
-
-    plt.savefig('run_seqs.pdf')
-    plt.show()
-
-
 def plot_speed_up():
     """Plot the speed-up between CPU and GPU implementations
      for predict, update and resample functions
