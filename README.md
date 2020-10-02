@@ -59,10 +59,12 @@ Where exact versions are needed, this is explicitly stated.
 
 The following scripts produce the results found in the thesis document:
 
-- `results/bioreactor_openloop/no_noise` - Shows a closedloop simulation with no noise
-- `results/bioreactor_openloop/with_noise` - Shows a closedloop simulation with noise
-- `results/bioreactor_openloop/performance_vs_control_period` - Shows the effect of control period on performance
-- `results/bioreactor_openloop/mpc_run_seq` - Benchmarks the MPC code
+- `results/bioreactor_closedloop/no_noise` - Shows a closedloop simulation with no noise
+- `results/bioreactor_closedloop/with_noise` - Shows a closedloop simulation with noise
+- `results/bioreactor_closedloop/performance_vs_control_period` - Shows the effect of control period on performance
+- `results/bioreactor_closedloop/mpc_run_seq` - Benchmarks the MPC code
+- `results/bioreactor_openloop/batch_production_growth` - Shows the batch, production and growth phases of the bioreactor
+- `results/bioreactor_openloop/ss2ss` - Shows the open loop transition between two steady states
 - 
 
 ## Building the docs
