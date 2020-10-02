@@ -50,10 +50,10 @@ for t in tqdm.tqdm(ts[1:]):
         us.append(us[-1])
 
     bioreactor.step(dt, us[-1])
-    bioreactor.X += state_pdf.draw().get()
+    bioreactor.X += state_pdf.draw().get().squeeze()
     outputs = bioreactor.outputs(us[-1])
     ys.append(outputs.copy())
-    outputs[lin_model.outputs] += measurement_pdf.draw().get()
+    outputs[lin_model.outputs] += measurement_pdf.draw().get().squeeze()
     ys_meas.append(outputs)
     xs.append(bioreactor.X.copy())
 
