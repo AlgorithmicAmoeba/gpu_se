@@ -58,13 +58,16 @@ us = numpy.array(us)
 xs = numpy.array(xs)
 
 
-def add_time_lines():
-    for time in [25, 200, 500]:
-        plt.axvline(time, color='black', alpha=0.4)
-    plt.xlim([0, ts[-1]])
-
-
 def plot():
+    """Plots outputs, inputs and biases vs time for a simulation
+    that shows the various phases of the bioreactor
+    """
+
+    def add_time_lines():
+        for time in [25, 200, 500]:
+            plt.axvline(time, color='black', alpha=0.4)
+        plt.xlim([0, ts[-1]])
+
     matplotlib.rcParams.update({'font.size': 24})
     plt.figure(figsize=(6.25*3, 5*2))
 
@@ -119,6 +122,10 @@ def plot():
 
 
 def plot_pretty():
+    """Plots outputs, inputs and biases vs time for a simulation
+    that shows the various phases of the bioreactor.
+    For use in a presentation
+    """
     black = '#2B2B2D'
     red = '#E90039'
     orange = '#FF1800'

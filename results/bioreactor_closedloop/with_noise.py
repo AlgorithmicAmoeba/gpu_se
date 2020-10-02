@@ -64,6 +64,7 @@ print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.
 
 def plot():
     """Plots outputs, inputs and biases vs time
+    for a closed loop simulation with noise from a steady state to a set point.
     """
     matplotlib.rcParams.update({'font.size': 20})
     plt.figure(figsize=(6.25 * 3, 5 * 2))
@@ -129,8 +130,9 @@ def plot():
 
 
 def plot_pretty():
-    """Plots outputs, inputs and biases vs time.
-    For use in a presentation
+    """Plots outputs, inputs and biases vs time
+    for a closed loop simulation with noise from a steady state to a set point.
+    For use in a presentation.
     """
     plt.style.use('seaborn-deep')
 
