@@ -70,6 +70,21 @@ The following scripts produce the results found in the thesis document:
     - `results/bioreactor_closedloop/performance_vs_control_period` - Shows the effect of control period on performance
     - `results/bioreactor_closedloop/mpc_run_seq` - Benchmarks the MPC code
 
+3. Open loop particle filter
+    - `results/pf_openloop/pf_run_seq` - Benchmarks the run time of the openloop particle filter
+    - `results/pf_openloop/pf_power` - Benchmarks the power consumption of the openloop particle filter
+    
+4. Closed loop particle filter
+    - `results/pf_closedloop/bioreactor_performance_pf` - Shows the performance of the particle filter in a closed loop
+    
+5. Open loop Gaussian sum filter
+    - `results/gsf_openloop/pf_run_seq` - Benchmarks the run time of the openloop Gaussian sum filter
+    - `results/gsf_openloop/pf_power` - Benchmarks the power consumption of the openloop Gaussian sum filter
+    
+6. Closed loop Gaussian sum filter
+    - `results/gsf_closedloop/bioreactor_performance_pf` - Shows the performance of the Gaussian sum filter in a closed loop
+        
+
 ## Building the docs
 Complete documentation for the code can be built.
 It requires a working instillation of `latexpdf`.
