@@ -8,6 +8,22 @@ from decorators import PickleJar
 
 @PickleJar.pickle(path='bioreactor/perf_vs_cp/raw')
 def get_simulation_performance(dt_control, monte_carlo):
+    """Does a simulation with a given control period and returns the performance
+
+    Parameters
+    ----------
+    dt_control : float
+        Control period
+
+    monte_carlo : int
+        Index of the monte carlo run
+
+    Returns
+    -------
+    performance : float
+        ISE performance of the run
+
+    """
     _ = monte_carlo
     end_time = 50
     ts = numpy.linspace(0, end_time, end_time*20)
@@ -61,6 +77,13 @@ def get_simulation_performance(dt_control, monte_carlo):
 
 @PickleJar.pickle(path='bioreactor/perf_vs_cp/processed')
 def generate_results():
+    """Collects individual simulation results for performance runs
+
+    Returns
+    -------
+    dt_controls, performances : list
+        A list of control periods and performances
+    """
     monte_carlos = 5
     dt_controls, performances = [], []
     for dt_control in tqdm.tqdm(numpy.linspace(0.1, 30, 20)):
@@ -75,6 +98,8 @@ def generate_results():
 
 
 def plot_results():
+    """Plots performances vs control periods
+    """
     matplotlib.rcParams.update({'font.size': 9})
     plt.figure(figsize=(6.25/1.4, 5/1.4))
 
@@ -92,6 +117,9 @@ def plot_results():
 
 
 def plot_pretty_results():
+    """Plots performances vs control periods.
+    For use in a presentation.
+    """
     plt.style.use('seaborn-deep')
 
     black = '#2B2B2D'

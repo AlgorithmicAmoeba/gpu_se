@@ -48,6 +48,8 @@ print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.
 
 
 def plot():
+    """Plots outputs, inputs and biases vs time
+    """
     matplotlib.rcParams.update({'font.size': 20})
     plt.figure(figsize=(6.25 * 3, 5*2))
 

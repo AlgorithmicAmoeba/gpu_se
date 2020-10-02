@@ -71,6 +71,11 @@ def mpc_run_seq(N_runs):
 
 
 def plot_benchmarks():
+    """Plots three benchmarking graphs:
+    1) The run sequence plot: run time vs iterations
+    2) Lag chart: :math:`x_{i}` vs :math:`x_{i-1}`
+    3) Autocorrelation plot: autocorrelation vs lag
+    """
     run_seq = mpc_run_seq(1000)
 
     matplotlib.rcParams.update({'font.size': 20})
