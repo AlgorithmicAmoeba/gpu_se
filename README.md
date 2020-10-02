@@ -59,7 +59,11 @@ Where exact versions are needed, this is explicitly stated.
 
 The following scripts produce the results found in the thesis document:
 
-- `results/bioreactor_openloop`
+- `results/bioreactor_openloop/no_noise` - Shows a closedloop simulation with no noise
+- `results/bioreactor_openloop/with_noise` - Shows a closedloop simulation with noise
+- `results/bioreactor_openloop/performance_vs_control_period` - Shows the effect of control period on performance
+- `results/bioreactor_openloop/mpc_run_seq` - Benchmarks the MPC code
+- 
 
 ## Building the docs
 Complete documentation for the code can be built.
