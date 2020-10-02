@@ -91,7 +91,7 @@ def get_results(end_time=50, monte_carlo_sims=1):
     return N_particles, energy_cpugpu, runtime_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu
 
 
-def plot_utilisation_per_watt():
+def plot_performance_vs_utilisation():
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
@@ -131,11 +131,11 @@ def plot_utilisation_per_watt():
     # plt.title('Closedloop performance versus utilization')
     plt.legend()
     plt.tight_layout()
-    plt.savefig('PF_util.pdf')
+    plt.savefig('pf_performance_vs_utilisation.pdf')
     plt.show()
 
 
-def plot_perf_per_watt():
+def plot_performance_per_watt():
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
@@ -175,117 +175,7 @@ def plot_perf_per_watt():
     # plt.title('Closedloop performance versus power')
     plt.legend()
     plt.tight_layout()
-    plt.savefig('PF_epe.pdf')
-    plt.show()
-
-
-def plot_control_periods():
-    N_particles, _, control_cpugpu, _, _, _ = get_results()
-    for cpu_gpu in range(2):
-        controls = control_cpugpu[cpu_gpu]
-        logN_part = numpy.log2(N_particles[cpu_gpu])
-        plt.semilogy(
-            logN_part,
-            controls[: len(logN_part)],
-            ['k.', 'kx'][cpu_gpu],
-            label=['CPU', 'GPU]'][cpu_gpu]
-        )
-
-    ticks, _ = plt.xticks()
-    plt.xticks(
-        ticks,
-        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
-    )
-
-    plt.xlabel('$ N_p $')
-    plt.ylabel(r'Control period (min)')
-    # plt.title('Control periods')
-    plt.legend()
-    plt.savefig('PF_control.pdf')
-    plt.show()
-
-
-def plot_ppjs():
-    N_particles, energy_cpugpu, _, _, performance_cpugpu, _ = get_results()
-    for cpu_gpu in range(2):
-        energys = numpy.average(energy_cpugpu[cpu_gpu], axis=1)
-        performances = numpy.average(performance_cpugpu[cpu_gpu], axis=1)
-        logN_part = numpy.log2(N_particles[cpu_gpu])
-        plt.semilogy(
-            logN_part,
-            performances/energys,
-            ['k.', 'kx'][cpu_gpu],
-            label=['CPU', 'GPU]'][cpu_gpu]
-        )
-
-    ticks, _ = plt.xticks()
-    plt.xticks(
-        ticks,
-        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
-    )
-
-    plt.xlabel('$ N_p $')
-    plt.ylabel(r'$\frac{\mathrm{ISE}}{\mathrm{J}}$')
-    # plt.title('Performance per energy')
-    plt.legend()
-    plt.savefig('PF_ppj.pdf')
-    plt.show()
-
-
-def plot_mpc_fracs():
-    N_particles, _, _, mpc_frac_cpugpu, _, _ = get_results()
-    for cpu_gpu in range(2):
-        mpc_fracss = mpc_frac_cpugpu[cpu_gpu]
-        logN_part = numpy.log2(N_particles[cpu_gpu])
-        mpc_fracs = numpy.average(mpc_fracss, axis=1)
-        plt.plot(
-            logN_part,
-            mpc_fracs,
-            ['k.', 'kx'][cpu_gpu],
-            label=['CPU', 'GPU]'][cpu_gpu]
-        )
-
-    ticks, _ = plt.xticks()
-    plt.xticks(
-        ticks,
-        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
-    )
-
-    plt.xlabel('$ N_p $')
-    plt.ylabel(r'Fraction MPC convergence')
-    # plt.title('MPC convergence')
-    plt.ylim(ymin=0)
-    plt.legend()
-    plt.savefig('PF_mpc_frac.pdf')
-    plt.show()
-
-
-def plot_performances():
-    N_particles, _, _, _, performance_cpugpu, _ = get_results()
-    matplotlib.rcParams.update({'font.size': 9})
-    plt.figure(figsize=(6.25, 5))
-    for cpu_gpu in range(2):
-        performancess = performance_cpugpu[cpu_gpu]
-        logN_part = numpy.log2(N_particles[cpu_gpu])
-        performances = numpy.average(performancess, axis=1)
-        plt.semilogy(
-            logN_part,
-            performances,
-            ['k.', 'kx'][cpu_gpu],
-            label=['CPU', 'GPU]'][cpu_gpu]
-        )
-
-    ticks, _ = plt.xticks()
-    plt.xticks(
-        ticks,
-        '$2^{' + numpy.char.array(ticks, unicode=True) + '}$'
-    )
-
-    plt.xlabel('$ N_p $')
-    plt.ylabel(r'$\mathrm{ISE}$')
-    # plt.title('Performance')
-    plt.legend()
-    plt.savefig('PF_performance.pdf')
+    plt.savefig('pf_performance_per_watt.pdf')
     plt.show()
 
 
@@ -323,7 +213,6 @@ def plot_pcov():
     plt.show()
 
 
-plot_utilisation_per_watt()
-plot_perf_per_watt()
-plot_performances()
+plot_performance_vs_utilisation()
+plot_performance_per_watt()
 plot_pcov()
