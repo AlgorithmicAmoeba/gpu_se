@@ -8,9 +8,11 @@ Welcome to GPU SE documentation !
 |
 
 This project creates results required for my Master's thesis in the performance enhancement of
-state estimators using graphical processign units.
+state estimators using graphical processing units.
 
-The source code is available `here <https://github.com/darren-roos/INSERTLINK>`_.
+The source code is available `here <https://github.com/darren-roos/gpu_se>`_.
+The cache is available `here <github.com/darren-roos/picklejar>`_.
+My thesis is available `here <github.com/darren-roos/thesis>`_.
 
 |
 
@@ -25,12 +27,13 @@ The source code is available `here <https://github.com/darren-roos/INSERTLINK>`_
 
 
 .. toctree::
-   :maxdepth: 1
-   :name: mastertoc
+    :maxdepth: 1
+    :name: mastertoc
 
-   controller
-   model
-   noise
+    model
+    controller
+    gaussian_sums
+    filters
 
 .. Delete this line until the * to generate index for your project: * :ref:`genindex`
 

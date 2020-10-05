@@ -1,5 +1,6 @@
-Controllers
+Controller
 ============
 |
 
-.. autoclass:: controller.SMPC
+.. autoclass:: controller.MPC
+    :members:

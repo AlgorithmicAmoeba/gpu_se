@@ -3,7 +3,10 @@ Model
 |
 
 .. autoclass:: model.LinearModel
+    :members:
 
-.. autoclass:: model.BioreactorModel
+.. autoclass:: model.NonlinearModel
+    :members:
 
-.. autoclass:: model.CSTRModel
+.. autoclass:: model.Bioreactor
+    :members:
