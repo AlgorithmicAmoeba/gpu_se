@@ -205,7 +205,7 @@ def get_random_io():
 
 
 class Simulation:
-    """An object that holds details of a simulation"""
+    """Holds details of a simulation"""
     def __init__(self, N_particles, dt_control, dt_predict, end_time=50, pf=True):
         self.ts = numpy.linspace(0, end_time, end_time*10)
         self.dt = self.ts[1]
@@ -241,6 +241,7 @@ class Simulation:
         self.predict_count, self.update_count = 0, 0
 
     def simulate(self):
+        """Performs a simulation using the simulation parameters"""
         t_next_control, t_next_predict = 0, 0
         mpc_converged, mpc_no_converged = 0, 0
         for t in self.ts[1:]:

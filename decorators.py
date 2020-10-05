@@ -37,6 +37,7 @@ class PickleJar(joblib.memory.MemorizedFunc):
 
     @staticmethod
     def pickle(path):
+        """Creates decorator that curries the PickleJar initialisation method"""
         return lambda fun: PickleJar(fun, path)
 
     def clear_single(self, *args, **kwargs):
