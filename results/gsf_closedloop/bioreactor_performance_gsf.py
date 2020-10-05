@@ -9,14 +9,47 @@ import sim_base
 
 sys.path.append(os.path.abspath('../gsf_openloop'))
 # noinspection PyUnresolvedReferences
-import GSF_run_seq
+import gsf_run_seq
 # noinspection PyUnresolvedReferences
-import GSF_power
+import gsf_power
 from decorators import PickleJar
 
 
 @PickleJar.pickle(path='gsf/raw')
 def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=50, pf=False):
+    """Returns simulations results for a given simulation configuration.
+
+    Parameters
+    ----------
+    N_particles : int
+        Number of particles
+
+    dt_control, dt_predict : float
+        Control and prediction periods
+
+    monte_carlo : int, optional
+        The monte carlo indexing number
+
+    end_time : float, optional
+        Simulation end time
+
+    pf : bool, optional
+        Should the filter be the particle filter or gaussian sum filter
+
+    Returns
+    -------
+    performance : float
+        The simulation's ISE performance
+
+    mpc_frac : float
+        Fraction of MPC convergence
+
+    predict_count, update_count : int
+        Number of times the predict and update/resample methods were called
+
+    covariance_point_size : numpy.array
+        Maximum singular value of the covariance point estimate for each time instance
+    """
     _ = monte_carlo
     sim = sim_base.Simulation(N_particles, dt_control, dt_predict, end_time, pf)
     sim.simulate()
@@ -26,8 +59,24 @@ def get_sim(N_particles, dt_control, dt_predict, monte_carlo=0, end_time=50, pf=
 
 @PickleJar.pickle(path='gsf/processed')
 def get_results(end_time=50, monte_carlo_sims=1):
-    run_seqss = GSF_run_seq.cpu_gpu_run_seqs()
-    powerss = GSF_power.cpu_gpu_power_seqs()
+    """Aggregates simulation results and performance post simulation calculations
+
+    Parameters
+    ----------
+    end_time : float
+        Simulation end time
+
+    monte_carlo_sims : int
+        The number of monte carlo simulations required
+
+    Returns
+    -------
+    N_particles, energy_cpugpu, runtime_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu : numpy.array
+        Number of particles, energy measurements, run times, MPC convergence fractions,
+        performance measurements, and covariance results from simulations
+    """
+    run_seqss = gsf_run_seq.cpu_gpu_run_seqs()
+    powerss = gsf_power.cpu_gpu_power_seqs()
 
     energy_cpugpu, runtime_cpugpu, mpc_frac_cpugpu, performance_cpugpu, pcov_cpugpu = [], [], [], [], []
     for cpu_gpu in range(2):
@@ -56,6 +105,7 @@ def get_results(end_time=50, monte_carlo_sims=1):
 
             energys, mpc_fracs, performances, pcovs = [], [], [], []
             for monte_carlo in range(monte_carlo_sims):
+                # noinspection PyTupleAssignmentBalance
                 performance, mpc_frac, predict_count, update_count, pcov = get_sim(
                     int(N_particles[i]),
                     dt_control,
@@ -93,6 +143,8 @@ def get_results(end_time=50, monte_carlo_sims=1):
 
 
 def plot_performance_vs_utilisation():
+    """Plots the ISE performance against utilisation fractions.
+    Third dimension shows power consumption"""
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
@@ -138,6 +190,8 @@ def plot_performance_vs_utilisation():
 
 
 def plot_performance_per_watt():
+    """Plots the ISE performance against power consumption.
+    Third dimension shows number of particles"""
     N_particles, energy_cpugpu, runtime_cpugpu, _, performance_cpugpu, _ = get_results()
 
     cmap = matplotlib.cm.get_cmap('plasma')
@@ -182,6 +236,7 @@ def plot_performance_per_watt():
 
 
 def plot_pcov():
+    """Plots the covariance convergence against time"""
     N_particles, _, _, _, _, pcov_cpugpu = get_results(
         end_time=500,
         monte_carlo_sims=1
