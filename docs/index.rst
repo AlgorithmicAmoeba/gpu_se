@@ -10,9 +10,9 @@ Welcome to GPU SE documentation !
 This project creates results required for my Master's thesis in the performance enhancement of
 state estimators using graphical processing units.
 
-The source code is available `here <https://github.com/darren-roos/gpu_se>`_.
-The cache is available `here <github.com/darren-roos/picklejar>`_.
-My thesis is available `here <github.com/darren-roos/thesis>`_.
+The source code is available `here <https://github.com/darren-roos/gpu_se>`__.
+The cache is available `here <github.com/darren-roos/picklejar>`__.
+My thesis is available `here <github.com/darren-roos/thesis>`__.
 
 |
 
