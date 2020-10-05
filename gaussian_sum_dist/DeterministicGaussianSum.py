@@ -40,7 +40,7 @@ class DeterministicGaussianSum(gaussian_sum_dist.MultivariateGaussianSum):
         Returns
         -------
         out : library.array
-            A (*shape x Nx) array of samples
+            A (\*shape x Nx) array of samples
         """
         if not isinstance(shape, tuple):
             shape = (shape,)
