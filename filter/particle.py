@@ -4,7 +4,7 @@ import numba.cuda as cuda
 import torch
 import torch.utils.dlpack as torch_dlpack
 import cupy
-import gpu_funcs
+import gaussian_sum_dist
 
 
 class ParticleFilter:

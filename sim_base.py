@@ -2,7 +2,7 @@ import numpy
 import cupy
 import controller
 import model.LinearModel
-import gpu_funcs.MultivariateGaussianSum
+import gaussian_sum_dist.MultivariateGaussianSum
 import filter.particle
 import scipy.integrate
 
@@ -131,13 +131,13 @@ def get_noise(lib=cupy, deterministic=False):
 
     Returns
     -------
-    state_pdf, measurement_pdf : {gpu_funcs.MultivariateGaussianSum, gpu_funcs.DeterministicGaussianSum}
+    state_pdf, measurement_pdf : {gaussian_sum_dist.MultivariateGaussianSum, gaussian_sum_dist.DeterministicGaussianSum}
         State and measurement noise objects
     """
     if deterministic:
-        distribution = gpu_funcs.DeterministicGaussianSum
+        distribution = gaussian_sum_dist.DeterministicGaussianSum
     else:
-        distribution = gpu_funcs.MultivariateGaussianSum
+        distribution = gaussian_sum_dist.MultivariateGaussianSum
     state_pdf = distribution(
         means=numpy.zeros(shape=(2, 5)),
         covariances=numpy.array([

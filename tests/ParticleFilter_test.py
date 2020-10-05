@@ -1,6 +1,6 @@
 import numpy
 from filter.particle import ParticleFilter
-from gpu_funcs.MultivariateGaussianSum import MultivariateGaussianSum
+from gaussian_sum_dist.MultivariateGaussianSum import MultivariateGaussianSum
 
 
 def f(x, u, dt):

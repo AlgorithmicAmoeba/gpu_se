@@ -1,9 +1,9 @@
 import numpy
 import cupy
-import gpu_funcs.MultivariateGaussianSum
+import gaussian_sum_dist.MultivariateGaussianSum
 
 
-class DeterministicGaussianSum(gpu_funcs.MultivariateGaussianSum):
+class DeterministicGaussianSum(gaussian_sum_dist.MultivariateGaussianSum):
     """Creates a MultivariateGaussianSum singleton that always returns the same values.
     Useful for testing.
 

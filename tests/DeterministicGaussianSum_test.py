@@ -1,9 +1,9 @@
 import numpy
-import gpu_funcs.DeterministicGaussianSum
+import gaussian_sum_dist.DeterministicGaussianSum
 
 
 def test_DeterministicGaussianSum():
-    m = gpu_funcs.DeterministicGaussianSum(
+    m = gaussian_sum_dist.DeterministicGaussianSum(
         means=numpy.array([[10, 0],
                            [-10, -10]]),
         covariances=numpy.array([[[1, 0],

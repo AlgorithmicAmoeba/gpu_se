@@ -1,6 +1,6 @@
 import numpy
 import cupy
-from gpu_funcs.MultivariateGaussianSum import MultivariateGaussianSum
+from gaussian_sum_dist.MultivariateGaussianSum import MultivariateGaussianSum
 
 m = MultivariateGaussianSum(
     means=numpy.array([[10, 0],
