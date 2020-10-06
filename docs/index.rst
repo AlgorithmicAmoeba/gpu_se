@@ -34,6 +34,7 @@ My thesis is available `here <github.com/darren-roos/thesis>`__.
     controller
     gaussian_sums
     filters
+    results
 
 .. Delete this line until the * to generate index for your project: * :ref:`genindex`
 
