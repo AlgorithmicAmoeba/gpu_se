@@ -6,13 +6,14 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy
 import sim_base
-
-sys.path.append(os.path.abspath('../pf_openloop'))
-# noinspection PyUnresolvedReferences
-import pf_run_seq
-# noinspection PyUnresolvedReferences
-import pf_power
 from decorators import PickleJar
+
+if __name__ == '__main__':
+    sys.path.append(os.path.abspath('../pf_openloop'))
+    # noinspection PyUnresolvedReferences
+    import pf_run_seq
+    # noinspection PyUnresolvedReferences
+    import pf_power
 
 
 @PickleJar.pickle(path='pf/raw')
@@ -269,6 +270,7 @@ def plot_pcov():
     plt.show()
 
 
-plot_performance_vs_utilisation()
-plot_performance_per_watt()
-plot_pcov()
+if __name__ == '__main__':
+    plot_performance_vs_utilisation()
+    plot_performance_per_watt()
+    plot_pcov()

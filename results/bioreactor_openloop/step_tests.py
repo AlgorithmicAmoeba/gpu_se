@@ -110,4 +110,5 @@ def plot():
     print(max_slope, argmax)
 
 
-plot()
+if __name__ == '__main__':
+    plot()

@@ -4,53 +4,94 @@ import matplotlib
 import matplotlib.pyplot as plt
 import sim_base
 
-# Simulation set-up
-end_time = 50
-ts = numpy.linspace(0, end_time, end_time*10)
-dt = ts[1]
-dt_control = 1
-assert dt <= dt_control
 
-bioreactor, lin_model, K, _ = sim_base.get_parts(dt_control=dt_control)
+def simulate():
+    """Performs no noise simulation"""
+    # Simulation set-up
+    end_time = 50
+    ts = numpy.linspace(0, end_time, end_time*10)
+    dt = ts[1]
+    dt_control = 1
+    assert dt <= dt_control
 
-# Initial values
-us = [numpy.array([0.06, 0.2])]
-xs = [bioreactor.X.copy()]
-ys = [bioreactor.outputs(us[-1])]
+    bioreactor, lin_model, K, _ = sim_base.get_parts(dt_control=dt_control)
 
-biass = []
+    # Initial values
+    us = [numpy.array([0.06, 0.2])]
+    xs = [bioreactor.X.copy()]
+    ys = [bioreactor.outputs(us[-1])]
 
-t_next = 0
-for t in tqdm.tqdm(ts[1:]):
-    if t > t_next:
-        U_temp = us[-1].copy()
-        if K.y_predicted is not None:
-            biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
+    biass = []
 
-        u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
-        U_temp[lin_model.inputs] = lin_model.ud2n(u)
-        us.append(U_temp.copy())
-        t_next += dt_control
-    else:
-        us.append(us[-1])
+    t_next = 0
+    for t in tqdm.tqdm(ts[1:]):
+        if t > t_next:
+            U_temp = us[-1].copy()
+            if K.y_predicted is not None:
+                biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
 
-    bioreactor.step(dt, us[-1])
-    outputs = bioreactor.outputs(us[-1])
-    ys.append(outputs.copy())
-    xs.append(bioreactor.X.copy())
+            u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+            U_temp[lin_model.inputs] = lin_model.ud2n(u)
+            us.append(U_temp.copy())
+            t_next += dt_control
+        else:
+            us.append(us[-1])
 
-ys = numpy.array(ys)
-us = numpy.array(us)
-xs = numpy.array(xs)
-biass = numpy.array(biass)
+        bioreactor.step(dt, us[-1])
+        outputs = bioreactor.outputs(us[-1])
+        ys.append(outputs.copy())
+        xs.append(bioreactor.X.copy())
 
-print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.yd2n(K.ysp), ts))
+    # Simulation set-up
+    end_time = 50
+    ts = numpy.linspace(0, end_time, end_time * 10)
+    dt = ts[1]
+    dt_control = 1
+    assert dt <= dt_control
+
+    bioreactor, lin_model, K, _ = sim_base.get_parts(dt_control=dt_control)
+
+    # Initial values
+    us = [numpy.array([0.06, 0.2])]
+    xs = [bioreactor.X.copy()]
+    ys = [bioreactor.outputs(us[-1])]
+
+    biass = []
+
+    t_next = 0
+    for t in tqdm.tqdm(ts[1:]):
+        if t > t_next:
+            U_temp = us[-1].copy()
+            if K.y_predicted is not None:
+                biass.append(lin_model.yn2d(ys[-1]) - K.y_predicted)
+
+            u = K.step(lin_model.xn2d(xs[-1]), lin_model.un2d(us[-1]), lin_model.yn2d(ys[-1]))
+            U_temp[lin_model.inputs] = lin_model.ud2n(u)
+            us.append(U_temp.copy())
+            t_next += dt_control
+        else:
+            us.append(us[-1])
+
+        bioreactor.step(dt, us[-1])
+        outputs = bioreactor.outputs(us[-1])
+        ys.append(outputs.copy())
+        xs.append(bioreactor.X.copy())
+
+    ys = numpy.array(ys)
+    us = numpy.array(us)
+    biass = numpy.array(biass)
+
+    print('Performance: ', sim_base.performance(ys[:, lin_model.outputs], lin_model.yd2n(K.ysp), ts))
+
+    return ts, ys, lin_model, K, us, dt_control, biass, end_time
 
 
 def plot():
     """Plots outputs, inputs and biases vs time
     for a closed loop simulation from a steady state to a set point
     """
+    ts, ys, lin_model, K, us, dt_control, biass, end_time = simulate()
+
     matplotlib.rcParams.update({'font.size': 20})
     plt.figure(figsize=(6.25 * 3, 5*2))
 
@@ -119,6 +160,8 @@ def plot_pretty():
     for a closed loop simulation without noise from a steady state to a set point.
     For use in a presentation.
     """
+
+    ts, ys, lin_model, K, us, dt_control, biass, end_time = simulate()
     plt.style.use('seaborn-deep')
 
     black = '#2B2B2D'
@@ -187,5 +230,6 @@ def plot_pretty():
     plt.show()
 
 
-plot()
-# plot_pretty()
+if __name__ == '__main__':
+    plot()
+    # plot_pretty()

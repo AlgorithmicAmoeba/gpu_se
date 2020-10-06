@@ -5,63 +5,67 @@ import matplotlib.pyplot as plt
 import sim_base
 import model
 
-# Simulation set-up
-end_time = 800
-ts = numpy.linspace(0, end_time, end_time*10)
-dt = ts[1]
 
-bioreactor = model.Bioreactor(
-    #                Ng,         Nx,      Nfa, Ne, Nh
-    X0=numpy.array([3000 / 180, 1 / 24.6, 0 / 116, 0., 0.]),
-    high_N=True
-)
+def simulate():
+    """Performs no noise simulation"""
+    # Simulation set-up
+    end_time = 800
+    ts = numpy.linspace(0, end_time, end_time*10)
+    dt = ts[1]
 
-select_inputs = [0, 1]  # Fg_in, Fm_in
-select_outputs = [0, 2]  # Cg, Cfa
+    bioreactor = model.Bioreactor(
+        #                Ng,         Nx,      Nfa, Ne, Nh
+        X0=numpy.array([3000 / 180, 1 / 24.6, 0 / 116, 0., 0.]),
+        high_N=True
+    )
 
-state_pdf, measurement_pdf = sim_base.get_noise()
+    select_inputs = [0, 1]  # Fg_in, Fm_in
+    select_outputs = [0, 2]  # Cg, Cfa
 
+    state_pdf, measurement_pdf = sim_base.get_noise()
 
-# Initial values
-us = [numpy.array([0., 0.])]
-xs = [bioreactor.X.copy()]
-ys = [bioreactor.outputs(us[-1])]
-ys_meas = [bioreactor.outputs(us[-1])]
+    # Initial values
+    us = [numpy.array([0., 0.])]
+    xs = [bioreactor.X.copy()]
+    ys = [bioreactor.outputs(us[-1])]
+    ys_meas = [bioreactor.outputs(us[-1])]
 
-not_cleared = True
-for t in tqdm.tqdm(ts[1:]):
-    if t < 25:
-        us.append(numpy.array([0., 0.]))
-    elif t < 200:
-        if not_cleared:
-            bioreactor.X[[0, 2, 3, 4]] = 0
-            not_cleared = False
-            bioreactor.high_N = False
+    not_cleared = True
+    for t in tqdm.tqdm(ts[1:]):
+        if t < 25:
+            us.append(numpy.array([0., 0.]))
+        elif t < 200:
+            if not_cleared:
+                bioreactor.X[[0, 2, 3, 4]] = 0
+                not_cleared = False
+                bioreactor.high_N = False
 
-        us.append(numpy.array([0.03, 0.]))
-    elif t < 500:
-        us.append(numpy.array([0.058, 0.]))
-    else:
-        us.append(numpy.array([0.074, 0.]))
+            us.append(numpy.array([0.03, 0.]))
+        elif t < 500:
+            us.append(numpy.array([0.058, 0.]))
+        else:
+            us.append(numpy.array([0.074, 0.]))
 
-    bioreactor.step(dt, us[-1])
-    bioreactor.X += state_pdf.draw().get().squeeze()
-    outputs = bioreactor.outputs(us[-1])
-    ys.append(outputs.copy())
-    outputs[select_outputs] += measurement_pdf.draw().get().squeeze()
-    ys_meas.append(outputs)
-    xs.append(bioreactor.X.copy())
+        bioreactor.step(dt, us[-1])
+        bioreactor.X += state_pdf.draw().get().squeeze()
+        outputs = bioreactor.outputs(us[-1])
+        ys.append(outputs.copy())
+        outputs[select_outputs] += measurement_pdf.draw().get().squeeze()
+        ys_meas.append(outputs)
+        xs.append(bioreactor.X.copy())
 
-ys = numpy.array(ys)
-ys_meas = numpy.array(ys_meas)
-us = numpy.array(us)
-xs = numpy.array(xs)
+    ys = numpy.array(ys)
+    ys_meas = numpy.array(ys_meas)
+    us = numpy.array(us)
+
+    return ts, ys, ys_meas, us, end_time, select_inputs
 
 
 def plot():
     """Plots outputs, inputs and biases vs time for a simulation
     that shows the various phases of the bioreactor
     """
+    ts, ys, ys_meas, us, end_time, select_inputs = simulate()
 
     def add_time_lines():
         for time in [25, 200, 500]:
@@ -126,6 +130,8 @@ def plot_pretty():
     that shows the various phases of the bioreactor.
     For use in a presentation
     """
+    ts, ys, ys_meas, us, end_time, select_inputs = simulate()
+
     black = '#2B2B2D'
     red = '#E90039'
     orange = '#FF1800'
@@ -173,9 +179,8 @@ def plot_pretty():
     plt.plot(ts, us[:, select_inputs[0]], color=yellow)
     plt.title(r'$F_{G, in}$')
     plt.xlim([0, ts[-1]])
-    for c in [0.4, 0.5]:
-        glucose_calc = c / 180 * bioreactor.X[1] * 24.6 * 1 / (5 / 180)
-        plt.axhline(glucose_calc, color=white, alpha=0.4)
+    plt.axhline(0.4 / 5000 * 640, color='green')
+    plt.axhline(0.5 / 5000 * 640, color='green')
     plt.gca().set_facecolor(black)
 
     # plt.subplot(2, 3, 6)
