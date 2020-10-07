@@ -11,8 +11,8 @@ This project creates results required for my Master's thesis in the performance 
 state estimators using graphical processing units.
 
 The source code is available `here <https://github.com/darren-roos/gpu_se>`__.
-The cache is available `here <github.com/darren-roos/picklejar>`__.
-My thesis is available `here <github.com/darren-roos/thesis>`__.
+The cache is available `here <https://github.com/darren-roos/picklejar>`__.
+My thesis is available `here <https://github.com/darren-roos/thesis>`__.
 
 The results available in the cache are from runs performed on a machine with an AMD Ryzen 5 2400G,
 32 GB of RAM and a GeForce GTX 1070 (8 GB of on board memory).
