@@ -14,6 +14,11 @@ The source code is available `here <https://github.com/darren-roos/gpu_se>`__.
 The cache is available `here <github.com/darren-roos/picklejar>`__.
 My thesis is available `here <github.com/darren-roos/thesis>`__.
 
+The results available in the cache are from runs performed on a machine with an AMD Ryzen 5 2400G,
+32 GB of RAM and a GeForce GTX 1070 (8 GB of on board memory).
+The machine was running Ubuntu 18.04.4 LTS with a Python 3.8.2 environment.
+Further details about the Python environment can be found in the environment.yml file in
+the source code repository.
 |
 
 .. maxdepth = 1 means the Table of Contents will only links to the separate pages of the documentation.
