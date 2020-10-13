@@ -4,7 +4,6 @@ import numba.cuda as cuda
 import torch
 import torch.utils.dlpack as torch_dlpack
 import cupy
-import gaussian_sum_dist
 
 
 class ParticleFilter:
@@ -109,8 +108,9 @@ class ParticleFilter:
 
     def point_covariance(self):
         """Returns the maximum singular value of the filter's covariance"""
-        w_cov = self.particles.T @ (self.particles * self.weights[:, None])
-        s = numpy.linalg.svd(w_cov, compute_uv=False)
+        dist = self.particles - (self.weights @ self.particles)
+        cov = dist.T @ (dist * self.weights[:, None])
+        s = numpy.linalg.svd(cov, compute_uv=False)
         return s[0]
 
 
@@ -321,6 +321,7 @@ class ParallelParticleFilter(ParticleFilter):
 
     def point_covariance(self):
         """Returns the maximum singular value of the filter's covariance"""
-        w_cov = self.particles.T @ (self.particles * self.weights[:, None])
-        s = cupy.linalg.svd(w_cov, compute_uv=False)
+        dist = self.particles - (self.weights @ self.particles)
+        cov = dist.T @ (dist * self.weights[:, None])
+        s = cupy.linalg.svd(cov, compute_uv=False)
         return (s[0]).get()

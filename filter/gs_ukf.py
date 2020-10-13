@@ -175,8 +175,11 @@ class GaussianSumUnscentedKalmanFilter:
 
     def point_covariance(self):
         """Returns the maximum singular value of the filter's covariance"""
-        w_cov = self.means.T @ (self.means * self.weights[:, None])
-        s = numpy.linalg.svd(w_cov, compute_uv=False)
+        cov_cov = numpy.sum(self.weights[:, None, None] * self.covariances, axis=0)
+        dist = self.means - (self.weights @ self.means)
+        cov_mean = dist.T @ (dist * self.weights[:, None])
+        cov = cov_cov + cov_mean
+        s = numpy.linalg.svd(cov, compute_uv=False)
         return s[0]
 
 
@@ -438,6 +441,9 @@ class ParallelGaussianSumUnscentedKalmanFilter(GaussianSumUnscentedKalmanFilter)
 
     def point_covariance(self):
         """Returns the maximum singular value of the filter's covariance"""
-        w_cov = self.means.T @ (self.means * self.weights[:, None])
-        s = cupy.linalg.svd(w_cov, compute_uv=False)
+        cov_cov = cupy.sum(self.weights[:, None, None] * self.covariances, axis=0)
+        dist = self.means - (self.weights @ self.means)
+        cov_mean = dist.T @ ( dist * self.weights[:, None])
+        cov = cov_cov + cov_mean
+        s = cupy.linalg.svd(cov, compute_uv=False)
         return (s[0]).get()
