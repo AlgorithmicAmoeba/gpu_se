@@ -67,52 +67,43 @@ def plot():
     """
     ts, ys, ys_meas, us, end_time, select_inputs = simulate()
 
-    def add_time_lines():
+    def add_time_lines(axis):
         for time in [25, 200, 500]:
-            plt.axvline(time, color='black', alpha=0.4)
-        plt.xlim([0, ts[-1]])
+            axis.axvline(time, color='black', alpha=0.4)
+        axis.set_xlim([0, ts[-1]])
 
-    matplotlib.rcParams.update({'font.size': 24})
-    plt.figure(figsize=(6.25*3, 5*2))
+    matplotlib.rcParams.update({'font.size': 15})
+    fig, axes = plt.subplots(1, 2,
+                             figsize=(6.25*2, 5),
+                             gridspec_kw={'wspace': 0.25}
+                             )
 
-    plt.subplot(2, 3, 1)
-    plt.plot(ts, ys_meas[:, 2], 'k')
-    plt.title(r'$C_{FA}$')
-    plt.ylabel(r'$\frac{mmol}{L}$')
-    plt.xlabel(r't ($min$)')
-    add_time_lines()
+    ax = axes[0]
+    ax.plot(ts, us[:, select_inputs[1]], 'k')
+    ax.plot(ts, us[:, select_inputs[0]], 'k--')
 
-    plt.subplot(2, 3, 2)
-    plt.plot(ts, ys_meas[:, 0], 'k')
-    plt.title(r'$C_{G}$')
-    plt.ylabel(r'$\frac{mmol}{L}$')
-    plt.xlabel(r't ($min$)')
-    plt.axhline(280, color='red')
-    add_time_lines()
+    ax.set_ylabel(r'$\frac{L}{min}$')
+    ax.set_xlabel(r't ($min$)')
+    ax.set_xlim([0, ts[-1]])
+    ax.legend([r'$F_{m, in}$', r'$F_{G, in}$'])
+    ax.set_title('Inputs')
 
-    plt.subplot(2, 3, 3)
-    plt.plot(ts, ys_meas[:, 3], 'k')
-    plt.title(r'$C_{E}$')
-    plt.ylabel(r'$\frac{mmol}{L}$')
-    plt.xlabel(r't ($min$)')
-    add_time_lines()
+    add_time_lines(ax)
+    ax.axhline(0.4 / 5000 * 640, color='green')
+    ax.axhline(0.5 / 5000 * 640, color='green')
 
-    plt.subplot(2, 3, 4)
-    plt.plot(ts, us[:, select_inputs[1]], 'k')
-    plt.title(r'$F_{m, in}$')
-    plt.ylabel(r'$\frac{L}{min}$')
-    plt.xlabel(r't ($min$)')
-    add_time_lines()
+    ax = axes[1]
+    ax.plot(ts, ys_meas[:, 2], 'k')
+    ax.plot(ts, ys_meas[:, 0], 'grey')
+    ax.plot(ts, ys_meas[:, 3], 'k--')
 
-    plt.subplot(2, 3, 5)
-    plt.plot(ts, us[:, select_inputs[0]], 'k')
-    plt.title(r'$F_{G, in}$')
-    plt.ylabel(r'$\frac{L}{min}$')
-    plt.xlabel(r't ($min$)')
-    plt.xlim([0, ts[-1]])
-    add_time_lines()
-    plt.axhline(0.4/5000*640, color='green')
-    plt.axhline(0.5/5000*640, color='green')
+    ax.set_title(r'Outputs')
+    ax.set_ylabel(r'$\frac{mg}{L}$')
+    ax.set_xlabel(r't ($min$)')
+    ax.legend([r'$C_{FA}$', r'$C_{G}$', r'$C_{E}$'])
+
+    ax.axhline(280, color='red')
+    add_time_lines(ax)
 
     # plt.subplot(2, 3, 6)
     # plt.plot(ts, ys[:, 1])
@@ -120,7 +111,7 @@ def plot():
     # add_time_lines()
 
     # plt.suptitle('Openloop transition between steady states')
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig('batch_production_growth.pdf')
     plt.show()
 
