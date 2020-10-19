@@ -239,13 +239,13 @@ def plot_performance_per_watt():
 def plot_pcov():
     """Plots the covariance convergence against time"""
     N_particles, _, _, _, _, pcov_cpugpu = get_results(
-        end_time=500,
+        end_time=1500,
         monte_carlo_sims=1
     )
     cmap = matplotlib.cm.get_cmap('plasma')
     matplotlib.rcParams.update({'font.size': 18})
     plt.figure(figsize=(6.25*2, 5))
-    ts = numpy.linspace(0, 500, 5000)
+    ts = numpy.linspace(0, 1500, 15000)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharey='row')
     for cpu_gpu in range(2):
@@ -256,7 +256,7 @@ def plot_pcov():
 
         norm = matplotlib.colors.Normalize(vmin=log2_Npart[0], vmax=log2_Npart[-1])
         for i in range(len(log2_Npart)):
-            ax.semilogy(ts, pcovs[i], color=cmap(norm(log2_Npart[i])))
+            ax.plot(ts, pcovs[i], color=cmap(norm(log2_Npart[i])))
         ax.set_title(['CPU', 'GPU'][cpu_gpu])
         ax.set_xlabel('Time (min)')
 
