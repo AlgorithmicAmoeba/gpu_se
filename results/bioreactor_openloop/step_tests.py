@@ -83,14 +83,14 @@ def plot():
         ax = axes[0]
         ax.plot(ts, ys[:, 2])
         ax.set_title(r'$C_{FA}$')
-        ax.set_ylabel(r'$\frac{mmol}{L}$')
+        ax.set_ylabel(r'$\frac{mg}{L}$')
         ax.set_xlabel(r't ($min$)')
         ax.set_xlim(xmin=0, xmax=100)
 
         ax = axes[1]
         ax.plot(ts, ys[:, 0])
         ax.set_title(r'$C_{G}$')
-        # ax.set_ylabel(r'$\frac{mmol}{L}$')
+        # ax.set_ylabel(r'$\frac{mg}{L}$')
         ax.set_xlabel(r't ($min$)')
         ax.set_xlim(xmin=0, xmax=300)
 
