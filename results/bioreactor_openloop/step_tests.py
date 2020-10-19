@@ -54,7 +54,11 @@ def plot():
 
     # u = numpy.array([0.06, 0.2])
     matplotlib.rcParams.update({'font.size': 16})
-    plt.figure(figsize=(6.25*2, 5))
+    fig, axes = plt.subplots(1, 2,
+                             sharey='row',
+                             figsize=(6.25 * 2, 5),
+                             gridspec_kw={'wspace': 0.08}
+                             )
 
     max_slope = 0
     argmax = 0
@@ -76,19 +80,19 @@ def plot():
             Cg_max = Cg[numpy.where(ts == ts_max)]
             argmax = ts_max, Cg_max
 
-        plt.subplot(1, 2, 1)
-        plt.plot(ts, ys[:, 2])
-        plt.title(r'$C_{FA}$')
-        plt.ylabel(r'$\frac{mmol}{L}$')
-        plt.xlabel(r't ($min$)')
-        plt.xlim(xmin=0, xmax=100)
+        ax = axes[0]
+        ax.plot(ts, ys[:, 2])
+        ax.set_title(r'$C_{FA}$')
+        ax.set_ylabel(r'$\frac{mmol}{L}$')
+        ax.set_xlabel(r't ($min$)')
+        ax.set_xlim(xmin=0, xmax=100)
 
-        plt.subplot(1, 2, 2)
-        plt.plot(ts, ys[:, 0])
-        plt.title(r'$C_{G}$')
-        plt.ylabel(r'$\frac{mmol}{L}$')
-        plt.xlabel(r't ($min$)')
-        plt.xlim(xmin=0, xmax=300)
+        ax = axes[1]
+        ax.plot(ts, ys[:, 0])
+        ax.set_title(r'$C_{G}$')
+        # ax.set_ylabel(r'$\frac{mmol}{L}$')
+        ax.set_xlabel(r't ($min$)')
+        ax.set_xlim(xmin=0, xmax=300)
 
         # plt.subplot(2, 2, 3)
         # plt.axhline(u_i[1])
@@ -103,8 +107,8 @@ def plot():
         # plt.xlabel(r't ($min$)')
 
         # plt.suptitle('Step tests')
-        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        plt.savefig('step_tests.pdf')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.savefig('step_tests.pdf')
     plt.show()
 
     print(max_slope, argmax)
