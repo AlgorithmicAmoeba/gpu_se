@@ -376,7 +376,13 @@ def plot_max_auto():
     run_seqss = cpu_gpu_run_seqs()
 
     matplotlib.rcParams.update({'font.size': 20})
-    fig, axes = plt.subplots(2, 3, sharey='row', figsize=(6.25 * 3, 5 * 2))
+    fig, axes = plt.subplots(
+        2, 3,
+        sharey='row',
+        sharex='col',
+        figsize=(6.25 * 3, 5 * 2),
+        gridspec_kw={'wspace': 0.14}
+    )
     for row in range(2):
         for col in range(3):
             ax = axes[row, col]
@@ -389,7 +395,8 @@ def plot_max_auto():
             ax.set_ylim(0, 1)
             ax.set_xlim(0, 20)
             ax.axhline(0.2, color='r')
-            ax.set_xlabel(r'$N_p$')
+            if row:
+                ax.set_xlabel(r'$N_p$')
             ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
 
             if row == 0:
@@ -432,7 +439,7 @@ def plot_speed_up():
             speed_up,
             yerr=speed_up_err,
             fmt=['k.', 'kx', 'k^'][method],
-            capsize=3,
+            capsize=0,
             elinewidth=2,
             markeredgewidth=1,
             ecolor=(0, 0, 1, 0.3),
