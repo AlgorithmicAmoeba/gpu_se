@@ -662,7 +662,7 @@ def plot_speed_up():
     # plt.title('Speed-up of Gaussian sum filter')
     plt.ylabel('Speed-up')
     plt.xlabel(r'$ N_p$')
-    plt.xlim(xmin=1, xmax=19.5)
+    plt.xlim(xmin=1, xmax=18.5)
     plt.axhline(1, color='black', alpha=0.4)
     plt.tight_layout()
     plt.savefig('GSF_speedup.pdf')
@@ -716,7 +716,7 @@ def plot_times():
             if method == 0:
                 ax.set_ylabel('Time (s)')
             ax.set_xlabel(r'$ N_p$')
-            ax.set_xlim(xmin=1, xmax=19.5)
+            ax.set_xlim(xmin=1, xmax=18.5)
             if device:
                 ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
     # fig.suptitle('Run times Gaussian sum filter methods')
