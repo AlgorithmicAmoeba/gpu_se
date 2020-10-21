@@ -221,6 +221,7 @@ def plot_energy_per_run():
             if method == 0:
                 ax.set_ylabel(r'$\frac{\mathrm{J}}{\mathrm{run}}$')
             ax.set_title(['Predict', 'Update', 'Resample'][method])
+            ax.set_xlim([0, 18.5])
 
     # fig.suptitle('Energy per run')
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
