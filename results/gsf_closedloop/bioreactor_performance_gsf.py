@@ -256,9 +256,12 @@ def plot_pcov():
 
         norm = matplotlib.colors.Normalize(vmin=log2_Npart[0], vmax=log2_Npart[-1])
         for i in range(len(log2_Npart)):
+            if i == numpy.where(pcovs == numpy.nanmax(pcovs))[0][0]:
+                continue
             ax.plot(ts, pcovs[i], color=cmap(norm(log2_Npart[i])))
         ax.set_title(['CPU', 'GPU'][cpu_gpu])
         ax.set_xlabel('Time (min)')
+        ax.set_xlim(xmin=0, xmax=500)
 
         if cpu_gpu:
             cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=plt.gcf().gca())
