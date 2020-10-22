@@ -270,6 +270,7 @@ def plot_pcov():
         else:
             ax.set_ylabel(r'$\bar{\sigma}(\Sigma)$')
 
+    plt.tight_layout()
     plt.savefig('GSF_cov_con.pdf')
     plt.show()
 
