@@ -428,38 +428,10 @@ def plot_speed_up():
         gpu_times = run_seqss[1][method][1][:cpu_times.shape[0]]
 
         speed_up = numpy.median(cpu_times, axis=1) / numpy.median(gpu_times, axis=1)
-        speed_up_err = numpy.abs(
-            (
-                numpy.quantile(cpu_times, [0.096, 1], axis=1) /
-                numpy.quantile(gpu_times, [0.096, 1], axis=1)
-            ) - speed_up
-        )
-        plt.errorbar(
+        plt.plot(
             logN_part,
             speed_up,
-            yerr=speed_up_err,
-            fmt=['k.', 'kx', 'k^'][method],
-            capsize=0,
-            elinewidth=2,
-            markeredgewidth=1,
-            ecolor=(0, 0, 1, 0.3),
-        )
-
-        speed_up_err = numpy.abs(
-            (
-                    numpy.quantile(cpu_times, [0.1, 0.9], axis=1) /
-                    numpy.quantile(gpu_times, [0.1, 0.9], axis=1)
-            ) - speed_up
-        )
-        plt.errorbar(
-            logN_part,
-            speed_up,
-            yerr=speed_up_err,
-            fmt=['k.', 'kx', 'k^'][method],
-            capsize=5,
-            elinewidth=2,
-            markeredgewidth=1,
-            ecolor=(1, 0, 0, 1),
+            ['k.', 'kx', 'k^'][method],
             label=['Predict', 'Update', 'Resample'][method]
         )
 
@@ -497,17 +469,22 @@ def plot_times():
 
             times = numpy.median(timess, axis=1)
 
-            times_err = numpy.abs(numpy.quantile(timess, [0, 1], axis=1) - times)
-            ax.errorbar(
-                logN_part,
-                times,
-                yerr=times_err,
-                fmt=['k.', 'kx'][device],
-                capsize=0,
-                elinewidth=2,
-                markeredgewidth=1,
-                ecolor=(0, 0, 1, 0.3),
-            )
+            # plot outliers
+            ranges = numpy.ptp(timess, axis=1)
+            mins = numpy.min(timess, axis=1)
+            for i in range(times.shape[0]):
+                truth = numpy.logical_or(
+                    (timess[i] - mins[i]) / ranges[i] < 0.1,
+                    (timess[i] - mins[i]) / ranges[i] > 0.9,
+                )
+                n = timess[i][truth].shape[0]
+                ax.plot(
+                    [logN_part[i]] * n,
+                    timess[i][truth],
+                    ['.', 'x'][device],
+                    color=(0, 0, 1, 0.5),
+                    markersize=4
+                )
 
             times_err = numpy.abs(numpy.quantile(timess, [0.1, 0.9], axis=1) - times)
             ax.errorbar(
@@ -525,8 +502,7 @@ def plot_times():
             ax.legend()
             ax.set_title(['Predict', 'Update', 'Resample'][method])
 
-            if method == 0:
-                ax.set_ylabel('Time (s)')
+            ax.set_ylabel('Time (s)')
             ax.set_xlabel('$ N_p $')
             ax.set_xlim(xmin=1, xmax=19.5)
 
@@ -569,8 +545,7 @@ def plot_sub_routine_fractions():
 
         ax.legend()
         ax.set_title(['Predict', 'Update', 'Resample'][i])
-        if i == 0:
-            ax.set_ylabel('Fraction of runtime')
+        ax.set_ylabel('Fraction of runtime')
         ax.set_xlabel(r'$ N_p $')
         ax.set_xticklabels('$2^{' + numpy.char.array(ax.get_xticks(), unicode=True) + '}$')
 
